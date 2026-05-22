@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Slice — Japanese Sim</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=DM+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0b07;
+      font-family: 'DM Mono', monospace;
+      color: #f5f0e8;
+      overflow: hidden;
+    }
+
+    #game-wrap { position: fixed; inset: 0; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+
+    #start-screen {
+      position: fixed; inset: 0;
+      background: rgba(10,8,4,0.97);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 20px; z-index: 10;
+    }
+    #start-screen h1 { font-family: 'Noto Serif JP', serif; font-size: 28px; color: #b8860b; letter-spacing: 0.1em; }
+    #start-screen .subtitle { font-size: 12px; color: #888; text-align: center; max-width: 400px; line-height: 1.8; }
+    #start-screen .goal-box { border: 1px solid #3a2810; padding: 16px 24px; max-width: 420px; line-height: 2; }
+    #start-screen .goal-box .label { font-size: 10px; color: #666; letter-spacing: 0.1em; margin-bottom: 8px; }
+    #start-screen .goal-box li { font-size: 12px; color: #c8b89a; list-style: none; }
+    #start-screen .goal-box li::before { content: "○  "; color: #b8860b; }
+    #start-btn {
+      padding: 12px 36px; background: none; border: 1px solid #b8860b;
+      color: #b8860b; font-family: 'DM Mono', monospace; font-size: 14px;
+      cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s, color 0.15s;
+    }
+    #start-btn:hover { background: #b8860b; color: #0d0b07; }
+    .hint-line { font-size: 10px; color: #444; }
+
+    #workspace {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 180px;
+      background: rgba(10,8,4,0.97); border-top: 1px solid #2a2010;
+      z-index: 15; display: flex; flex-direction: column;
+    }
+    #ws-empty { flex:1; display:flex; align-items:center; padding:0 24px; font-size:11px; color:#555; }
+    #ws-panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
+    #ws-panel.open { display:flex; }
+    #ws-chips-row {
+      display:flex; align-items:center; gap:0; padding:8px 12px 6px;
+      border-bottom:1px solid #1a1408; overflow-x:auto; overflow-y:hidden;
+      scrollbar-width:thin; scrollbar-color:#3a2810 transparent; flex-shrink:0;
+    }
+    #ws-sign-label { font-family:'Noto Serif JP',serif; font-size:11px; color:#7a6040; white-space:nowrap; margin-right:12px; flex-shrink:0; }
+    .ws-chip {
+      font-family:'Noto Serif JP',serif; font-size:17px; padding:4px 10px;
+      border:1.5px solid rgba(255,255,255,0.12); border-radius:4px; cursor:pointer;
+      white-space:nowrap; margin-right:5px; flex-shrink:0; color:#c8b89a;
+      background:rgba(255,255,255,0.04); transition:background 0.1s;
+    }
+    .ws-chip:hover    { background:rgba(184,134,11,0.12); border-color:#b8860b; }
+    .ws-chip.selected { background:#8b3a1e; color:#fff; border-color:#8b3a1e; }
+    .ws-chip.reading  { border-color:rgba(184,134,11,0.7); background:rgba(184,134,11,0.08); }
+    .ws-chip.meaning  { border-color:rgba(45,106,79,0.6); background:rgba(45,106,79,0.06); }
+    .ws-chip.done     { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
+    #ws-body { flex:1; display:flex; align-items:center; gap:16px; padding:0 16px; overflow:hidden; }
+    #ws-def { display:flex; flex-direction:column; justify-content:center; min-width:160px; gap:3px; }
+    #ws-def-jp     { font-family:'Noto Serif JP',serif; font-size:22px; color:#f5f0e8; line-height:1.2; }
+    #ws-def-reading{ font-family:'DM Mono',monospace; font-size:11px; color:#b8860b; }
+    #ws-def-meaning{ font-family:'DM Mono',monospace; font-size:11px; color:#2d6a4f; }
+    #ws-def-hint   { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
+    #ws-input-area { flex:1; display:flex; flex-direction:column; gap:6px; justify-content:center; }
+    #ws-input {
+      width:100%; background:rgba(20,16,10,0.8); border:1.5px solid #8b6914;
+      color:#f5f0e8; font-family:'DM Mono',monospace; font-size:14px;
+      padding:7px 12px; outline:none; border-radius:4px;
+    }
+    #ws-input:disabled { opacity:0.3; }
+    #ws-input.correct  { border-color:#2d6a4f; background:rgba(45,106,79,0.2); }
+    #ws-input.wrong    { border-color:#c0392b; background:rgba(192,57,43,0.2); color:#1a0a08; }
+    #ws-input-bottom { display:flex; align-items:center; gap:8px; }
+    #ws-feedback { font-family:'DM Mono',monospace; font-size:11px; flex:1; min-height:14px; }
+    #ws-lookup {
+      background:rgba(20,16,10,0.8); border:1px solid #8b6914; color:#b8860b;
+      font-family:'DM Mono',monospace; font-size:11px; padding:4px 10px;
+      border-radius:3px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+    }
+    #ws-lookup:disabled { color:#444; border-color:#2a2010; cursor:default; }
+    #ws-lookup:not(:disabled):hover { background:#8b6914; color:#0d0b07; }
+
+    #ws-dialogue { display:none; flex:1; flex-direction:column; }
+    #ws-dialogue.open { display:flex; }
+    #ws-dlg-header { display:flex; align-items:center; gap:10px; padding:8px 14px; border-bottom:1px solid #1a1408; flex-shrink:0; }
+    #ws-dlg-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; }
+    #ws-dlg-name   { font-family:'DM Mono',monospace; font-size:11px; color:#b8860b; flex:1; letter-spacing:0.06em; }
+    #ws-dlg-close  { background:none; border:none; color:#4a3820; font-size:13px; cursor:pointer; padding:2px 6px; }
+    #ws-dlg-close:hover { color:#b8860b; }
+    #ws-dlg-body { flex:1; display:flex; flex-direction:column; justify-content:center; padding:6px 16px; overflow:hidden; }
+    #ws-dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:18px; color:#f5f0e8; line-height:1.5; }
+    #ws-dlg-npc-en { font-family:'DM Mono',monospace; font-size:11px; color:#6a5030; margin-top:2px; }
+    #ws-dlg-thinking { display:none; gap:5px; align-items:center; margin-top:4px; }
+    #ws-dlg-thinking.visible { display:flex; }
+    #ws-dlg-thinking span { width:7px; height:7px; background:#4a3820; border-radius:50%; animation:dlg-pulse 1.2s ease-in-out infinite; }
+    #ws-dlg-thinking span:nth-child(2) { animation-delay:0.2s; }
+    #ws-dlg-thinking span:nth-child(3) { animation-delay:0.4s; }
+    @keyframes dlg-pulse { 0%,80%,100%{transform:scale(0.7);opacity:0.4;} 40%{transform:scale(1.1);opacity:1;} }
+    #ws-dlg-input-row { display:flex; gap:8px; padding:8px 14px; border-top:1px solid #1a1408; flex-shrink:0; }
+    #ws-dlg-input {
+      flex:1; background:rgba(20,16,10,0.8); border:1.5px solid #3a2810;
+      color:#f5f0e8; font-family:'Noto Serif JP',serif; font-size:15px;
+      padding:6px 12px; outline:none; border-radius:4px;
+    }
+    #ws-dlg-input:focus { border-color:#8b6914; }
+    #ws-dlg-send { background:#3a2810; border:1px solid #5a3810; color:#b8860b; font-family:'DM Mono',monospace; font-size:14px; padding:6px 16px; border-radius:4px; cursor:pointer; }
+    #ws-dlg-send:hover { background:#8b6914; color:#0d0b07; }
+    #ws-dlg-send:disabled { opacity:0.4; cursor:default; }
+
+    #vocab-btn {
+      position:fixed; bottom:120px; right:20px; z-index:25;
+      background:rgba(20,16,10,0.97); border:1px solid #8b6914; color:#b8860b;
+      font-family:'DM Mono',monospace; font-size:12px; padding:6px 14px;
+      border-radius:4px; cursor:pointer; display:none;
+    }
+    #vocab-btn:hover { background:#8b6914; color:#0d0b07; }
+    #vocab-panel {
+      position:fixed; inset:0; z-index:30; background:rgba(8,6,3,0.92);
+      display:none; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:40px 20px; overflow-y:auto;
+    }
+    #vocab-panel.open { display:flex; }
+    #vocab-inner { width:100%; max-width:640px; }
+    #vocab-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:10px; border-bottom:1px solid #3a2810; }
+    #vocab-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:#b8860b; font-weight:400; letter-spacing:0.08em; }
+    #vocab-close { background:none; border:1px solid #3a2810; color:#888; font-family:'DM Mono',monospace; font-size:12px; padding:4px 10px; border-radius:3px; cursor:pointer; }
+    #vocab-close:hover { border-color:#8b6914; color:#b8860b; }
+    .vocab-sign-header { font-family:'Noto Serif JP',serif; font-size:13px; color:#6a5030; margin:18px 0 6px; letter-spacing:0.05em; }
+    .vocab-sign-header:first-child { margin-top:0; }
+    .vocab-row { display:grid; grid-template-columns:80px 180px 1fr; gap:12px; align-items:baseline; padding:5px 4px; border-bottom:1px solid #1a1408; }
+    .vocab-row:hover { background:rgba(184,134,11,0.05); }
+    .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:#f5f0e8; }
+    .vocab-reading { font-family:'DM Mono',monospace; font-size:11px; color:#b8860b; }
+    .vocab-reading.locked { color:#3a3020; }
+    .vocab-meaning { font-family:'DM Mono',monospace; font-size:11px; color:#2d6a4f; }
+    .vocab-meaning.locked { color:#1a3020; }
+    #vocab-empty { font-size:12px; color:#444; text-align:center; margin-top:40px; }
+
+    #lang-btn {
+      position: fixed; top: 10px; right: 10px; z-index: 100;
+      background: none; border: 1px solid #3a2810; color: #555;
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      padding: 5px 12px; cursor: pointer; letter-spacing: 0.06em;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #lang-btn:hover { border-color: #b8860b; color: #b8860b; }
+  </style>
+</head>
+<body>
+
+<div id="start-screen">
+  <h1>図書館</h1>
+  <p class="subtitle">A library simulation. Signs are in Japanese — walk up to them to read and translate.</p>
+  <div class="goal-box">
+    <p class="label">TODAY'S GOALS</p>
+    <ul>
+      <li>Read the textbook</li>
+      <li>Take notes on your laptop (library work only)</li>
+      <li>Maintain your 充実感 (well-being)</li>
+    </ul>
+  </div>
+  <button id="start-btn">Enter the library</button>
+  <p class="hint-line">WASD / arrows to move · E or click to interact · walk to signs to study them</p>
+</div>
+
+<div id="game-wrap">
+  <canvas id="game"></canvas>
+</div>
+
+<div id="workspace">
+  <div id="ws-empty">walk up to a sign and press E · talk to characters to practice Japanese</div>
+  <div id="ws-dialogue">
+    <div id="ws-dlg-header">
+      <div id="ws-dlg-avatar"></div>
+      <div id="ws-dlg-name"></div>
+      <button id="ws-dlg-close">✕</button>
+    </div>
+    <div id="ws-dlg-body">
+      <div id="ws-dlg-npc-jp"></div>
+      <div id="ws-dlg-npc-en"></div>
+      <div id="ws-dlg-thinking"><span></span><span></span><span></span></div>
+    </div>
+    <div id="ws-dlg-input-row">
+      <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="日本語で話しかけてください…">
+      <button id="ws-dlg-send">→</button>
+    </div>
+  </div>
+  <div id="ws-panel">
+    <div id="ws-chips-row"><span id="ws-sign-label"></span></div>
+    <div id="ws-body">
+      <div id="ws-def">
+        <span id="ws-def-jp"></span>
+        <span id="ws-def-reading"></span>
+        <span id="ws-def-meaning"></span>
+        <span id="ws-def-hint">click a word above</span>
+      </div>
+      <div id="ws-input-area">
+        <input id="ws-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="select a word first" disabled>
+        <div id="ws-input-bottom">
+          <span id="ws-feedback"></span>
+          <button id="ws-lookup" disabled>📱 look up</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<button id="lang-btn"></button>
+<button id="vocab-btn">📓 vocab</button>
+<div id="vocab-panel">
+  <div id="vocab-inner">
+    <div id="vocab-header">
+      <h2>語彙ログ — Vocabulary Log</h2>
+      <button id="vocab-close">✕ close</button>
+    </div>
+    <div id="vocab-content"></div>
+  </div>
+</div>
+
+<!-- Teaching language tracker (must load first) -->
+<script src="content/i18n.js"></script>
+
+<!-- Content -->
+<script src="content/signs.js"></script>
+<script src="content/signs_ko.js"></script>
+<script src="content/world_signs.js"></script>
+<script src="content/world_signs_ko.js"></script>
+<script src="content/rooms.js"></script>
+<script src="content/npcs.js"></script>
+<script src="content/lore.js"></script>
+<script src="content/entities.js"></script>
+<script src="content/dialogue.js"></script>
+<script src="content/knowledge.js"></script>
+
+<!-- Engine (top-down) -->
+<script src="engine/tiles.js"></script>
+<script src="engine/maps.js"></script>
+<script src="engine/sim2d.js"></script>
+<script src="engine/render2d.js"></script>
+<script src="engine/input2d.js"></script>
+
+<script>
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+      const ra=Array.isArray(r)?r:[r,r,r,r];
+      const[tl,tr,br,bl]=ra.length===4?ra:[ra[0],ra[0],ra[0],ra[0]];
+      this.moveTo(x+tl,y); this.lineTo(x+w-tr,y);
+      this.quadraticCurveTo(x+w,y,x+w,y+tr); this.lineTo(x+w,y+h-br);
+      this.quadraticCurveTo(x+w,y+h,x+w-br,y+h); this.lineTo(x+bl,y+h);
+      this.quadraticCurveTo(x,y+h,x,y+h-bl); this.lineTo(x,y+tl);
+      this.quadraticCurveTo(x,y,x+tl,y); this.closePath(); return this;
+    };
+  }
+
+  const WORD_PROGRESS = (() => {
+    const KEY_PREFIX = "library-slice-progress-v1";
+    function _key() { return KEY_PREFIX + '-' + LANG.current; }
+    let _data = {};
+    try { _data = JSON.parse(localStorage.getItem(_key()) || "{}"); } catch {}
+    function _flush() { try { localStorage.setItem(_key(), JSON.stringify(_data)); } catch {} }
+    return {
+      getSign(id) { return _data[id] || {}; },
+      getAll()    { return _data; },
+      unlock(id, idx, key) {
+        _data[id] = _data[id] || {}; _data[id][idx] = _data[id][idx] || {};
+        _data[id][idx][key] = true; _flush();
+      },
+      reload() {
+        try { _data = JSON.parse(localStorage.getItem(_key()) || "{}"); } catch { _data = {}; }
+      }
+    };
+  })();
+
+  const canvas = document.getElementById("game");
+
+  const WorkspacePanel = (() => {
+    const panel_el  = document.getElementById("ws-panel");
+    const empty_el  = document.getElementById("ws-empty");
+    const chips_row = document.getElementById("ws-chips-row");
+    const lbl_el    = document.getElementById("ws-sign-label");
+    const def_jp    = document.getElementById("ws-def-jp");
+    const def_read  = document.getElementById("ws-def-reading");
+    const def_mean  = document.getElementById("ws-def-meaning");
+    const def_hint  = document.getElementById("ws-def-hint");
+    const inp       = document.getElementById("ws-input");
+    const fb        = document.getElementById("ws-feedback");
+    const lkp       = document.getElementById("ws-lookup");
+
+    let cur_sign_id = null, cur_word_idx = null, word_results = {}, _lkp_timer = null, _checking = false;
+
+    const OLLAMA_URL = "http://localhost:11434/api/chat", OLLAMA_MODEL = "llama3.1:8b";
+
+    async function _llama_judge_meaning(token, player_input) {
+      try {
+        const res = await fetch(OLLAMA_URL, { method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ model:OLLAMA_MODEL, messages:[{role:"user", content:
+            `Japanese word: ${token.text}\nAccepted meanings: ${token.meaning}\nStudent answer: ${player_input}\nIs the student's answer close enough in meaning to be marked correct? Reply yes or no only.`
+          }], stream:false, options:{temperature:0, num_predict:5} }) });
+        if (!res.ok) throw new Error();
+        return (await res.json()).message?.content?.trim().toLowerCase().startsWith("yes") || false;
+      } catch { return false; }
+    }
+
+    function _normRomaji(s) { return s.toLowerCase().replace(/\s+/g,"").replace(/ou/g,"o").replace(/uu/g,"u").replace(/aa/g,"a"); }
+    function _checkWhat(word, raw, res) {
+      const val=raw.trim().toLowerCase(), val_ns=val.replace(/\s+/g,"");
+      if (!val) return null;
+      if (!res.romaji) {
+        if (word.romaji && _normRomaji(val_ns)===_normRomaji(word.romaji)) return "romaji";
+        if (val_ns===(word.furigana||"").toLowerCase()) return "romaji";
+      }
+      if (!res.meaning) {
+        const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split("/").map(p=>p.trim()).filter(Boolean);
+        if (parts.some(p=>val===p||val_ns===p.replace(/\s+/g,""))) return "meaning";
+      }
+      return null;
+    }
+
+    function _update_lkp() {
+      const cd=sim.state.phone.lookup_cooldown;
+      lkp.disabled=cd>0||cur_word_idx==null;
+      lkp.textContent=cd>0?`📱 (${cd}s)`:'📱 look up';
+    }
+    function _start_lkp_timer() {
+      if (_lkp_timer) return;
+      _lkp_timer=setInterval(()=>{ _update_lkp(); if(sim.state.phone.lookup_cooldown<=0){clearInterval(_lkp_timer);_lkp_timer=null;} },1000);
+    }
+
+    function _render_chips() {
+      [...chips_row.querySelectorAll(".ws-chip")].forEach(c=>c.remove());
+      const sign=SIGN_BY_ID[cur_sign_id]; if (!sign) return;
+      sign.tokens.forEach((token,idx)=>{
+        const res=word_results[idx]||{};
+        const chip=document.createElement("span"); chip.className="ws-chip";
+        if (res.romaji&&res.meaning) chip.classList.add("done");
+        else if (res.romaji) chip.classList.add("reading");
+        else if (res.meaning) chip.classList.add("meaning");
+        if (idx===cur_word_idx) chip.classList.add("selected");
+        chip.textContent=token.text;
+        chip.addEventListener("click",()=>_select(idx));
+        chips_row.appendChild(chip);
+      });
+    }
+
+    function _select(idx) {
+      cur_word_idx=idx;
+      const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[idx], res=word_results[idx]||{};
+      def_jp.textContent=token.text;
+      def_read.textContent=res.romaji?`${token.furigana}  [${token.romaji||""}]`:"";
+      def_mean.textContent=res.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
+      def_hint.textContent="";
+      const _romPlaceholder = LANG.current==='ko'?'romanization…':'romaji…';
+      inp.disabled=res.romaji&&res.meaning; inp.placeholder=res.romaji?'english meaning…':_romPlaceholder;
+      if (res.romaji&&res.meaning) inp.placeholder="—";
+      inp.value=""; inp.className=""; fb.textContent=""; fb.style.color="";
+      _render_chips(); _update_lkp(); inp.focus();
+    }
+
+    function open(sign_id) {
+      const sign=SIGN_BY_ID[sign_id]; if (!sign) return;
+      cur_sign_id=sign_id; cur_word_idx=null;
+      const saved=WORD_PROGRESS.getSign(sign_id); word_results={};
+      Object.keys(saved).forEach(k=>{ word_results[+k]={...saved[k]}; });
+      lbl_el.textContent=sign.label||sign_id;
+      def_jp.textContent=def_read.textContent=def_mean.textContent="";
+      def_hint.textContent='click a word above';
+      inp.disabled=true; inp.placeholder="select a word first"; inp.value=""; inp.className="";
+      fb.textContent=""; fb.style.color="";
+      empty_el.style.display="none";
+      document.getElementById("ws-dialogue").classList.remove("open");
+      panel_el.classList.add("open");
+      renderer.sign_panel={sign_id}; _render_chips(); _update_lkp();
+    }
+
+    function clear() {
+      cur_sign_id=null; cur_word_idx=null;
+      panel_el.classList.remove("open"); empty_el.style.display="";
+      renderer.sign_panel=null;
+    }
+
+    function _accept(token, matched, res) {
+      res[matched]=true; WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
+      inp.value=""; inp.className="correct";
+      setTimeout(()=>{ inp.className=""; },500);
+      inp.placeholder=(res.romaji&&res.meaning)?"—":res.romaji?'english meaning…':(LANG.current==='ko'?'romanization…':'romaji…');
+      inp.disabled=res.romaji&&res.meaning;
+      def_read.textContent=res.romaji?`${token.furigana}  [${token.romaji||""}]`:"";
+      def_mean.textContent=res.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
+      fb.textContent=""; fb.style.color=""; _render_chips();
+    }
+
+    inp.addEventListener("keydown", async e => {
+      if (e.key==="Escape"){inp.blur();return;}
+      if (e.key!=="Enter") return;
+      if (cur_sign_id==null||cur_word_idx==null||_checking) return;
+      const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[cur_word_idx];
+      word_results[cur_word_idx]=word_results[cur_word_idx]||{};
+      const res=word_results[cur_word_idx], raw=inp.value;
+      const matched=_checkWhat(token,raw,res);
+      if (matched) { _accept(token,matched,res); }
+      else if (res.romaji&&!res.meaning) {
+        _checking=true; inp.disabled=true; fb.textContent="checking…"; fb.style.color="#b8860b";
+        const ok=await _llama_judge_meaning(token,raw.trim());
+        _checking=false; inp.disabled=false;
+        if (ok){ inp.value=""; _accept(token,"meaning",res); }
+        else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
+        inp.focus();
+      } else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
+    });
+
+    lkp.addEventListener("click", () => {
+      if (cur_sign_id==null||cur_word_idx==null) return;
+      if (sim.state.phone.lookup_cooldown>0) return;
+      const token=SIGN_BY_ID[cur_sign_id].tokens[cur_word_idx];
+      word_results[cur_word_idx]=word_results[cur_word_idx]||{};
+      const res=word_results[cur_word_idx];
+      const field=!res.romaji?"romaji":!res.meaning?"meaning":null; if (!field) return;
+      const hint=field==="romaji"?(token.romaji||token.furigana):token.meaning.split("/")[0].trim();
+      fb.textContent="→ "+hint; fb.style.color="#b8860b";
+      sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); inp.focus();
+    });
+
+    return { open, clear };
+  })();
+
+  const sim      = new Sim2D();
+  const renderer = new Renderer2D(canvas, sim);
+  const input    = new Input2D(canvas, sim, renderer);
+
+  document.getElementById("start-btn").addEventListener("click", () => {
+    document.getElementById("start-screen").style.display = "none";
+    document.getElementById("vocab-btn").style.display = "block";
+    sim.start();
+  });
+
+  const VocabPanel = (() => {
+    const panel=document.getElementById("vocab-panel"), content=document.getElementById("vocab-content");
+    const btn=document.getElementById("vocab-btn"), close=document.getElementById("vocab-close");
+    function _populate() {
+      content.innerHTML=""; const all=WORD_PROGRESS.getAll(); let total=0;
+      SIGNS.forEach(sign=>{
+        const sd=all[sign.id]; if (!sd) return;
+        const entries=Object.entries(sd).filter(([,r])=>r.romaji||r.meaning);
+        if (!entries.length) return;
+        const hdr=document.createElement("div"); hdr.className="vocab-sign-header"; hdr.textContent=sign.label; content.appendChild(hdr);
+        entries.sort(([a],[b])=>parseInt(a)-parseInt(b)).forEach(([idx,res])=>{
+          const token=sign.tokens[parseInt(idx)]; if (!token) return;
+          const row=document.createElement("div"); row.className="vocab-row";
+          const jp=document.createElement("span"); jp.className="vocab-jp"; jp.textContent=token.text;
+          const reading=document.createElement("span"); reading.className="vocab-reading"+(res.romaji?"":" locked");
+          reading.textContent=res.romaji?`${token.furigana}  [${token.romaji||""}]`:"not yet unlocked";
+          const meaning=document.createElement("span"); meaning.className="vocab-meaning"+(res.meaning?"":" locked");
+          meaning.textContent=res.meaning?token.meaning.split("/")[0].trim():"not yet unlocked";
+          row.appendChild(jp); row.appendChild(reading); row.appendChild(meaning); content.appendChild(row); total++;
+        });
+      });
+      if (!total){ const e=document.createElement("p"); e.id="vocab-empty"; e.textContent="No words unlocked yet."; content.appendChild(e); }
+    }
+    function open(){ _populate(); panel.classList.add("open"); }
+    function close_panel(){ panel.classList.remove("open"); }
+    btn.addEventListener("click",open); close.addEventListener("click",close_panel);
+    panel.addEventListener("click",e=>{ if(e.target===panel) close_panel(); });
+    return {open,close:close_panel,refresh:_populate};
+  })();
+
+  const DialoguePanel = (() => {
+    const dlg_el=document.getElementById("ws-dialogue"), avatar=document.getElementById("ws-dlg-avatar");
+    const name_el=document.getElementById("ws-dlg-name"), npc_jp=document.getElementById("ws-dlg-npc-jp");
+    const npc_en=document.getElementById("ws-dlg-npc-en"), thinking=document.getElementById("ws-dlg-thinking");
+    const inp=document.getElementById("ws-dlg-input"), send_btn=document.getElementById("ws-dlg-send");
+    const close_btn=document.getElementById("ws-dlg-close");
+    let cur_npc_id=null; const _histories={};
+    const OLLAMA_URL="http://localhost:11434/api/chat", OLLAMA_MODEL="llama3.1:8b";
+
+    function _system_prompt(npc_id) {
+      const npc=NPC_DEFS[npc_id];
+      const facts=(NPC_KNOWLEDGE[npc_id]||[]).map(f=>"- "+f).join("\n");
+      return `You are ${npc.name_jp} (${npc.name_en}). A visitor is speaking to you in Japanese.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite Japanese staff member using 丁寧語\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON in this exact format: {"jp": "Japanese response", "en": "English translation"}\n- If asked about something not covered above, say politely that you don't know\n- Do not include any text outside the JSON`;
+    }
+
+    async function _generate(npc_id, text) {
+      const history=_histories[npc_id]||[];
+      try {
+        const res=await fetch(OLLAMA_URL,{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:150}})});
+        if (!res.ok) throw new Error();
+        const raw=(await res.json()).message?.content?.trim()||"";
+        let parsed=null;
+        try{parsed=JSON.parse(raw);}catch{}
+        if (!parsed){const m=raw.match(/\{[\s\S]*?\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
+        if (parsed?.jp&&parsed?.en){
+          _histories[npc_id]=[...history,{role:"user",content:text},{role:"assistant",content:raw}];
+          return {jp:parsed.jp,en:parsed.en};
+        }
+        throw new Error();
+      } catch {
+        const intent_id=npc_fallback_classify(npc_id,text);
+        const intent=NPC_DEFS[npc_id]?.intents[intent_id];
+        return intent?{jp:intent.jp,en:intent.en}:null;
+      }
+    }
+
+    async function _send() {
+      if (!cur_npc_id) return;
+      const text=inp.value.trim(); if (!text) return;
+      inp.value=""; inp.disabled=true; send_btn.disabled=true;
+      npc_jp.textContent=""; npc_en.textContent=""; thinking.classList.add("visible");
+      const response=await _generate(cur_npc_id,text);
+      thinking.classList.remove("visible");
+      if (response){npc_jp.textContent=response.jp; npc_en.textContent=response.en;}
+      send_btn.disabled=false; inp.disabled=false; inp.focus();
+    }
+
+    function open(npc_id) {
+      const npc=NPC_DEFS[npc_id]; if (!npc) return;
+      cur_npc_id=npc_id;
+      const greeting = LANG.current==='ko' && npc.greeting_ko ? npc.greeting_ko : npc.greeting;
+      _histories[npc_id]=[{role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en})}];
+      document.getElementById("ws-empty").style.display="none";
+      document.getElementById("ws-panel").classList.remove("open");
+      dlg_el.classList.add("open");
+      avatar.style.background=npc.color; name_el.textContent=`${npc.name_jp} — ${npc.name_en}`;
+      npc_jp.textContent=greeting.jp; npc_en.textContent=greeting.en;
+      inp.placeholder = LANG.current==='ko' ? '한국어로 말을 걸어보세요…' : '日本語で話しかけてください…';
+      thinking.classList.remove("visible"); inp.value=""; inp.disabled=false; send_btn.disabled=false; inp.focus();
+    }
+
+    function close() {
+      cur_npc_id=null; dlg_el.classList.remove("open");
+      document.getElementById("ws-empty").style.display="";
+    }
+
+    send_btn.addEventListener("click",_send);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")_send();});
+    close_btn.addEventListener("click",close);
+    return {open,close};
+  })();
+
+  // ── Teaching language switch ───────────────────────────────────────────────
+
+  function switchTeachingLang(lang) {
+    LANG.set(lang);
+    // Hot-swap SIGN_BY_ID: delete all current entries, re-populate from the right set
+    Object.keys(SIGN_BY_ID).forEach(k => delete SIGN_BY_ID[k]);
+    const signs = lang === 'ko' ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
+    signs.forEach(s => { SIGN_BY_ID[s.id] = s; });
+    // Reload per-language vocab progress
+    WORD_PROGRESS.reload();
+    // Close any open panels so stale sign data isn't shown
+    WorkspacePanel.clear();
+    // Update button: show the OTHER language as the switch target
+    const btn = document.getElementById('lang-btn');
+    if (btn) btn.textContent = lang === 'ko' ? '日本語' : '한국어';
+  }
+
+  document.getElementById('lang-btn').addEventListener('click', () => {
+    switchTeachingLang(LANG.current === 'ko' ? 'ja' : 'ko');
+  });
+
+  // Apply saved teaching language on load
+  switchTeachingLang(LANG.current);
+
+  // ── Game loop ──────────────────────────────────────────────────────────────
+  let _last_t = 0;
+  let _room_prev = null;
+
+  function loop(now) {
+    const dt = Math.min((now - _last_t) / 1000, 0.05);
+    _last_t = now;
+
+    if (sim.state.session_active) {
+      input.update(dt, now);
+
+      if (sim.state.transition) {
+        const changed = sim.advance_transition(dt);
+        if (changed) {
+          WorkspacePanel.clear();
+          DialoguePanel.close();
+        }
+      }
+    }
+
+    renderer.draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>
