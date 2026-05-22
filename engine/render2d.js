@@ -203,6 +203,12 @@ class Renderer2D {
 
     this._draw_notifications(cam, s);
 
+    // Per-room ambient tint (subtle mood colour)
+    if (room) this._draw_room_tint(s.room);
+
+    // Vignette — darken viewport edges for depth and focus
+    this._draw_vignette();
+
     // Transition fade
     if (s.transition) {
       const alpha = Math.min(s.transition.alpha, 1);
@@ -535,6 +541,34 @@ class Renderer2D {
     ctx.beginPath(); ctx.roundRect(rb.x,rb.y,rb.w,rb.h,5); ctx.fill(); ctx.stroke();
     ctx.fillStyle=hov?'#1a1209':'#f5f0e8'; ctx.font=`13px ${this.FONT_MONO}`;
     ctx.fillText('Play again', rb.x+rb.w/2, rb.y+20);
+  }
+
+  // ── Atmosphere ────────────────────────────────────────────────────────────
+
+  _draw_vignette() {
+    const ctx = this.ctx;
+    const cx = this.VP_W / 2, cy = this.VP_H / 2;
+    const inner = Math.min(this.VP_W, this.VP_H) * 0.22;
+    const outer = Math.max(this.VP_W, this.VP_H) * 0.82;
+    const g = ctx.createRadialGradient(cx, cy, inner, cx, cy, outer);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.48)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, this.VP_W, this.VP_H);
+  }
+
+  _draw_room_tint(room_id) {
+    const TINTS = {
+      library:   'rgba(190,130, 40,0.055)',
+      lobby:     'rgba(180,200,230,0.04)',
+      play_area: 'rgba( 30,110, 10,0.05)',
+      salon:     'rgba(170, 90,170,0.04)',
+      outdoor:   'rgba( 60,150,220,0.06)',
+    };
+    const t = TINTS[room_id];
+    if (!t) return;
+    this.ctx.fillStyle = t;
+    this.ctx.fillRect(0, 0, this.VP_W, this.VP_H);
   }
 
   // ── Reactions ─────────────────────────────────────────────────────────────

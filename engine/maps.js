@@ -3,8 +3,9 @@
 // All rooms sized for 1920×1080: VP=1920×848px at TS=32 → 60×26.5, use 60×27.
 
 // ── Shorthand aliases ────────────────────────────────────────────────────────
-const _W = 'WALL', _D = 'DESK', _S = 'SHELF', _C = 'CRAFT', _R = 'RECEPTION';
+const _W = 'WALL', _D = 'DESK', _S = 'SHELF', _S2 = 'SHELF2', _C = 'CRAFT', _C2 = 'CRAFT2', _R = 'RECEPTION';
 const _B = 'BENCH', _SW = 'SWING', _G = 'GATE', _T = 'TREE', _T2='TREE2', _T3='TREE3';
+const _FT = 'F_TAN', _FS = 'F_STONE', _FSD = 'F_SAND', _FW2 = 'F_WOOD2';
 
 // ── Map builder helpers ───────────────────────────────────────────────────────
 const _COLS = 60, _ROWS = 27;
@@ -55,16 +56,29 @@ function rect(c1, r1, c2, r2, tile) {
 const LIBRARY_MAP = make_map(_COLS, _ROWS, _W,
   [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX }],
   [
-    // Bookshelves along right wall — two banks, gap at exit rows
+    // Bookshelves: right wall (two banks, gap at exit rows)
     ...rect(52, 1, 58, 11, _S),
     ...rect(52, 15, 58, 25, _S),
-    // Reception desk (left side, near left entrance)
+    // Bookshelves: top wall (around sign columns 5, 20, 40)
+    ...rect( 1, 1,  4, 1, _S),
+    ...rect( 6, 1, 19, 1, _S),
+    ...rect(21, 1, 39, 1, _S),
+    ...rect(41, 1, 51, 1, _S),
+    // Bookshelves: bottom wall
+    ...rect( 1, 25, 51, 25, _S),
+    // Bookshelves: left wall (above and below reception)
+    ...rect(1, 1, 1,  7, _S),
+    ...rect(1, 15, 1, 25, _S),
+    // Reception desk (left side)
     ...rect(3, 9, 6, 11, _R),
-    // Study desk bank 1 — three sections separated by aisles
+    // Warm-wood aisle runners between desk banks
+    ...rect(9, 12, 49, 15, _FT),
+    ...rect(9, 20, 49, 21, _FT),
+    // Study desk bank 1
     ...rect(10, 9, 20, 10, _D),
     ...rect(23, 9, 33, 10, _D),
     ...rect(36, 9, 48, 10, _D),
-    // Study desk bank 2 (lower half)
+    // Study desk bank 2
     ...rect(10, 17, 20, 18, _D),
     ...rect(23, 17, 33, 18, _D),
     ...rect(36, 17, 48, 18, _D),
@@ -94,18 +108,31 @@ const LIBRARY_SIGNS = [
 const PLAY_MAP = make_map(_COLS, _ROWS, _W,
   [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX }],
   [
-    // Swings — two pairs on the left side
+    // Swings
     ...rect(8,  8, 9,  9, _SW),
     ...rect(12, 8, 13, 9, _SW),
-    // Gate structure — two sections forming an arch
+    // Gate arch
     ...rect(28, 8, 29, 9, _G),
     ...rect(32, 8, 33, 9, _G),
-    // Tree clusters — scattered decoration
-    ...rect(45, 5, 46, 6, _T),
-    ...rect(50, 8, 51, 9, _T2),
-    ...rect(20, 20, 21, 21, _T),
-    ...rect(40, 18, 41, 19, _T2),
-    ...rect(8,  18, 9,  19, _T3),
+    // Sandy path from left entrance toward the gate
+    ...rect(1, 11, 27, 12, _FSD),
+    // Sandy ring around the swing area
+    ...rect(6, 6, 15, 11, _FSD),
+    // Benches near the gate / rest area
+    24, 11, _B,   37, 11, _B,
+    // Tree clusters — richer coverage
+    ...rect(45, 4, 47, 6, _T),
+    ...rect(50, 7, 52, 9, _T2),
+    ...rect(55, 4, 57, 6, _T3),
+    ...rect(3,  4, 5,  6, _T3),
+    ...rect(18, 4, 19, 5, _T3),
+    ...rect(38, 4, 40, 6, _T2),
+    ...rect(20, 19, 22, 21, _T),
+    ...rect(40, 17, 42, 19, _T2),
+    ...rect(8,  18, 10, 20, _T3),
+    ...rect(30, 20, 32, 22, _T),
+    ...rect(50, 19, 52, 21, _T3),
+    ...rect(55, 20, 57, 22, _T2),
   ]
 );
 const PLAY_NPCS  = [{ npc_id:'play_staff', col:40, row:10 }];
@@ -120,8 +147,17 @@ const PLAY_SIGNS = [
 const LOBBY_MAP = make_map(_COLS, _ROWS, _W,
   [{ dir:'right', rows:_EX }],
   [
-    // Wide reception counter in the centre
+    // Wide reception counter
     ...rect(22, 10, 38, 12, _R),
+    // Waiting benches along side walls
+     1,  5, _B,    1,  8, _B,    1, 11, _B,
+    58,  5, _B,   58,  8, _B,   58, 11, _B,
+    // Welcome-mat accent in front of reception
+    ...rect(22, 14, 38, 15, _FT),
+    // Decorative floor band across the upper lobby
+    ...rect( 2,  4, 57,  5, _FS),
+    // Stone trim along bottom wall
+    ...rect( 2, 22, 57, 22, _FS),
   ]
 );
 const LOBBY_NPCS  = [{ npc_id:'receptionist', col:40, row:10 }];
@@ -135,14 +171,29 @@ const LOBBY_SIGNS = [
 const SALON_MAP = make_map(_COLS, _ROWS, _W,
   [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX }],
   [
-    // Craft table banks — three sections with walkway gaps
-    ...rect(10, 9, 20, 11, _C),
-    ...rect(23, 9, 33, 11, _C),
-    ...rect(36, 9, 48, 11, _C),
-    // Lower craft bank
-    ...rect(10, 17, 20, 19, _C),
-    ...rect(23, 17, 33, 19, _C),
-    ...rect(36, 17, 48, 19, _C),
+    // Supply shelves: top wall (around sign cols 5, 30)
+    ...rect( 1, 1,  4, 1, _S2),
+    ...rect( 6, 1, 28, 1, _S2),
+    ...rect(31, 1, 51, 1, _S2),
+    // Supply shelves: bottom wall
+    ...rect( 1, 25, 51, 25, _S2),
+    // Supply shelves: left wall
+    ...rect(1, 2, 1, 8, _S2),
+    ...rect(1, 15, 1, 24, _S2),
+    // Upper craft banks — alternating table variants for visual interest
+    ...rect(10,  9, 15, 11, _C),
+    ...rect(16,  9, 20, 11, _C2),
+    ...rect(23,  9, 28, 11, _C),
+    ...rect(29,  9, 33, 11, _C2),
+    ...rect(36,  9, 41, 11, _C),
+    ...rect(42,  9, 48, 11, _C2),
+    // Lower craft banks
+    ...rect(10, 17, 15, 19, _C2),
+    ...rect(16, 17, 20, 19, _C),
+    ...rect(23, 17, 28, 19, _C2),
+    ...rect(29, 17, 33, 19, _C),
+    ...rect(36, 17, 41, 19, _C2),
+    ...rect(42, 17, 48, 19, _C),
   ]
 );
 const SALON_NPCS  = [{ npc_id:'salon_staff', col:50, row:20 }];
@@ -156,18 +207,45 @@ const SALON_SIGNS = [
 const OUTDOOR_MAP = make_map(_COLS, _ROWS, _T,
   [{ dir:'left', rows:_EX }],
   [
-    // Interior tree clusters for depth and decoration
-    ...rect(2,  2,  3,  3,  _T),
-    ...rect(8,  2,  9,  3,  _T2),
-    ...rect(55, 2,  57, 4,  _T),
-    ...rect(50, 2,  51, 3,  _T2),
-    ...rect(2,  20, 3,  22, _T),
-    ...rect(8,  22, 9,  23, _T2),
-    ...rect(55, 21, 57, 23, _T),
-    ...rect(50, 22, 51, 23, _T2),
-    ...rect(30, 3,  31, 4,  _T3),
-    // Bench in the centre
-    5, 13, _B,
+    // Dense tree line: top interior edge
+    ...rect( 2,  2,  4,  4, _T),
+    ...rect( 7,  2,  9,  4, _T2),
+    ...rect(13,  2, 15,  4, _T3),
+    ...rect(18,  2, 20,  4, _T),
+    ...rect(25,  2, 27,  4, _T2),
+    ...rect(31,  2, 33,  3, _T3),
+    ...rect(37,  2, 39,  4, _T),
+    ...rect(44,  2, 46,  4, _T2),
+    ...rect(50,  2, 52,  4, _T3),
+    ...rect(55,  2, 57,  4, _T),
+    // Dense tree line: bottom interior edge
+    ...rect( 2, 21,  4, 24, _T2),
+    ...rect( 8, 22, 10, 24, _T),
+    ...rect(15, 22, 17, 24, _T3),
+    ...rect(22, 21, 24, 24, _T),
+    ...rect(29, 22, 31, 24, _T2),
+    ...rect(36, 22, 38, 24, _T),
+    ...rect(43, 21, 45, 24, _T3),
+    ...rect(50, 22, 52, 24, _T2),
+    ...rect(55, 21, 57, 24, _T),
+    // Scattered interior trees
+    ...rect(12,  8, 13, 10, _T3),
+    ...rect(25,  6, 26,  8, _T2),
+    ...rect(40, 10, 41, 12, _T),
+    ...rect(48,  7, 49,  9, _T3),
+    ...rect(18, 14, 19, 16, _T3),
+    ...rect(45, 16, 46, 18, _T2),
+    // Sandy path from gate entrance through the space
+    ...rect(1, 11,  3, 16, _FSD),
+    ...rect(3, 13, 28, 14, _FSD),
+    // Swing set
+    ...rect(37, 3, 38, 4, _SW),
+    ...rect(41, 3, 42, 4, _SW),
+    39, 3, _G, 39, 4, _G,
+    // Benches: entrance rest spot + gathering area
+     5, 13, _B,
+    29, 14, _B,
+    33, 14, _B,
   ]
 );
 const OUTDOOR_NPCS  = [{ npc_id:'outdoor_guide', col:30, row:18 }];
