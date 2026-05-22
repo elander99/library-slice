@@ -34,7 +34,7 @@ const SIGNS_KO = [
       { text: "조용히",   furigana: "조용히",   romaji: "joyonghi",      meaning: "quietly / silently / please be quiet / in silence" },
       { text: "휴대전화", furigana: "휴대전화", romaji: "hyudaejeonhwa", meaning: "mobile phone / cell phone / phone / smartphone" },
       { text: "통화",     furigana: "통화",     romaji: "tonghwa",       meaning: "phone call / call / calling" },
-      { text: "삼가다",   furigana: "삼가다",   romaji: "samgada",       meaning: "refrain / please refrain / hold back / abstain" },
+      { text: "삼가",     furigana: "삼가",     romaji: "samga",         meaning: "refrain / please refrain / hold back" },
       { text: "주세요",   furigana: "주세요",   romaji: "juseyo",        meaning: "please / please do" },
     ]
   },

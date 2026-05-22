@@ -36,7 +36,7 @@ const WORLD_SIGNS_KO = [
     japanese: "신발을\n벗어 주세요",
     tokens: [
       { text: "신발",   furigana: "신발",   romaji: "sinbal", meaning: "shoes / footwear" },
-      { text: "벗다",   furigana: "벗다",   romaji: "beotda", meaning: "take off / remove / undress" },
+      { text: "벗어",   furigana: "벗어",   romaji: "beoseo", meaning: "take off / remove" },
       { text: "주세요", furigana: "주세요", romaji: "juseyo", meaning: "please / please do" },
     ]
   },
@@ -56,7 +56,7 @@ const WORLD_SIGNS_KO = [
     id: "play_age",
     label: "대상 연령",
     color: "#2d6a4f",
-    japanese: "3살부터 6살\n어린이를 위한 공간",
+    japanese: "3살부터 6살까지\n어린이를 위한 공간",
     tokens: [
       { text: "살",     furigana: "살",     romaji: "sal",     meaning: "years old / age" },
       { text: "부터",   furigana: "부터",   romaji: "buteo",   meaning: "from / starting from / since" },
@@ -87,7 +87,7 @@ const WORLD_SIGNS_KO = [
     tokens: [
       { text: "음식물", furigana: "음식물", romaji: "eumsigmul", meaning: "food and drink / food or drink / refreshments" },
       { text: "반입",   furigana: "반입",   romaji: "banip",     meaning: "bringing in / bringing inside / carrying in" },
-      { text: "삼가다", furigana: "삼가다", romaji: "samgada",   meaning: "please refrain / hold back / abstain" },
+      { text: "삼가",   furigana: "삼가",   romaji: "samga",     meaning: "refrain / please refrain / hold back" },
       { text: "수분",   furigana: "수분",   romaji: "subun",     meaning: "water / hydration / moisture" },
       { text: "보충",   furigana: "보충",   romaji: "bochung",   meaning: "replenishment / supplement / refill" },
       { text: "가능",   furigana: "가능",   romaji: "ganeung",   meaning: "possible / allowed / OK / permissible" },
@@ -99,11 +99,11 @@ const WORLD_SIGNS_KO = [
     id: "outdoor_zipline",
     label: "짚라인",
     color: "#c0392b",
-    japanese: "짚라인 이용자가 지나갑니다\n주의하세요!",
+    japanese: "짚라인 이용자가 지나가요\n주의하세요!",
     tokens: [
       { text: "짚라인",   furigana: "짚라인",   romaji: "jiprain",  meaning: "zipline" },
       { text: "이용자",   furigana: "이용자",   romaji: "iyongja",  meaning: "user / rider / person using" },
-      { text: "지나가다", furigana: "지나가다", romaji: "jinagada", meaning: "pass / go through / pass by" },
+      { text: "지나가",   furigana: "지나가",   romaji: "jinaga",   meaning: "pass / go through / pass by" },
       { text: "주의",     furigana: "주의",     romaji: "juui",     meaning: "caution / attention / careful / warning / watch out" },
     ]
   },
@@ -113,6 +113,7 @@ const WORLD_SIGNS_KO = [
     color: "#b8860b",
     japanese: "7살 이상은 어린 아이에게\n양보해 주세요",
     tokens: [
+      { text: "살",     furigana: "살",     romaji: "sal",    meaning: "years old / age" },
       { text: "이상",   furigana: "이상",   romaji: "isang",  meaning: "and over / or more / above / or older" },
       { text: "어린",   furigana: "어린",   romaji: "eorin",  meaning: "young / little / small" },
       { text: "아이",   furigana: "아이",   romaji: "ai",     meaning: "child / children / kid" },

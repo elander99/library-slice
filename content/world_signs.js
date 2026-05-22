@@ -53,7 +53,7 @@ const WORLD_SIGNS = [
     id: "play_age",
     label: "対象年齢",
     color: "#2d6a4f",
-    japanese: "3才から6才\nのこどもたちが\n対象です",
+    japanese: "3才から6才まで\nのこどもたちが\n対象です",
     tokens: [
       { text: "才",     furigana: "さい",       romaji: "sai",     meaning: "years old / age" },
       { text: "から",   furigana: "から",       romaji: "kara",    meaning: "from / since" },

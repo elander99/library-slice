@@ -28,8 +28,7 @@ const SIGNS = [
       { text: "場合",     furigana: "ばあい",     romaji: "baai",    meaning: "case / situation / occasion / instance / when" },
       { text: "のみ",     furigana: "のみ",       romaji: "nomi",    meaning: "only / just / exclusively" },
       { text: "許可",     furigana: "きょか",     romaji: "kyoka",   meaning: "permission / authorization / permit / approval" },
-      { text: "される",   furigana: "される",     romaji: "sareru",  meaning: "to be done / is permitted / passive form / done / permitted / passive" },
-      { text: "ています", furigana: "ています",   romaji: "teimasu", meaning: "is / ongoing / currently happening" }
+      { text: "されています", furigana: "されています", romaji: "sareteimasu", meaning: "is permitted / is being done / passive ongoing" }
     ]
   },
   {
