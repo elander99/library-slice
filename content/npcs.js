@@ -5,6 +5,7 @@ const NPC_DEFS = {
 
   librarian: {
     name_jp: "司書",
+    name_ko: "사서",
     name_en: "Librarian",
     room: "library",
     hotspot: "librarian",
@@ -63,6 +64,7 @@ const NPC_DEFS = {
 
   receptionist: {
     name_jp: "受付係",
+    name_ko: "안내 직원",
     name_en: "Receptionist",
     room: "lobby",
     hotspot: "npc_receptionist",
@@ -111,6 +113,7 @@ const NPC_DEFS = {
 
   play_staff: {
     name_jp: "スタッフ",
+    name_ko: "직원",
     name_en: "Play Area Staff",
     room: "play_area",
     hotspot: "npc_play_staff",
@@ -159,6 +162,7 @@ const NPC_DEFS = {
 
   salon_staff: {
     name_jp: "サロンスタッフ",
+    name_ko: "살롱 직원",
     name_en: "Salon Staff",
     room: "salon",
     hotspot: "npc_salon_staff",
@@ -207,6 +211,7 @@ const NPC_DEFS = {
 
   outdoor_guide: {
     name_jp: "ガイド",
+    name_ko: "가이드",
     name_en: "Outdoor Guide",
     room: "outdoor",
     hotspot: "npc_outdoor_guide",

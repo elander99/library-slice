@@ -10,7 +10,7 @@ function get_room_signs(room_id) {
 
 const ROOM_DEFS = {
   lobby: {
-    id: "lobby", name_jp: "ロビー", name_en: "Lobby",
+    id: "lobby", name_jp: "ロビー", name_ko: "로비", name_en: "Lobby",
     left: null, right: "play_area",
     wall_color: "#ede8da", floor_color: "#9a6830", floor_dark: "#6a4010",
     sign_layout: [
@@ -24,7 +24,7 @@ const ROOM_DEFS = {
     }),
   },
   play_area: {
-    id: "play_area", name_jp: "遊び場", name_en: "Play Area",
+    id: "play_area", name_jp: "遊び場", name_ko: "놀이 공간", name_en: "Play Area",
     left: "lobby", right: "library",
     wall_color: "#fef5cc", floor_color: "#6a8c2a", floor_dark: "#4a6010",
     sign_layout: [
@@ -39,7 +39,7 @@ const ROOM_DEFS = {
     }),
   },
   library: {
-    id: "library", name_jp: "図書館", name_en: "Library",
+    id: "library", name_jp: "図書館", name_ko: "도서관", name_en: "Library",
     left: "play_area", right: "salon",
     wall_color: "#f0ebe0", floor_color: "#b07a3a", floor_dark: "#7a4f1e",
     sign_layout: [
@@ -50,7 +50,7 @@ const ROOM_DEFS = {
     // Library objects (incl. librarian hotspot) defined inline in renderer
   },
   salon: {
-    id: "salon", name_jp: "こどもサロン", name_en: "Children's Salon",
+    id: "salon", name_jp: "こどもサロン", name_ko: "어린이 살롱", name_en: "Children's Salon",
     left: "library", right: "outdoor",
     wall_color: "#f0e8f5", floor_color: "#7a5090", floor_dark: "#4a2060",
     sign_layout: [
@@ -64,7 +64,7 @@ const ROOM_DEFS = {
     }),
   },
   outdoor: {
-    id: "outdoor", name_jp: "屋外", name_en: "Outdoor",
+    id: "outdoor", name_jp: "屋外", name_ko: "야외", name_en: "Outdoor",
     left: "salon", right: null,
     wall_color: "#87ceeb", floor_color: "#5a8c3a", floor_dark: "#3a6020",
     outdoor: true,

@@ -567,11 +567,13 @@
       btn.style.color   = lang === 'ko' ? '#c0392b' : '#555';
       btn.style.borderColor = lang === 'ko' ? '#c0392b' : '#3a2810';
     }
-    // Update start-screen subtitle so the switch is obviously visible
+    // Update start-screen text so the switch is obviously visible
     const sub = document.querySelector('#start-screen .subtitle');
     if (sub) sub.textContent = lang === 'ko'
       ? 'A library simulation. Signs are in Korean — walk up to them to read and translate.'
       : 'A library simulation. Signs are in Japanese — walk up to them to read and translate.';
+    const h1 = document.querySelector('#start-screen h1');
+    if (h1) h1.textContent = lang === 'ko' ? '도서관' : '図書館';
   }
 
   document.getElementById('lang-btn').addEventListener('click', () => {

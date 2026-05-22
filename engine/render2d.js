@@ -326,12 +326,13 @@ class Renderer2D {
       // Name tag above the sprite
       const npc = NPC_DEFS[npc_def.npc_id];
       if (npc) {
+        const npc_name = LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp;
         ctx.fillStyle = 'rgba(20,16,10,0.75)';
         ctx.fillRect(dx-22, dy-dh-10, 44, 12);
         ctx.fillStyle = '#b8860b';
         ctx.font = `9px ${this.FONT_MONO}`;
         ctx.textAlign = 'center';
-        ctx.fillText(npc.name_jp, dx, dy-dh);
+        ctx.fillText(npc_name, dx, dy-dh);
       }
 
       // Speech bubble
@@ -344,7 +345,7 @@ class Renderer2D {
   _draw_bubble(alert, bx, by, ctx) {
     const dl = DIALOGUE[alert.key];
     if (!dl) return;
-    const text = dl.japanese;
+    const text = LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese;
     const bw = 200, bh = 44;
     const px = Math.min(Math.max(bx - bw/2, 4), this.VP_W - bw - 4);
     const py = by - bh - 10;
@@ -428,7 +429,7 @@ class Renderer2D {
       ctx.textAlign = 'center';
       ctx.fillStyle = '#b8860b';
       ctx.font = `15px ${this.FONT_JP}`;
-      ctx.fillText(room.name_jp, W/2, 21);
+      ctx.fillText(LANG.current === 'ko' && room.name_ko ? room.name_ko : room.name_jp, W/2, 21);
       ctx.fillStyle = '#c8a87a';
       ctx.font = `10px ${this.FONT_MONO}`;
       ctx.fillText(room.name_en.toUpperCase(), W/2, 38);
@@ -505,7 +506,7 @@ class Renderer2D {
     const high=s.juujitsukan>=60;
     const dl=high?DIALOGUE.session_end_high:DIALOGUE.session_end_low;
     ctx.fillStyle='#b8860b'; ctx.font=`26px ${this.FONT_JP}`; ctx.textAlign='center';
-    ctx.fillText(dl.japanese, px+pw/2, py+60);
+    ctx.fillText(LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese, px+pw/2, py+60);
     ctx.fillStyle='#f5f0e8'; ctx.font=`13px ${this.FONT_MONO}`;
     ctx.fillText(dl.english, px+pw/2, py+90);
     ctx.fillStyle=s.juujitsukan>60?'#2d6a4f':s.juujitsukan>30?'#b8860b':'#c0392b';
