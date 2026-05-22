@@ -113,7 +113,6 @@ const WORLD_SIGNS_KO = [
     color: "#b8860b",
     japanese: "7살 이상은 어린 아이에게\n양보해 주세요",
     tokens: [
-      { text: "살",     furigana: "살",     romaji: "sal",    meaning: "years old / age" },
       { text: "이상",   furigana: "이상",   romaji: "isang",  meaning: "and over / or more / above / or older" },
       { text: "어린",   furigana: "어린",   romaji: "eorin",  meaning: "young / little / small" },
       { text: "아이",   furigana: "아이",   romaji: "ai",     meaning: "child / children / kid" },
