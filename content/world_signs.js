@@ -109,11 +109,13 @@ const WORLD_SIGNS = [
     color: "#b8860b",
     japanese: "7才以上の方は\n小さな子に\n道を譲って",
     tokens: [
-      { text: "以上",   furigana: "いじょう", romaji: "ijou",   meaning: "and over / or more / above" },
-      { text: "方",     furigana: "かた",     romaji: "kata",   meaning: "person / people (polite)" },
+      { text: "7才",    furigana: "ななさい", romaji: "nana sai", meaning: "7 years old / age 7" },
+      { text: "以上",   furigana: "いじょう", romaji: "ijou",     meaning: "and over / or more / above" },
+      { text: "方",     furigana: "かた",     romaji: "kata",     meaning: "person / people (polite)" },
       { text: "小さな", furigana: "ちいさな", romaji: "chiisana", meaning: "small / little" },
-      { text: "道",     furigana: "みち",     romaji: "michi",  meaning: "path / way / road" },
-      { text: "譲って", furigana: "ゆずって", romaji: "yuzutte", meaning: "give way / yield / let pass" },
+      { text: "子",     furigana: "こ",       romaji: "ko",       meaning: "child / kid" },
+      { text: "道",     furigana: "みち",     romaji: "michi",    meaning: "path / way / road" },
+      { text: "譲って", furigana: "ゆずって", romaji: "yuzutte",  meaning: "give way / yield / let pass" },
     ]
   },
 ];

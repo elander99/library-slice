@@ -221,7 +221,8 @@ class Renderer2D {
 
   _draw_map(room, cam) {
     const { cx, cy } = cam;
-    this._tree_draws = [];  // collect tree draw calls; render after characters
+    this._tree_draws = [];   // collect tree draw calls; render after characters
+    this._tree_room  = room; // needed by _flush_trees for southernmost-tile check
     const TREE_CODE = { TREE:'leafy_lg', TREE2:'pine', TREE3:'shrub' };
     const wall_patch = room.wall_patch ? NINE_PATCH[room.wall_patch] : null;
 
@@ -238,11 +239,8 @@ class Renderer2D {
             } else {
               const tree_spr = TREE_SPRITES[TREE_CODE[code]];
               if (tree_spr) {
-                // Defer tree draw so it renders on top
-                this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS });
-                // Still draw a solid dark tile as a trunk/base placeholder
-                this.ctx.fillStyle = 'rgba(0,0,0,0.3)';
-                this.ctx.fillRect(dx + 8, dy + 16, TS - 16, TS - 16);
+                // Defer tree draw so it renders on top; store col/row for base pass
+                this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS, col, row });
               } else {
                 this._draw_tile(code, dx, dy);
               }
@@ -257,6 +255,24 @@ class Renderer2D {
     if (!this._tree_draws) return;
     // Sort by wy so southerly trees draw on top
     this._tree_draws.sort((a, b) => a.wy - b.wy);
+
+    // Pass 1: ground shadows — drawn before sprites so they sit behind the canopy
+    const ctx = this.ctx;
+    const room = this._tree_room;
+    const TREE_KEYS = new Set(['TREE', 'TREE2', 'TREE3']);
+    for (const { col, row } of this._tree_draws) {
+      if (room) {
+        const code_below = (row + 1 < room.rows) ? room.tiles[row + 1][col] : null;
+        if (code_below && TREE_KEYS.has(code_below)) continue;
+      }
+      const dx = col*TS - cam.cx, dy = row*TS - cam.cy;
+      ctx.fillStyle = 'rgba(30,20,10,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(dx + TS/2, dy + TS - 4, 8, 5, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Pass 2: tree sprites on top of shadows
     for (const { spr, wx, wy } of this._tree_draws) {
       this._draw_tree(spr, wx, wy, cam);
     }
@@ -398,10 +414,10 @@ class Renderer2D {
       ctx.fillStyle = done ? 'rgba(45,106,79,0.85)' : sign.color || 'rgba(100,40,20,0.85)';
       ctx.fillRect(dx+2, dy+2, TS-4, TS-6);
       ctx.fillStyle = done ? '#4fc38a' : '#fff';
-      ctx.font = `8px ${this.FONT_JP}`;
+      ctx.font = `14px ${this.FONT_JP}`;
       ctx.textAlign = 'center';
       const lines = sign.japanese ? sign.japanese.split('\n') : [sign.id];
-      lines.slice(0,2).forEach((l,i) => ctx.fillText(l, dx+TS/2, dy+10+i*10));
+      lines.slice(0,2).forEach((l,i) => ctx.fillText(l, dx+TS/2, dy+16+i*14));
     }
   }
 
