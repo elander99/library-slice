@@ -14,6 +14,7 @@ const WORLD_SIGNS_KO = [
       { text: "살롱",   furigana: "살롱",   romaji: "sallong",   meaning: "salon / lounge" },
       { text: "요리실", furigana: "요리실", romaji: "yorisil",   meaning: "cooking room / kitchen" },
       { text: "완구",   furigana: "완구",   romaji: "wangu",     meaning: "toys / playthings / toy" },
+      { text: "전시관", furigana: "전시관", romaji: "jeonshigwan", meaning: "exhibition hall / gallery / display hall" },
     ]
   },
   {
@@ -62,6 +63,7 @@ const WORLD_SIGNS_KO = [
       { text: "부터",   furigana: "부터",   romaji: "buteo",   meaning: "from / starting from / since" },
       { text: "까지",   furigana: "까지",   romaji: "kkaji",   meaning: "until / up to / through" },
       { text: "어린이", furigana: "어린이", romaji: "eorini",  meaning: "child / children" },
+      { text: "위한",   furigana: "위한",   romaji: "wihan",   meaning: "for / intended for / for the sake of" },
       { text: "공간",   furigana: "공간",   romaji: "gonggan", meaning: "space / area / place" },
     ]
   },
@@ -85,12 +87,14 @@ const WORLD_SIGNS_KO = [
     color: "#8b3a1e",
     japanese: "음식물 반입은 삼가 주세요\n수분 보충은 가능합니다",
     tokens: [
-      { text: "음식물", furigana: "음식물", romaji: "eumsigmul", meaning: "food and drink / food or drink / refreshments" },
-      { text: "반입",   furigana: "반입",   romaji: "banip",     meaning: "bringing in / bringing inside / carrying in" },
-      { text: "삼가",   furigana: "삼가",   romaji: "samga",     meaning: "refrain / please refrain / hold back" },
-      { text: "수분",   furigana: "수분",   romaji: "subun",     meaning: "water / hydration / moisture" },
-      { text: "보충",   furigana: "보충",   romaji: "bochung",   meaning: "replenishment / supplement / refill" },
-      { text: "가능",   furigana: "가능",   romaji: "ganeung",   meaning: "possible / allowed / OK / permissible" },
+      { text: "음식물",   furigana: "음식물",   romaji: "eumsigmul",   meaning: "food and drink / food or drink / refreshments" },
+      { text: "반입",     furigana: "반입",     romaji: "banip",       meaning: "bringing in / bringing inside / carrying in" },
+      { text: "삼가",     furigana: "삼가",     romaji: "samga",       meaning: "refrain / please refrain / hold back" },
+      { text: "주세요",   furigana: "주세요",   romaji: "juseyo",      meaning: "please / please do" },
+      { text: "수분",     furigana: "수분",     romaji: "subun",       meaning: "water / hydration / moisture" },
+      { text: "보충",     furigana: "보충",     romaji: "bochung",     meaning: "replenishment / supplement / refill" },
+      { text: "가능",     furigana: "가능",     romaji: "ganeung",     meaning: "possible / allowed / OK / permissible" },
+      { text: "합니다",   furigana: "합니다",   romaji: "hamnida",     meaning: "is / does (formal sentence ending)" },
     ]
   },
 
@@ -113,10 +117,13 @@ const WORLD_SIGNS_KO = [
     color: "#b8860b",
     japanese: "7살 이상은 어린 아이에게\n양보해 주세요",
     tokens: [
-      { text: "이상",   furigana: "이상",   romaji: "isang",  meaning: "and over / or more / above / or older" },
+      { text: "살",     furigana: "살",     romaji: "sal",    meaning: "years old / age" },
+      { text: "이상",   furigana: "이상",   romaji: "isang",  meaning: "and over / or more / above" },
+      { text: "은",     furigana: "은",     romaji: "eun",    meaning: "topic marker (after consonant)" },
       { text: "어린",   furigana: "어린",   romaji: "eorin",  meaning: "young / little / small" },
       { text: "아이",   furigana: "아이",   romaji: "ai",     meaning: "child / children / kid" },
-      { text: "양보",   furigana: "양보",   romaji: "yangbo", meaning: "yield / give way / concession / deference" },
+      { text: "에게",   furigana: "에게",   romaji: "ege",    meaning: "to / for (animate objects)" },
+      { text: "양보",   furigana: "양보",   romaji: "yangbo", meaning: "yield / give way / concession" },
       { text: "주세요", furigana: "주세요", romaji: "juseyo", meaning: "please / please do" },
     ]
   },
