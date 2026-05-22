@@ -548,18 +548,30 @@
   // ── Teaching language switch ───────────────────────────────────────────────
 
   function switchTeachingLang(lang) {
-    LANG.set(lang);
-    // Hot-swap SIGN_BY_ID: delete all current entries, re-populate from the right set
-    Object.keys(SIGN_BY_ID).forEach(k => delete SIGN_BY_ID[k]);
-    const signs = lang === 'ko' ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
-    signs.forEach(s => { SIGN_BY_ID[s.id] = s; });
-    // Reload per-language vocab progress
-    WORD_PROGRESS.reload();
-    // Close any open panels so stale sign data isn't shown
-    WorkspacePanel.clear();
+    try {
+      LANG.set(lang);
+      // Hot-swap SIGN_BY_ID: delete all current entries, re-populate from the right set
+      Object.keys(SIGN_BY_ID).forEach(k => delete SIGN_BY_ID[k]);
+      const signs = lang === 'ko' ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
+      signs.forEach(s => { SIGN_BY_ID[s.id] = s; });
+      // Reload per-language vocab progress
+      WORD_PROGRESS.reload();
+      // Close any open panels so stale sign data isn't shown
+      WorkspacePanel.clear();
+    } catch(e) { console.error('switchTeachingLang error:', e); }
+
     // Update button: show the OTHER language as the switch target
     const btn = document.getElementById('lang-btn');
-    if (btn) btn.textContent = lang === 'ko' ? '日本語' : '한국어';
+    if (btn) {
+      btn.textContent   = lang === 'ko' ? '日本語' : '한국어';
+      btn.style.color   = lang === 'ko' ? '#c0392b' : '#555';
+      btn.style.borderColor = lang === 'ko' ? '#c0392b' : '#3a2810';
+    }
+    // Update start-screen subtitle so the switch is obviously visible
+    const sub = document.querySelector('#start-screen .subtitle');
+    if (sub) sub.textContent = lang === 'ko'
+      ? 'A library simulation. Signs are in Korean — walk up to them to read and translate.'
+      : 'A library simulation. Signs are in Japanese — walk up to them to read and translate.';
   }
 
   document.getElementById('lang-btn').addEventListener('click', () => {
