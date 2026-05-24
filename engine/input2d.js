@@ -12,6 +12,10 @@ class Input2D {
 
     window.addEventListener('keydown', e => this._on_keydown(e));
     window.addEventListener('keyup',   e => { this._keys[e.key] = false; });
+    window.addEventListener('focusin', e => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) this._keys = {};
+    });
     canvas.addEventListener('mousemove', e => {
       const p = this._pos(e);
       renderer._hover_x = p.x;
@@ -37,7 +41,13 @@ class Input2D {
     };
   }
 
+  _input_focused() {
+    const t = document.activeElement;
+    return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  }
+
   _on_keydown(e) {
+    if (this._input_focused()) return;
     this._keys[e.key] = true;
 
     // Interact key
@@ -134,10 +144,11 @@ class Input2D {
       }
     }
 
-    // Check sign clicks
+    // Check sign clicks using the world-space rects computed by the renderer
+    const sign_rects = R._sign_world_rects || {};
     for (const sg of (room.signs||[])) {
-      const sx = sg.col*TS, sy_t = sg.row*TS;
-      if (wx>=sx && wx<=sx+TS && wy>=sy_t && wy<=sy_t+TS) {
+      const r = sign_rects[sg.sign_id];
+      if (r && wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h) {
         WorkspacePanel.open(sg.sign_id);
         return;
       }

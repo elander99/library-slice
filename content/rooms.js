@@ -65,7 +65,7 @@ const ROOM_DEFS = {
   },
   outdoor: {
     id: "outdoor", name_jp: "屋外", name_ko: "야외", name_en: "Outdoor",
-    left: "salon", right: null,
+    left: "salon", right: "house",
     wall_color: "#87ceeb", floor_color: "#5a8c3a", floor_dark: "#3a6020",
     outdoor: true,
     sign_layout: [
@@ -76,6 +76,19 @@ const ROOM_DEFS = {
       outdoor_bench:   { x: Math.round(W * 0.6),      y: FY - 38,  w: 120, h: 38  },
       zipline_post:    { x: Math.round(W * 0.1) - 20, y: FY - 170, w: 40,  h: 170 },
       npc_outdoor_guide:{ x: Math.round(W * 0.5) - 22, y: FY - 90, w: 44, h: 90  },
+    }),
+  },
+  house: {
+    id: "house", name_jp: "家", name_ko: "집", name_en: "Home",
+    left: "outdoor", right: null,
+    wall_color: "#f5f0e8", floor_color: "#B7B899", floor_dark: "#8a8770",
+    sign_layout: [
+      { sign_id: "house_entrance", x: 60,  w: 180, h: 110 },
+      { sign_id: "house_kotatsu",  x: 280, w: 200, h:  90 },
+      { sign_id: "house_kitchen",  x: 490, w: 180, h: 100 },
+    ],
+    object_hotspots: (W, FY, SY) => ({
+      npc_house_resident: { x: Math.round(W * 0.58) - 22, y: FY - 90, w: 44, h: 90 },
     }),
   },
 };

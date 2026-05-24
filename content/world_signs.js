@@ -118,4 +118,44 @@ const WORLD_SIGNS = [
       { text: "譲って", furigana: "ゆずって", romaji: "yuzutte",  meaning: "give way / yield / let pass" },
     ]
   },
+
+  // --- HOUSE ---
+  {
+    id: "house_entrance",
+    label: "玄関",
+    color: "#8b3a1e",
+    japanese: "おかえりなさい\nくつをおぬぎ\nください",
+    tokens: [
+      { text: "おかえりなさい", furigana: "おかえりなさい", romaji: "okaerinasai", meaning: "welcome back / you're home" },
+      { text: "くつ",           furigana: "くつ",           romaji: "kutsu",       meaning: "shoes / footwear" },
+      { text: "を",             furigana: "を",             romaji: "wo",          meaning: "object marker / particle" },
+      { text: "おぬぎ",         furigana: "おぬぎ",         romaji: "onugi",       meaning: "take off / remove (polite)" },
+      { text: "ください",       furigana: "ください",       romaji: "kudasai",     meaning: "please" },
+    ]
+  },
+  {
+    id: "house_kotatsu",
+    label: "居間",
+    color: "#3a2810",
+    japanese: "こたつで\nあたたまろう",
+    tokens: [
+      { text: "こたつ",       furigana: "こたつ",       romaji: "kotatsu",      meaning: "kotatsu / heated table / low table" },
+      { text: "で",           furigana: "で",           romaji: "de",           meaning: "at / in / by means of / particle" },
+      { text: "あたたまろう", furigana: "あたたまろう", romaji: "atatamaro u",  meaning: "let's warm up / let's get cozy" },
+    ]
+  },
+  {
+    id: "house_kitchen",
+    label: "台所",
+    color: "#1a3a5c",
+    japanese: "今日の夕飯は\nカレーライスです",
+    tokens: [
+      { text: "今日",         furigana: "きょう",         romaji: "kyou",          meaning: "today / this day" },
+      { text: "の",           furigana: "の",             romaji: "no",            meaning: "possessive / of / particle" },
+      { text: "夕飯",         furigana: "ゆうはん",       romaji: "yuuhan",        meaning: "dinner / evening meal / supper" },
+      { text: "は",           furigana: "は",             romaji: "wa",            meaning: "topic marker / particle" },
+      { text: "カレーライス", furigana: "カレーライス",   romaji: "karee raisu",   meaning: "curry rice / Japanese curry" },
+      { text: "です",         furigana: "です",           romaji: "desu",          meaning: "is / are / it is / copula" },
+    ]
+  },
 ];

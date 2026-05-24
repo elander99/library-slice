@@ -117,14 +117,14 @@ const WORLD_SIGNS_KO = [
     color: "#b8860b",
     japanese: "7살 이상은 어린 아이에게\n양보해 주세요",
     tokens: [
-      { text: "7살",    furigana: "7살",    romaji: "ilgop sal", meaning: "7 years old / age 7" },
-      { text: "이상",   furigana: "이상",   romaji: "isang",     meaning: "and over / or more / above" },
-      { text: "은",     furigana: "은",     romaji: "eun",    meaning: "topic marker (after consonant)" },
-      { text: "어린",   furigana: "어린",   romaji: "eorin",  meaning: "young / little / small" },
-      { text: "아이",   furigana: "아이",   romaji: "ai",     meaning: "child / children / kid" },
-      { text: "에게",   furigana: "에게",   romaji: "ege",    meaning: "to / for (animate objects)" },
-      { text: "양보",   furigana: "양보",   romaji: "yangbo", meaning: "yield / give way / concession" },
-      { text: "주세요", furigana: "주세요", romaji: "juseyo", meaning: "please / please do" },
+      { text: "7살",    furigana: "7살",    romaji: "ilgop sal", meaning: "7 years old / age 7 / seven years old" },
+      { text: "이상",   furigana: "이상",   romaji: "isang",     meaning: "and over / or older / and older / and up / at least / or more / above / over" },
+      { text: "은",     furigana: "은",     romaji: "eun",       meaning: "topic marker / subject marker / topic / subject" },
+      { text: "어린",   furigana: "어린",   romaji: "eorin",     meaning: "young / younger / little / small" },
+      { text: "아이",   furigana: "아이",   romaji: "ai",        meaning: "child / children / kid / kids / little one" },
+      { text: "에게",   furigana: "에게",   romaji: "ege",       meaning: "to / for / to someone / for someone" },
+      { text: "양보",   furigana: "양보",   romaji: "yangbo",    meaning: "yield / give way / let pass / make way / step aside / priority / concession" },
+      { text: "주세요", furigana: "주세요", romaji: "juseyo",    meaning: "please / please do / kindly" },
     ]
   },
 ];

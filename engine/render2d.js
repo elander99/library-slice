@@ -31,9 +31,9 @@ class Renderer2D {
     this.canvas.height = this.H * dpr;
     this.canvas.style.width  = this.W + 'px';
     this.canvas.style.height = this.H + 'px';
-    // Viewport for the game world (between HUD and workspace)
+    // Viewport fills from HUD to bottom; workspace panel overlays transparently
     this.VP_Y = this.HUD_H;
-    this.VP_H = this.H - this.HUD_H - this.WS_H;
+    this.VP_H = this.H - this.HUD_H;
     this.VP_W = this.W;
   }
 
@@ -350,9 +350,9 @@ class Renderer2D {
       if (npc) {
         const npc_name = LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp;
         ctx.fillStyle = 'rgba(20,16,10,0.75)';
-        ctx.fillRect(dx-22, dy-dh-10, 44, 12);
+        ctx.fillRect(dx-32, dy-dh-13, 64, 15);
         ctx.fillStyle = '#b8860b';
-        ctx.font = `9px ${this.FONT_MONO}`;
+        ctx.font = `12px ${this.FONT_MONO}`;
         ctx.textAlign = 'center';
         ctx.fillText(npc_name, dx, dy-dh);
       }
@@ -410,21 +410,75 @@ class Renderer2D {
     if (!room.signs) return;
     const ctx = this.ctx;
     const { cx, cy } = cam;
+    const hx = this._hover_x ?? -9999;
+    const hy = (this._hover_y ?? -9999) - this.VP_Y;
+    let any_hov = false;
+    let tooltip = null;
+    this._sign_world_rects = {};
+
+    const FONT_SZ = 12, LINE_H = 17, PAD_X = 8, PAD_Y = 5;
+
     for (const sg of room.signs) {
-      const dx = sg.col*TS - cx, dy = sg.row*TS - cy;
       const sign = SIGN_BY_ID[sg.sign_id];
       if (!sign) continue;
-      const prog = WORD_PROGRESS.getSign(sg.sign_id);
-      const done = sign.tokens && sign.tokens.length > 0 &&
-        sign.tokens.every((_,i) => { const r=prog[i]||{}; return r.romaji && r.meaning; });
-      ctx.fillStyle = done ? 'rgba(45,106,79,0.85)' : sign.color || 'rgba(100,40,20,0.85)';
-      ctx.fillRect(dx+2, dy+2, TS-4, TS-6);
-      ctx.fillStyle = done ? '#4fc38a' : '#fff';
-      ctx.font = `14px ${this.FONT_JP}`;
+
+      const text = sign.japanese || sign.tokens.map(t => t.text).join('');
+      const lines = text.split('\n');
+
+      ctx.font = `${FONT_SZ}px ${this.FONT_JP}`;
+      const max_line_w = lines.reduce((m, l) => Math.max(m, ctx.measureText(l).width), 0);
+      const sw = max_line_w + PAD_X * 2;
+      const sh = lines.length * LINE_H + PAD_Y * 2 - (LINE_H - FONT_SZ);
+
+      // World-space rect centred on the sign tile
+      const wx_c   = sg.col * TS + TS / 2;
+      const wy_top = sg.row * TS + 2;
+      const wx_l   = wx_c - sw / 2;
+      this._sign_world_rects[sg.sign_id] = { x: wx_l, y: wy_top, w: sw, h: sh };
+
+      const sdx = wx_l - cx, sdy = wy_top - cy;
+      const is_hov = hx >= sdx && hx <= sdx + sw && hy >= sdy && hy <= sdy + sh;
+      if (is_hov) { any_hov = true; tooltip = { sdx, sdy, sw, sign }; }
+
+      // Sign background
+      ctx.fillStyle = sign.color || 'rgba(100,40,20,0.88)';
+      ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.fill();
+
+      if (is_hov) {
+        ctx.save();
+        ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2;
+        ctx.shadowColor = '#b8860b'; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(184,134,11,0.12)';
+        ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.fill();
+      }
+
+      // Sign text
+      ctx.font = `${FONT_SZ}px ${this.FONT_JP}`;
+      ctx.fillStyle = '#f5f0e8';
       ctx.textAlign = 'center';
-      const lines = sign.japanese ? sign.japanese.split('\n') : [sign.id];
-      lines.slice(0,2).forEach((l,i) => ctx.fillText(l, dx+TS/2, dy+16+i*14));
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], sdx + sw / 2, sdy + PAD_Y + FONT_SZ + i * LINE_H);
+      }
     }
+
+    if (tooltip) {
+      const { sdx, sdy, sw, sign } = tooltip;
+      const label = sign.label_en || sign.label || sign.id;
+      ctx.font = `10px ${this.FONT_MONO}`;
+      const tw = ctx.measureText(label).width + 14;
+      const th = 18;
+      const tx = Math.max(2, Math.min(sdx + sw / 2 - tw / 2, this.VP_W - tw - 2));
+      const ty = sdy - th - 4;
+      ctx.fillStyle = 'rgba(20,16,10,0.92)';
+      ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(tx, ty, tw, th, 3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#b8860b'; ctx.textAlign = 'left';
+      ctx.fillText(label, tx + 7, ty + 12);
+    }
+
+    this.canvas.style.cursor = any_hov ? 'pointer' : '';
   }
 
   // ── HUD ───────────────────────────────────────────────────────────────────
@@ -564,6 +618,7 @@ class Renderer2D {
       play_area: 'rgba( 30,110, 10,0.05)',
       salon:     'rgba(170, 90,170,0.04)',
       outdoor:   'rgba( 60,150,220,0.06)',
+      house:     'rgba(200,150, 80,0.07)',
     };
     const t = TINTS[room_id];
     if (!t) return;

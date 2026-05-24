@@ -203,9 +203,9 @@ const SALON_SIGNS = [
 ];
 
 // ── Outdoor (60×27) ──────────────────────────────────────────────────────────
-// Floor: F_GRASS. Exit: left col=0 rows 13-14 (to salon). Perimeter: tree line.
+// Floor: F_GRASS. Exits: left col=0 rows 13-14 (to salon), right col=59 rows 13-14 (to house).
 const OUTDOOR_MAP = make_map(_COLS, _ROWS, _T,
-  [{ dir:'left', rows:_EX }],
+  [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX }],
   [
     // Dense tree line: top interior edge
     ...rect( 2,  2,  4,  4, _T),
@@ -246,12 +246,48 @@ const OUTDOOR_MAP = make_map(_COLS, _ROWS, _T,
      5, 13, _B,
     29, 14, _B,
     33, 14, _B,
+    // Sandy path leading toward the house (right exit)
+    ...rect(35, 11, 57, 16, _FSD),
   ]
 );
 const OUTDOOR_NPCS  = [{ npc_id:'outdoor_guide', col:30, row:18 }];
 const OUTDOOR_SIGNS = [
   { sign_id:'outdoor_zipline', col:5,  row:1 },
   { sign_id:'outdoor_yield',   col:40, row:1 },
+];
+
+// ── House (60×27) ─────────────────────────────────────────────────────────────
+// Floor: F_TATAMI. Exit: left col=0 rows 13-14 (from outdoor). Cozy Japanese home.
+const HOUSE_MAP = make_map(_COLS, _ROWS, _W,
+  [{ dir:'left', rows:_EX }],
+  [
+    // Top wall shelves (gaps at sign positions col 4, 25, 48)
+    ...rect( 1, 1,  3, 1, _S2),
+    ...rect( 5, 1, 24, 1, _S2),
+    ...rect(26, 1, 47, 1, _S2),
+    ...rect(49, 1, 58, 1, _S2),
+    // Bottom wall shelves
+    ...rect( 1, 25, 58, 25, _S2),
+    // Left wall shelves (above and below exit gap at rows 13-14)
+    ...rect(1,  2, 1, 11, _S2),
+    ...rect(1, 16, 1, 24, _S2),
+    // Genkan / entry vestibule — wood floor near entrance
+    ...rect(2,  9, 7, 18, _FW2),
+    // Kotatsu table (center of room)
+    ...rect(22, 11, 28, 13, _D),
+    // Benches flanking the kotatsu (east and west)
+    20, 12, _B,   30, 12, _B,
+    // Kitchen counter (right side)
+    ...rect(40,  9, 54, 12, _R),
+    // Cabinet shelf below kitchen counter
+    ...rect(41, 14, 53, 14, _S2),
+  ]
+);
+const HOUSE_NPCS  = [{ npc_id:'house_resident', col:36, row:20 }];
+const HOUSE_SIGNS = [
+  { sign_id:'house_entrance', col:4,  row:1 },
+  { sign_id:'house_kotatsu',  col:25, row:1 },
+  { sign_id:'house_kitchen',  col:48, row:1 },
 ];
 
 // ── Room registry ────────────────────────────────────────────────────────────
@@ -297,8 +333,18 @@ const ROOM_MAP_DATA = {
     id: 'outdoor', floor: 'F_GRASS', cols: _COLS, rows: _ROWS,
     tiles: OUTDOOR_MAP, npcs: OUTDOOR_NPCS, objects: [], signs: OUTDOOR_SIGNS,
     exits: [
-      { dir:'left', room:'salon', my_col:0, my_rows:_EX, enter_col:58 },
+      { dir:'left',  room:'salon', my_col:0,  my_rows:_EX, enter_col:58 },
+      { dir:'right', room:'house', my_col:59, my_rows:_EX, enter_col:1  },
     ],
     name_jp: '屋外', name_en: 'Outdoor',
+  },
+  house: {
+    id: 'house', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
+    wall_patch: 'stone_border',
+    tiles: HOUSE_MAP, npcs: HOUSE_NPCS, objects: [], signs: HOUSE_SIGNS,
+    exits: [
+      { dir:'left', room:'outdoor', my_col:0, my_rows:_EX, enter_col:58 },
+    ],
+    name_jp: '家', name_ko: '집', name_en: 'Home',
   },
 };

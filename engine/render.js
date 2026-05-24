@@ -914,8 +914,9 @@ class Renderer {
       ctx.fillText(label, dx + dw / 2, dy + dh - 8);
     };
 
-    if (room.left)  _door("left",  ROOM_DEFS[room.left].name_jp,  "←");
-    if (room.right) _door("right", ROOM_DEFS[room.right].name_jp, "→");
+    const _room_name = r => LANG.current === 'ko' && r.name_ko ? r.name_ko : r.name_jp;
+    if (room.left)  _door("left",  _room_name(ROOM_DEFS[room.left]),  "←");
+    if (room.right) _door("right", _room_name(ROOM_DEFS[room.right]), "→");
   }
 
   // --- NPC figure helper ---

@@ -29,8 +29,8 @@
     #start-screen h1 { font-family: 'Noto Serif JP', serif; font-size: 28px; color: #b8860b; letter-spacing: 0.1em; }
     #start-screen .subtitle { font-size: 12px; color: #888; text-align: center; max-width: 400px; line-height: 1.8; }
     #start-screen .goal-box { border: 1px solid #3a2810; padding: 16px 24px; max-width: 420px; line-height: 2; }
-    #start-screen .goal-box .label { font-size: 10px; color: #666; letter-spacing: 0.1em; margin-bottom: 8px; }
-    #start-screen .goal-box li { font-size: 12px; color: #c8b89a; list-style: none; }
+    #start-screen .goal-box .label { font-size: 11px; color: #888; letter-spacing: 0.1em; margin-bottom: 8px; }
+    #start-screen .goal-box li { font-size: 13px; color: #c8b89a; list-style: none; }
     #start-screen .goal-box li::before { content: "○  "; color: #b8860b; }
     #start-btn {
       padding: 12px 36px; background: none; border: 1px solid #b8860b;
@@ -38,84 +38,194 @@
       cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s, color 0.15s;
     }
     #start-btn:hover { background: #b8860b; color: #0d0b07; }
-    .hint-line { font-size: 10px; color: #444; }
+    .hint-line { font-size: 11px; color: #666; }
 
+    /* ── Workspace panel ────────────────────────────────────────────────────── */
     #workspace {
       position: fixed; bottom: 0; left: 0; right: 0; height: 180px;
-      background: rgba(10,8,4,0.97); border-top: 1px solid #2a2010;
-      z-index: 15; display: flex; flex-direction: column;
+      background: transparent;
+      border-top: none;
+      z-index: 15; display: flex; flex-direction: column; overflow: hidden;
+      transition: background 0.2s;
     }
-    #ws-empty { flex:1; display:flex; align-items:center; padding:0 24px; font-size:11px; color:#555; }
-    #ws-panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
-    #ws-panel.open { display:flex; }
-    #ws-chips-row {
-      display:flex; align-items:center; gap:0; padding:8px 12px 6px;
-      border-bottom:1px solid #1a1408; overflow-x:auto; overflow-y:hidden;
-      scrollbar-width:thin; scrollbar-color:#3a2810 transparent; flex-shrink:0;
+    #workspace.active {
+      background: rgba(7,4,1,0.75);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
     }
-    #ws-sign-label { font-family:'Noto Serif JP',serif; font-size:11px; color:#7a6040; white-space:nowrap; margin-right:12px; flex-shrink:0; }
-    .ws-chip {
-      font-family:'Noto Serif JP',serif; font-size:17px; padding:4px 10px;
-      border:1.5px solid rgba(255,255,255,0.12); border-radius:4px; cursor:pointer;
-      white-space:nowrap; margin-right:5px; flex-shrink:0; color:#c8b89a;
-      background:rgba(255,255,255,0.04); transition:background 0.1s;
+    /* double gold inlay rule at the top edge */
+    #workspace::before {
+      content: ''; position: absolute; top: 0; left: 48px; right: 48px; height: 1px; pointer-events: none; z-index: 1;
+      background: linear-gradient(90deg, transparent, rgba(184,134,11,0.75) 25%, rgba(184,134,11,0.75) 75%, transparent);
     }
-    .ws-chip:hover    { background:rgba(184,134,11,0.12); border-color:#b8860b; }
-    .ws-chip.selected { background:#8b3a1e; color:#fff; border-color:#8b3a1e; }
-    .ws-chip.reading  { border-color:rgba(184,134,11,0.7); background:rgba(184,134,11,0.08); }
-    .ws-chip.meaning  { border-color:rgba(45,106,79,0.6); background:rgba(45,106,79,0.06); }
-    .ws-chip.done     { background:#2d6a4f; border-color:#2d6a4f; color:#fff; }
-    #ws-body { flex:1; display:flex; align-items:center; gap:16px; padding:0 16px; overflow:hidden; }
-    #ws-def { display:flex; flex-direction:column; justify-content:center; min-width:160px; gap:3px; }
-    #ws-def-jp     { font-family:'Noto Serif JP',serif; font-size:22px; color:#f5f0e8; line-height:1.2; }
-    #ws-def-reading{ font-family:'DM Mono',monospace; font-size:11px; color:#b8860b; }
-    #ws-def-meaning{ font-family:'DM Mono',monospace; font-size:11px; color:#2d6a4f; }
-    #ws-def-hint   { font-family:'DM Mono',monospace; font-size:10px; color:#555; }
-    #ws-input-area { flex:1; display:flex; flex-direction:column; gap:6px; justify-content:center; }
-    #ws-input {
-      width:100%; background:rgba(20,16,10,0.8); border:1.5px solid #8b6914;
-      color:#f5f0e8; font-family:'DM Mono',monospace; font-size:14px;
-      padding:7px 12px; outline:none; border-radius:4px;
+    #workspace::after {
+      content: ''; position: absolute; top: 4px; left: 96px; right: 96px; height: 1px; pointer-events: none; z-index: 1;
+      background: linear-gradient(90deg, transparent, rgba(184,134,11,0.18) 25%, rgba(184,134,11,0.18) 75%, transparent);
     }
-    #ws-input:disabled { opacity:0.3; }
-    #ws-input.correct  { border-color:#2d6a4f; background:rgba(45,106,79,0.2); }
-    #ws-input.wrong    { border-color:#c0392b; background:rgba(192,57,43,0.2); }
-    #ws-input-bottom { display:flex; align-items:center; gap:8px; }
-    #ws-feedback { font-family:'DM Mono',monospace; font-size:11px; flex:1; min-height:14px; }
-    #ws-lookup {
-      background:rgba(20,16,10,0.8); border:1px solid #8b6914; color:#b8860b;
-      font-family:'DM Mono',monospace; font-size:11px; padding:4px 10px;
-      border-radius:3px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+    @keyframes ws-slide-up {
+      from { transform: translateY(14px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
     }
-    #ws-lookup:disabled { color:#444; border-color:#2a2010; cursor:default; }
-    #ws-lookup:not(:disabled):hover { background:#8b6914; color:#0d0b07; }
 
-    #ws-dialogue { display:none; flex:1; flex-direction:column; }
-    #ws-dialogue.open { display:flex; }
-    #ws-dlg-header { display:flex; align-items:center; gap:10px; padding:8px 14px; border-bottom:1px solid #1a1408; flex-shrink:0; }
-    #ws-dlg-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; }
-    #ws-dlg-name   { font-family:'DM Mono',monospace; font-size:11px; color:#b8860b; flex:1; letter-spacing:0.06em; }
-    #ws-dlg-close  { background:none; border:none; color:#4a3820; font-size:13px; cursor:pointer; padding:2px 6px; }
-    #ws-dlg-close:hover { color:#b8860b; }
-    #ws-dlg-body { flex:1; display:flex; flex-direction:column; justify-content:center; padding:6px 16px; overflow:hidden; }
-    #ws-dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:18px; color:#f5f0e8; line-height:1.5; }
-    #ws-dlg-npc-en { font-family:'DM Mono',monospace; font-size:11px; color:#6a5030; margin-top:2px; }
-    #ws-dlg-thinking { display:none; gap:5px; align-items:center; margin-top:4px; }
-    #ws-dlg-thinking.visible { display:flex; }
-    #ws-dlg-thinking span { width:7px; height:7px; background:#4a3820; border-radius:50%; animation:dlg-pulse 1.2s ease-in-out infinite; }
-    #ws-dlg-thinking span:nth-child(2) { animation-delay:0.2s; }
-    #ws-dlg-thinking span:nth-child(3) { animation-delay:0.4s; }
-    @keyframes dlg-pulse { 0%,80%,100%{transform:scale(0.7);opacity:0.4;} 40%{transform:scale(1.1);opacity:1;} }
-    #ws-dlg-input-row { display:flex; gap:8px; padding:8px 14px; border-top:1px solid #1a1408; flex-shrink:0; }
-    #ws-dlg-input {
-      flex:1; background:rgba(20,16,10,0.8); border:1.5px solid #3a2810;
-      color:#f5f0e8; font-family:'Noto Serif JP',serif; font-size:15px;
-      padding:6px 12px; outline:none; border-radius:4px;
+    /* idle state */
+    #ws-empty {
+      flex:1; display:flex; align-items:center; justify-content:center;
+      font-size:9px; letter-spacing:0.24em; text-transform:uppercase; color:#2e2418;
     }
-    #ws-dlg-input:focus { border-color:#8b6914; }
-    #ws-dlg-send { background:#3a2810; border:1px solid #5a3810; color:#b8860b; font-family:'DM Mono',monospace; font-size:14px; padding:6px 16px; border-radius:4px; cursor:pointer; }
-    #ws-dlg-send:hover { background:#8b6914; color:#0d0b07; }
-    #ws-dlg-send:disabled { opacity:0.4; cursor:default; }
+    #ws-empty::before { content:'◆'; color:#3a1e10; margin-right:10px; font-size:6px; vertical-align:middle; }
+
+    /* sign panel */
+    #ws-panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
+    #ws-panel.open { display:flex; animation: ws-slide-up 0.34s cubic-bezier(0.16,1,0.3,1) both; }
+
+    /* chips row — the full sign text strip */
+    #ws-chips-row {
+      display:flex; align-items:center; justify-content:center; gap:0; padding:10px 22px 8px;
+      border-bottom:1px solid rgba(184,134,11,0.1); overflow-x:auto; overflow-y:hidden;
+      scrollbar-width:none; flex-shrink:0;
+      background: rgba(184,134,11,0.025);
+    }
+    #ws-chips-row::-webkit-scrollbar { display:none; }
+    #ws-sign-label {
+      font-family:'DM Mono',monospace; font-size:11px; color:rgba(184,134,11,0.6);
+      white-space:nowrap; margin-right:18px; flex-shrink:0;
+      letter-spacing:0.18em; text-transform:uppercase;
+    }
+    #ws-speak-all {
+      background:none; border:1px solid rgba(184,134,11,0.45); color:#b8860b;
+      font-family:'DM Mono',monospace; font-size:12px; padding:3px 10px; border-radius:2px;
+      cursor:pointer; white-space:nowrap; flex-shrink:0; letter-spacing:0.08em;
+      transition:border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    #ws-speak-all:hover { border-color:rgba(184,134,11,0.9); background:rgba(184,134,11,0.1); color:#d4a020; }
+    #ws-voice-pick {
+      background:transparent; border:1px solid rgba(184,134,11,0.45); color:#b8860b;
+      font-family:'DM Mono',monospace; font-size:12px; padding:2px 6px; border-radius:2px;
+      cursor:pointer; flex-shrink:0; max-width:140px;
+    }
+    #ws-voice-pick:hover { border-color:rgba(184,134,11,0.8); }
+
+    /* merged text display */
+    .ws-merged-chip {
+      font-family:'Noto Serif JP',serif; font-size:21px; color:#d4c4a0;
+      display:inline-flex; align-items:flex-start; flex-shrink:0; white-space:nowrap;
+      letter-spacing:0.03em;
+    }
+    .ws-token {
+      cursor:pointer; padding:1px 0; border-radius:1px;
+      display:inline-flex; flex-direction:column; align-items:center;
+      transition:color 0.1s, text-decoration-color 0.1s;
+      text-decoration:underline; text-underline-offset:6px;
+      text-decoration-color:rgba(184,134,11,0.25); text-decoration-thickness:1px;
+    }
+    .ws-token:hover    { color:#ede4ce; text-decoration-color:rgba(184,134,11,0.5); }
+    .ws-token.selected { color:#fff; background:rgba(139,58,30,0.82); padding:1px 3px; margin:0 -3px; border-radius:2px; text-decoration-color:transparent; }
+    .ws-token.done     { color:#4fc38a; text-decoration-color:transparent; text-shadow:0 0 16px rgba(79,195,138,0.2); }
+    .ws-token-meaning  { font-family:'DM Mono',monospace; font-size:13px; color:#3a8060; letter-spacing:0.04em; margin-top:3px; text-decoration:none; }
+    .ws-token.done .ws-token-meaning { color:#2d6a4f; }
+    .ws-particle       { color:rgba(184,134,11,0.4); cursor:default; }
+
+    /* body row: definition + input */
+    #ws-body { flex:1; display:flex; align-items:center; gap:0; padding:0 22px; overflow:hidden; }
+    #ws-def {
+      display:flex; flex-direction:column; justify-content:center;
+      min-width:170px; max-width:210px; gap:2px;
+      padding-right:22px; border-right:1px solid rgba(184,134,11,0.1); flex-shrink:0;
+    }
+    #ws-def-jp      { font-family:'Noto Serif JP',serif; font-size:24px; color:#ede4ce; line-height:1.2; letter-spacing:0.05em; }
+    #ws-def-reading { font-family:'DM Mono',monospace; font-size:12px; color:rgba(184,134,11,0.9); letter-spacing:0.06em; }
+    #ws-def-meaning { font-family:'DM Mono',monospace; font-size:12px; color:#4aaa80; letter-spacing:0.04em; }
+    #ws-def-hint    { font-family:'DM Mono',monospace; font-size:11px; color:#9a7c5a; letter-spacing:0.1em; }
+    #ws-input-area  { flex:1; display:flex; flex-direction:column; gap:7px; justify-content:center; padding-left:22px; }
+    #ws-input {
+      width:100%; background:transparent; border:none;
+      border-bottom:1px solid rgba(184,134,11,0.22);
+      color:#ede4ce; font-family:'DM Mono',monospace; font-size:14px;
+      padding:6px 2px; outline:none; border-radius:0; letter-spacing:0.08em;
+      caret-color:#b8860b; transition:border-color 0.2s;
+    }
+    #ws-input:focus        { border-bottom-color:rgba(184,134,11,0.65); }
+    #ws-input:disabled     { opacity:0.18; }
+    #ws-input::placeholder { color:#7a5c40; letter-spacing:0.06em; }
+    #ws-input.correct      { border-bottom-color:rgba(79,195,138,0.6); caret-color:#4fc38a; }
+    #ws-input.wrong        { border-bottom-color:rgba(139,58,30,0.7); }
+    #ws-input-bottom { display:flex; align-items:center; gap:10px; }
+    #ws-feedback { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.07em; flex:1; min-height:14px; }
+    #ws-lookup {
+      background:none; border:1px solid rgba(184,134,11,0.45); color:#b8860b;
+      font-family:'DM Mono',monospace; font-size:12px; padding:4px 12px; border-radius:2px;
+      cursor:pointer; white-space:nowrap; flex-shrink:0; letter-spacing:0.1em;
+      transition:border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    #ws-lookup:disabled { color:#3a2810; border-color:#2a1e0a; cursor:default; }
+    #ws-lookup:not(:disabled):hover { border-color:rgba(184,134,11,0.9); background:rgba(184,134,11,0.1); color:#d4a020; }
+
+    /* ── NPC dialogue (floats above panel) ───────────────────────────────────── */
+    @keyframes dlg-appear {
+      from { opacity:0; transform:translateX(-50%) translateY(8px); }
+      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    }
+    #ws-dialogue {
+      display:none; flex-direction:column;
+      position:fixed; bottom:196px; left:50%; transform:translateX(-50%);
+      width:min(480px, calc(100vw - 32px));
+      background:rgba(5,3,1,0.97); border:1px solid rgba(184,134,11,0.18);
+      border-radius:3px; z-index:20; overflow:hidden;
+      box-shadow:0 -6px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(184,134,11,0.1);
+    }
+    #ws-dialogue.open { display:flex; animation:dlg-appear 0.24s cubic-bezier(0.16,1,0.3,1) both; }
+    #ws-dlg-header {
+      display:flex; align-items:center; gap:10px; padding:9px 16px;
+      border-bottom:1px solid rgba(184,134,11,0.09); flex-shrink:0;
+      background:rgba(184,134,11,0.035);
+    }
+    #ws-dlg-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; }
+    #ws-dlg-name   { font-family:'DM Mono',monospace; font-size:9px; color:rgba(184,134,11,0.6); flex:1; letter-spacing:0.16em; text-transform:uppercase; }
+    #ws-dlg-close  { background:none; border:none; color:#2e1e0e; font-size:12px; cursor:pointer; padding:2px 6px; transition:color 0.15s; }
+    #ws-dlg-close:hover { color:rgba(184,134,11,0.65); }
+    #ws-dlg-body   { flex:1; display:flex; flex-direction:column; justify-content:center; padding:8px 18px; overflow:hidden; gap:4px; }
+    #ws-dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:17px; color:#ede4ce; line-height:1.7; flex-wrap:wrap; display:flex; gap:2px; align-items:baseline; }
+    .dlg-chip { cursor:pointer; border-radius:2px; padding:0 2px; transition:background 0.1s, color 0.1s; }
+    .dlg-chip:hover  { background:rgba(184,134,11,0.14); color:#c8a040; }
+    .dlg-chip.active { background:rgba(184,134,11,0.22); color:#ede4ce; }
+    .dlg-sentence {
+      cursor:pointer; border-radius:3px; padding:3px 6px; margin:-3px -6px;
+      transition:background 0.15s, color 0.15s; display:inline-block;
+      border-bottom:1px solid rgba(184,134,11,0.18);
+    }
+    .dlg-sentence:hover  { background:rgba(184,134,11,0.1); color:#d4b87a; border-bottom-color:rgba(184,134,11,0.4); }
+    .dlg-sentence.active { background:rgba(184,134,11,0.18); color:#ede4ce; border-bottom-color:rgba(184,134,11,0.6); }
+    #ws-dlg-word-info    { display:none; flex-direction:column; gap:1px; }
+    #ws-dlg-word-reading { font-family:'DM Mono',monospace; font-size:10px; color:rgba(184,134,11,0.75); letter-spacing:0.06em; }
+    #ws-dlg-word-meaning { font-family:'DM Mono',monospace; font-size:10px; color:#3a8060; letter-spacing:0.04em; }
+    #ws-dlg-npc-en  { font-family:'DM Mono',monospace; font-size:10px; color:#3a2818; letter-spacing:0.04em; }
+    #ws-dlg-reveal  {
+      display:none; background:none; border:none; font-family:'DM Mono',monospace;
+      font-size:9px; color:#221408; cursor:pointer; padding:2px 0; text-align:left;
+      letter-spacing:0.12em; text-transform:uppercase; transition:color 0.15s;
+    }
+    #ws-dlg-reveal:hover { color:rgba(184,134,11,0.55); }
+    #ws-dlg-thinking { display:none; gap:6px; align-items:center; margin-top:4px; }
+    #ws-dlg-thinking.visible { display:flex; }
+    #ws-dlg-thinking span { width:5px; height:5px; background:#2e1e0e; border-radius:50%; animation:dlg-pulse 1.4s ease-in-out infinite; }
+    #ws-dlg-thinking span:nth-child(2) { animation-delay:0.25s; }
+    #ws-dlg-thinking span:nth-child(3) { animation-delay:0.5s; }
+    @keyframes dlg-pulse { 0%,80%,100%{transform:scale(0.6);opacity:0.3;} 40%{transform:scale(1);opacity:1;} }
+    #ws-dlg-input-row { display:flex; gap:10px; padding:8px 16px; border-top:1px solid rgba(184,134,11,0.09); flex-shrink:0; }
+    #ws-dlg-input {
+      flex:1; background:transparent; border:none; border-bottom:1px solid rgba(184,134,11,0.18);
+      color:#ede4ce; font-family:'Noto Serif JP',serif; font-size:14px;
+      padding:5px 2px; outline:none; border-radius:0; caret-color:#b8860b; transition:border-color 0.2s;
+    }
+    #ws-dlg-input:focus { border-bottom-color:rgba(184,134,11,0.55); }
+    #ws-dlg-input::placeholder { color:#221408; }
+    #ws-dlg-send {
+      background:rgba(184,134,11,0.07); border:1px solid rgba(184,134,11,0.28);
+      color:rgba(184,134,11,0.75); font-family:'DM Mono',monospace; font-size:12px;
+      padding:5px 18px; border-radius:2px; cursor:pointer; letter-spacing:0.1em;
+      transition:background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    #ws-dlg-send:hover    { background:rgba(184,134,11,0.16); border-color:rgba(184,134,11,0.65); color:#b8860b; }
+    #ws-dlg-send:disabled { opacity:0.25; cursor:default; }
 
     #vocab-btn {
       position:fixed; bottom:120px; right:20px; z-index:25;
@@ -177,24 +287,25 @@
   <canvas id="game"></canvas>
 </div>
 
+<div id="ws-dialogue">
+  <div id="ws-dlg-header">
+    <div id="ws-dlg-avatar"></div>
+    <div id="ws-dlg-name"></div>
+    <button id="ws-dlg-close">✕</button>
+  </div>
+  <div id="ws-dlg-body">
+    <div id="ws-dlg-npc-jp"></div>
+    <div id="ws-dlg-npc-en"></div>
+    <button id="ws-dlg-reveal">show translation</button>
+    <div id="ws-dlg-thinking"><span></span><span></span><span></span></div>
+  </div>
+  <div id="ws-dlg-input-row">
+    <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="日本語で話しかけてください…">
+    <button id="ws-dlg-send">→</button>
+  </div>
+</div>
 <div id="workspace">
   <div id="ws-empty">walk up to a sign and press E · talk to characters to practice Japanese</div>
-  <div id="ws-dialogue">
-    <div id="ws-dlg-header">
-      <div id="ws-dlg-avatar"></div>
-      <div id="ws-dlg-name"></div>
-      <button id="ws-dlg-close">✕</button>
-    </div>
-    <div id="ws-dlg-body">
-      <div id="ws-dlg-npc-jp"></div>
-      <div id="ws-dlg-npc-en"></div>
-      <div id="ws-dlg-thinking"><span></span><span></span><span></span></div>
-    </div>
-    <div id="ws-dlg-input-row">
-      <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="日本語で話しかけてください…">
-      <button id="ws-dlg-send">→</button>
-    </div>
-  </div>
   <div id="ws-panel">
     <div id="ws-chips-row"><span id="ws-sign-label"></span></div>
     <div id="ws-body">
@@ -208,6 +319,8 @@
         <input id="ws-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="select a word first" disabled>
         <div id="ws-input-bottom">
           <span id="ws-feedback"></span>
+          <select id="ws-voice-pick" style="display:none"></select>
+          <button id="ws-speak-all" style="display:none">🔊 say it</button>
           <button id="ws-lookup" disabled>📱 look up</button>
         </div>
       </div>
@@ -280,13 +393,63 @@
     };
   })();
 
+  const NPC_VOCAB = (() => {
+    const KEY = 'library-slice-npc-vocab-v1';
+    let _entries = [];
+    try { _entries = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
+    function _flush() { try { localStorage.setItem(KEY, JSON.stringify(_entries)); } catch {} }
+    return {
+      getAll() { return _entries; },
+      add(token, key) {
+        let e = _entries.find(x => x.text === token.text);
+        if (!e) { e = {text:token.text, reading:'', meaning:'', romaji:false, meaning_unlocked:false}; _entries.push(e); }
+        if (token.romaji && !e.reading) e.reading = token.romaji;
+        if (token.meaning && !e.meaning) e.meaning = token.meaning.split('/')[0].trim();
+        if (key === 'romaji') e.romaji = true;
+        if (key === 'meaning') e.meaning_unlocked = true;
+        _flush();
+      }
+    };
+  })();
+
   const canvas = document.getElementById("game");
+
+  const SoundFX = (() => {
+    let _ctx = null;
+    function _ac() {
+      if (!_ctx) _ctx = new (window.AudioContext || window.webkitAudioContext)();
+      return _ctx;
+    }
+    function _tone(freq, dur, vol, delay, type) {
+      try {
+        const ac = _ac();
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.connect(gain); gain.connect(ac.destination);
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, ac.currentTime + delay);
+        gain.gain.setValueAtTime(vol, ac.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + delay + dur);
+        osc.start(ac.currentTime + delay);
+        osc.stop(ac.currentTime + delay + dur + 0.01);
+      } catch(e) {}
+    }
+    return {
+      ding()  { _tone(880, 0.18, 0.2, 0); },
+      chime() {
+        [[523, 0], [659, 0.1], [784, 0.2], [1047, 0.32]].forEach(([f, d]) => _tone(f, 0.4, 0.18, d));
+      }
+    };
+  })();
 
   const WorkspacePanel = (() => {
     const panel_el  = document.getElementById("ws-panel");
+    const ws_el     = document.getElementById("workspace");
     const empty_el  = document.getElementById("ws-empty");
     const chips_row = document.getElementById("ws-chips-row");
     const lbl_el    = document.getElementById("ws-sign-label");
+    const speak_all = document.getElementById("ws-speak-all");
+    const voice_pick = document.getElementById("ws-voice-pick");
     const def_jp    = document.getElementById("ws-def-jp");
     const def_read  = document.getElementById("ws-def-reading");
     const def_mean  = document.getElementById("ws-def-meaning");
@@ -296,6 +459,7 @@
     const lkp       = document.getElementById("ws-lookup");
 
     let cur_sign_id = null, cur_word_idx = null, word_results = {}, _lkp_timer = null, _checking = false;
+    let _npc_defs = {};
 
     const OLLAMA_URL = "http://localhost:11434/api/chat", OLLAMA_MODEL = "llama3.1:8b";
 
@@ -336,66 +500,198 @@
     }
 
     function _render_chips() {
-      [...chips_row.querySelectorAll(".ws-chip")].forEach(c=>c.remove());
+      [...chips_row.querySelectorAll(".ws-merged-chip")].forEach(c=>c.remove());
+      const merged=document.createElement("div"); merged.className="ws-merged-chip";
       const sign=SIGN_BY_ID[cur_sign_id]; if (!sign) return;
-      sign.tokens.forEach((token,idx)=>{
-        const res=word_results[idx]||{};
-        const chip=document.createElement("span"); chip.className="ws-chip";
-        if (res.romaji&&res.meaning) chip.classList.add("done");
-        else if (res.romaji) chip.classList.add("reading");
-        else if (res.meaning) chip.classList.add("meaning");
-        if (idx===cur_word_idx) chip.classList.add("selected");
-        chip.textContent=token.text;
-        chip.addEventListener("click",()=>_select(idx));
-        chips_row.appendChild(chip);
+      const tokens=sign.tokens||[];
+      // Walk the full sign text; place interactive token spans and dim particle spans
+      const full=(sign.japanese||tokens.map(t=>t.text).join('')).replace(/\n/g,' ');
+      let pos=0, tok_idx=0;
+      while (pos<=full.length && tok_idx<tokens.length) {
+        const token=tokens[tok_idx];
+        const found=full.indexOf(token.text, pos);
+        if (found===-1) { tok_idx++; continue; }
+        if (found>pos) {
+          const p=document.createElement("span"); p.className="ws-particle";
+          p.textContent=full.slice(pos,found); merged.appendChild(p);
+        }
+        const span=document.createElement("span"); span.className="ws-token";
+        const res=word_results[tok_idx]||{};
+        const isDone=res.romaji&&res.meaning;
+        if (isDone) span.classList.add("done");
+        else if (res.romaji) span.classList.add("reading");
+        else if (res.meaning) span.classList.add("meaning");
+        if (tok_idx===cur_word_idx) span.classList.add("selected");
+        const textNode=document.createElement("span"); textNode.textContent=token.text;
+        span.appendChild(textNode);
+        if (isDone&&token.meaning) {
+          const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
+          const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
+          mspan.textContent=raw.split("/")[0].trim();
+          span.appendChild(mspan);
+        }
+        const _i=tok_idx;
+        span.addEventListener("click",()=>_select(_i));
+        merged.appendChild(span);
+        pos=found+token.text.length; tok_idx++;
+      }
+      if (pos<full.length) {
+        const p=document.createElement("span"); p.className="ws-particle";
+        p.textContent=full.slice(pos); merged.appendChild(p);
+      }
+      chips_row.appendChild(merged);
+    }
+
+    const _KO_FALLBACK = {
+      '안녕하세요':{reading:'annyeonghaseyo',meaning:'hello (formal)'},
+      '어서':      {reading:'eoseo',         meaning:'come / quickly'},
+      '오세요':    {reading:'oseyo',         meaning:'please come'},
+      '무엇을':    {reading:'mueoseul',      meaning:'what (object)'},
+      '도와드릴까요':{reading:'dowadeurilkkayo',meaning:'shall I help you?'},
+      '오늘':      {reading:'oneul',         meaning:'today'},
+      '놀러':      {reading:'nolleo',        meaning:'to play / visit'},
+      '오셨어요':  {reading:'osyeosseoyo',   meaning:'did you come?'},
+      '재미있게':  {reading:'jaemiitge',     meaning:'enjoyably / have fun'},
+      '놀아요':    {reading:'norayo',        meaning:'play / have fun'},
+      '어린이':    {reading:'eorini',        meaning:'child / children'},
+      '살롱에':    {reading:'sallonge',      meaning:'at the salon'},
+      '오신':      {reading:'osin',          meaning:'(who) came (honorific)'},
+      '것을':      {reading:'geoseul',       meaning:'thing (object)'},
+      '환영해요':  {reading:'hwanyeonghaeyo',meaning:'welcome'},
+      '천천히':    {reading:'cheoncheonhi',  meaning:'slowly / take your time'},
+      '즐기세요':  {reading:'jeulgiseyo',    meaning:'please enjoy'},
+      '즐겨':      {reading:'jeulgeo',       meaning:'enjoy'},
+      '편히':      {reading:'pyeonhi',       meaning:'comfortably'},
+      '쉬다':      {reading:'swida',         meaning:'to rest'},
+      '가세요':    {reading:'gaseyo',        meaning:'please go / stay a while'},
+      '날씨':      {reading:'nalssi',        meaning:'weather'},
+      '좋죠':      {reading:'jochyo',        meaning:"nice, right?"},
+      '야외':      {reading:'yaoe',          meaning:'outdoors'},
+      '규칙을':    {reading:'gyuchikceul',   meaning:'rules (object)'},
+      '지키며':    {reading:'jikyimyeo',     meaning:'while following'},
+      '주세요':    {reading:'juseyo',        meaning:'please'},
+    };
+    async function _npc_lookup(word) {
+      const clean=word.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'');
+      if (_npc_defs[clean]) return _npc_defs[clean];
+      if (LANG.current==='ko'&&_KO_FALLBACK[clean]) { _npc_defs[clean]=_KO_FALLBACK[clean]; return _KO_FALLBACK[clean]; }
+      const lang_name = LANG.current==='ko'?'Korean':'Japanese';
+      try {
+        const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:'user',content:
+            `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
+          }],stream:false,options:{temperature:0,num_predict:40}})});
+        if (!res.ok) throw new Error();
+        const raw=(await res.json()).message?.content?.trim()||'';
+        let p=null; try{p=JSON.parse(raw);}catch{}
+        if (!p){const m=raw.match(/\{[\s\S]*\}/);if(m)try{p=JSON.parse(m[0]);}catch{}}
+        const reading=p?.reading||p?.romanization||p?.pronunciation||'';
+        const meaning=p?.meaning||p?.translation||p?.english||'';
+        if (reading||meaning){const def={reading,meaning};_npc_defs[clean]=def;return def;}
+      } catch {}
+      return null;
+    }
+
+    function _populate_voices() {
+      const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko'));
+      voice_pick.innerHTML = '';
+      const googleIdx = voices.findIndex(v => v.name.toLowerCase().includes('google'));
+      voices.forEach((v, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = v.name;
+        if (i === (googleIdx >= 0 ? googleIdx : 0)) opt.selected = true;
+        voice_pick.appendChild(opt);
       });
+    }
+    _populate_voices();
+    speechSynthesis.addEventListener('voiceschanged', _populate_voices);
+
+    function _speak(text) {
+      if (!window.speechSynthesis) return;
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR';
+      u.rate = 0.9;
+      const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ko'));
+      const chosen = voices[parseInt(voice_pick.value)];
+      if (chosen) u.voice = chosen;
+      speechSynthesis.speak(u);
     }
 
     function _select(idx) {
       cur_word_idx=idx;
       const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[idx], res=word_results[idx]||{};
+      if (LANG.current === 'ko') _speak(token.text);
       def_jp.textContent=token.text;
       def_read.textContent=res.romaji?`${token.furigana}  [${token.romaji||""}]`:"";
-      def_mean.textContent=res.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
+      def_mean.textContent=res.meaning&&token.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
       def_hint.textContent="";
       const _romPlaceholder = LANG.current==='ko'?'romanization…':'romaji…';
       inp.disabled=res.romaji&&res.meaning; inp.placeholder=res.romaji?'english meaning…':_romPlaceholder;
       if (res.romaji&&res.meaning) inp.placeholder="—";
       inp.value=""; inp.className=""; fb.textContent=""; fb.style.color="";
       _render_chips(); _update_lkp(); inp.focus();
+      if (cur_sign_id==='__npc__'&&!token.romaji&&!token.furigana&&!token.meaning) {
+        _npc_lookup(token.text).then(def=>{
+          if (def&&cur_word_idx===idx&&cur_sign_id==='__npc__') {
+            token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning;
+          }
+        });
+      }
+    }
+
+    function open_npc_sentence(jp_text, words, clicked_idx, npc_label, token_defs) {
+      const tokens=words.map((text,i)=>{
+        const td=token_defs&&token_defs[i];
+        return {text, furigana:td?.reading||'', romaji:td?.reading||'', meaning:td?.meaning||''};
+      });
+      SIGN_BY_ID['__npc__']={id:'__npc__', label:npc_label||'', japanese:jp_text||words.join(''), tokens};
+      open('__npc__');
+      _select(clicked_idx);
     }
 
     function open(sign_id) {
+      chips_row.style.display='';
       const sign=SIGN_BY_ID[sign_id]; if (!sign) return;
       cur_sign_id=sign_id; cur_word_idx=null;
-      const saved=WORD_PROGRESS.getSign(sign_id); word_results={};
+      const saved=sign_id==='__npc__'?{}:WORD_PROGRESS.getSign(sign_id); word_results={};
       Object.keys(saved).forEach(k=>{ word_results[+k]={...saved[k]}; });
       lbl_el.textContent=sign.label||sign_id;
+      const koMode=LANG.current==='ko';
+      speak_all.style.display=koMode?'':'none'; voice_pick.style.display=koMode?'':'none';
       def_jp.textContent=def_read.textContent=def_mean.textContent="";
       def_hint.textContent='click a word above';
       inp.disabled=true; inp.placeholder="select a word first"; inp.value=""; inp.className="";
       fb.textContent=""; fb.style.color="";
       empty_el.style.display="none";
-      document.getElementById("ws-dialogue").classList.remove("open");
-      panel_el.classList.add("open");
-      renderer.sign_panel={sign_id}; _render_chips(); _update_lkp();
+      if (sign_id!=='__npc__') document.getElementById("ws-dialogue").classList.remove("open");
+      panel_el.classList.add("open"); ws_el.classList.add("active");
+      if (sign_id!=='__npc__') renderer.sign_panel={sign_id};
+      _render_chips(); _update_lkp();
     }
 
     function clear() {
+      chips_row.style.display='';
       cur_sign_id=null; cur_word_idx=null;
-      panel_el.classList.remove("open"); empty_el.style.display="";
+      panel_el.classList.remove("open"); ws_el.classList.remove("active"); empty_el.style.display="";
       renderer.sign_panel=null;
     }
 
     function _accept(token, matched, res) {
-      res[matched]=true; WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
+      res[matched]=true;
+      if (cur_sign_id!=='__npc__') WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
+      else NPC_VOCAB.add(token, matched);
       inp.value=""; inp.className="correct";
       setTimeout(()=>{ inp.className=""; },500);
       inp.placeholder=(res.romaji&&res.meaning)?"—":res.romaji?'english meaning…':(LANG.current==='ko'?'romanization…':'romaji…');
       inp.disabled=res.romaji&&res.meaning;
       def_read.textContent=res.romaji?`${token.furigana}  [${token.romaji||""}]`:"";
-      def_mean.textContent=res.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
+      def_mean.textContent=res.meaning&&token.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
       fb.textContent=""; fb.style.color=""; _render_chips();
+      const sign=SIGN_BY_ID[cur_sign_id];
+      const allDone=sign&&sign.tokens.every((_,i)=>{ const r=word_results[i]||{}; return r.romaji&&r.meaning; });
+      if (allDone) SoundFX.chime(); else SoundFX.ding();
     }
 
     inp.addEventListener("keydown", async e => {
@@ -414,22 +710,65 @@
         if (ok){ inp.value=""; _accept(token,"meaning",res); }
         else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
         inp.focus();
+      } else if (cur_sign_id==='__npc__'&&!token.romaji&&!token.furigana&&!token.meaning) {
+        _checking=true; inp.disabled=true; fb.textContent='looking up…'; fb.style.color='#b8860b';
+        const def=await _npc_lookup(token.text);
+        _checking=false; inp.disabled=false;
+        if (def) {
+          token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning;
+          const m2=_checkWhat(token,raw,res);
+          if (m2) { _accept(token,m2,res); }
+          else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
+        } else {
+          fb.textContent='lookup unavailable'; fb.style.color='#c0392b'; setTimeout(()=>{fb.textContent='';},2500);
+        }
+        inp.focus();
       } else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
     });
 
-    lkp.addEventListener("click", () => {
+    speak_all.addEventListener("click", () => {
+      const sign = SIGN_BY_ID[cur_sign_id]; if (!sign) return;
+      _speak(sign.japanese.replace(/\n/g, ' '));
+    });
+
+    lkp.addEventListener("click", async () => {
       if (cur_sign_id==null||cur_word_idx==null) return;
-      if (sim.state.phone.lookup_cooldown>0) return;
-      const token=SIGN_BY_ID[cur_sign_id].tokens[cur_word_idx];
       word_results[cur_word_idx]=word_results[cur_word_idx]||{};
       const res=word_results[cur_word_idx];
-      const field=!res.romaji?"romaji":!res.meaning?"meaning":null; if (!field) return;
-      const hint=field==="romaji"?(token.romaji||token.furigana):token.meaning.split("/")[0].trim();
-      fb.textContent="→ "+hint; fb.style.color="#b8860b";
+      if (res.romaji&&res.meaning) return;
+      if (cur_sign_id==='__npc__') {
+        const token=SIGN_BY_ID['__npc__'].tokens[cur_word_idx];
+        if (!token.romaji&&!token.furigana&&!token.meaning) {
+          lkp.disabled=true; fb.textContent='looking up…'; fb.style.color='#b8860b';
+          const def=await _npc_lookup(token.text);
+          lkp.disabled=false;
+          if (def) { token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning; }
+          else { fb.textContent='lookup unavailable'; fb.style.color='#c0392b'; setTimeout(()=>{fb.textContent='';},2500); inp.focus(); return; }
+        }
+        const reading=token.romaji||token.furigana||'';
+        const meaning=(token.meaning||'').split("/")[0].trim()||'';
+        if (!reading&&!meaning) { fb.textContent='lookup unavailable'; fb.style.color='#c0392b'; setTimeout(()=>{fb.textContent='';},2500); inp.focus(); return; }
+        def_read.textContent=`${token.furigana||reading}  [${reading}]`;
+        def_mean.textContent=meaning;
+        fb.textContent=''; fb.style.color='';
+        inp.focus();
+        return;
+      }
+      if (sim.state.phone.lookup_cooldown>0) return;
+      const token=SIGN_BY_ID[cur_sign_id].tokens[cur_word_idx];
+      const reading=token.romaji||token.furigana;
+      const meaning=token.meaning.split("/")[0].trim();
+      if (!res.romaji){res.romaji=true;WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,"romaji");}
+      if (!res.meaning){res.meaning=true;WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,"meaning");}
+      fb.textContent=`${reading}  ·  ${meaning}`; fb.style.color="#b8860b";
+      def_read.textContent=`${token.furigana}  [${reading}]`;
+      def_mean.textContent="✓ "+meaning;
+      inp.disabled=true; inp.placeholder="—";
+      _render_chips();
       sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); inp.focus();
     });
 
-    return { open, clear };
+    return { open, clear, open_npc_sentence, prefetch: words => words.forEach(w => _npc_lookup(w)) };
   })();
 
   const sim      = new Sim2D();
@@ -463,6 +802,19 @@
           row.appendChild(jp); row.appendChild(reading); row.appendChild(meaning); content.appendChild(row); total++;
         });
       });
+      const npc_entries = NPC_VOCAB.getAll().filter(e => e.romaji || e.meaning_unlocked);
+      if (npc_entries.length) {
+        const hdr=document.createElement("div"); hdr.className="vocab-sign-header"; hdr.textContent="会話 — Dialogue"; content.appendChild(hdr);
+        npc_entries.forEach(e => {
+          const row=document.createElement("div"); row.className="vocab-row";
+          const jp=document.createElement("span"); jp.className="vocab-jp"; jp.textContent=e.text;
+          const reading=document.createElement("span"); reading.className="vocab-reading"+(e.romaji?"":" locked");
+          reading.textContent=e.romaji&&e.reading?e.reading:"not yet unlocked";
+          const meaning=document.createElement("span"); meaning.className="vocab-meaning"+(e.meaning_unlocked?"":" locked");
+          meaning.textContent=e.meaning_unlocked&&e.meaning?e.meaning:"not yet unlocked";
+          row.appendChild(jp); row.appendChild(reading); row.appendChild(meaning); content.appendChild(row); total++;
+        });
+      }
       if (!total){ const e=document.createElement("p"); e.id="vocab-empty"; e.textContent="No words unlocked yet."; content.appendChild(e); }
     }
     function open(){ _populate(); panel.classList.add("open"); }
@@ -478,34 +830,95 @@
     const npc_en=document.getElementById("ws-dlg-npc-en"), thinking=document.getElementById("ws-dlg-thinking");
     const inp=document.getElementById("ws-dlg-input"), send_btn=document.getElementById("ws-dlg-send");
     const close_btn=document.getElementById("ws-dlg-close");
+    const reveal_btn=document.getElementById("ws-dlg-reveal");
+    const _lookup_cache = {};
+
+    function _tokenize(text) {
+      if (LANG.current === 'ko') {
+        return text.replace(/[。、！？「」『』・…]/g,'').split(/\s+/).filter(Boolean);
+      }
+      const tokens = []; let buf = '', last = null;
+      const script = c => { const n=c.charCodeAt(0);
+        if (n>=0x4E00&&n<=0x9FFF||n>=0x3400&&n<=0x4DBF) return 'K';
+        if (n>=0x3040&&n<=0x309F) return 'H';
+        if (n>=0x30A0&&n<=0x30FF) return 'T';
+        return 'O'; };
+      for (const c of text) {
+        if (/[\s。、！？「」『』・…]/.test(c)) { if (buf){tokens.push(buf);buf='';last=null;} continue; }
+        const t=script(c); if (t!==last&&buf){tokens.push(buf);buf='';}
+        buf+=c; last=t;
+      }
+      if (buf) tokens.push(buf);
+      return tokens;
+    }
+
+    async function _lookup_word(word) {
+      if (_lookup_cache[word]) return _lookup_cache[word];
+      const lang_name = LANG.current==='ko'?'Korean':'Japanese';
+      try {
+        const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:'user',content:
+            `${lang_name} word: "${word}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
+          }],stream:false,options:{temperature:0,num_predict:40}})});
+        if (!res.ok) throw new Error();
+        const raw=(await res.json()).message?.content?.trim()||'';
+        let p=null; try{p=JSON.parse(raw);}catch{}
+        if (!p){const m=raw.match(/\{[\s\S]*?\}/);if(m)try{p=JSON.parse(m[0]);}catch{}}
+        if (p?.reading) { _lookup_cache[word]=p; return p; }
+      } catch {}
+      return null;
+    }
+
+    function _show_jp(jp, en, tokens) {
+      npc_jp.innerHTML='';
+      const all_words = tokens ? tokens.map(t=>t.text) : _tokenize(jp);
+      if (!tokens) WorkspacePanel.prefetch(all_words);
+      const sentence=document.createElement('span'); sentence.className='dlg-sentence';
+      sentence.textContent=jp;
+      sentence.addEventListener('click', () => {
+        npc_jp.querySelectorAll('.dlg-sentence.active').forEach(c=>c.classList.remove('active'));
+        sentence.classList.add('active');
+        WorkspacePanel.open_npc_sentence(jp, all_words, 0, name_el.textContent, tokens);
+      });
+      npc_jp.appendChild(sentence);
+      npc_en.textContent=en; npc_en.style.display='none'; reveal_btn.style.display='';
+    }
+    reveal_btn.addEventListener("click", () => {
+      npc_en.style.display=''; reveal_btn.style.display='none';
+    });
     let cur_npc_id=null; const _histories={};
     const OLLAMA_URL="http://localhost:11434/api/chat", OLLAMA_MODEL="llama3.1:8b";
 
     function _system_prompt(npc_id) {
       const npc=NPC_DEFS[npc_id];
       const facts=(NPC_KNOWLEDGE[npc_id]||[]).map(f=>"- "+f).join("\n");
-      return `You are ${npc.name_jp} (${npc.name_en}). A visitor is speaking to you in Japanese.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite Japanese staff member using 丁寧語\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON in this exact format: {"jp": "Japanese response", "en": "English translation"}\n- If asked about something not covered above, say politely that you don't know\n- Do not include any text outside the JSON`;
+      const ko = LANG.current === 'ko';
+      const npc_name = ko && npc.name_ko ? npc.name_ko : npc.name_jp;
+      const lang = ko ? 'Korean' : 'Japanese';
+      const style = ko ? '존댓말' : '丁寧語';
+      const reading_label = ko ? 'romanization' : 'romaji';
+      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: {"jp": "${lang} response", "en": "English translation", "tokens": [{"text": "word", "reading": "${reading_label}", "meaning": "English meaning"}]}\n- The tokens array must list every word/morpheme in your ${lang} response in order\n- If asked about something not covered above, say politely that you don't know\n- Do not include any text outside the JSON`;
     }
 
     async function _generate(npc_id, text) {
       const history=_histories[npc_id]||[];
       try {
         const res=await fetch(OLLAMA_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:150}})});
+          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:350}})});
         if (!res.ok) throw new Error();
         const raw=(await res.json()).message?.content?.trim()||"";
         let parsed=null;
         try{parsed=JSON.parse(raw);}catch{}
-        if (!parsed){const m=raw.match(/\{[\s\S]*?\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
+        if (!parsed){const m=raw.match(/\{[\s\S]*\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
         if (parsed?.jp&&parsed?.en){
           _histories[npc_id]=[...history,{role:"user",content:text},{role:"assistant",content:raw}];
-          return {jp:parsed.jp,en:parsed.en};
+          return {jp:parsed.jp,en:parsed.en,tokens:Array.isArray(parsed.tokens)?parsed.tokens:null};
         }
         throw new Error();
       } catch {
         const intent_id=npc_fallback_classify(npc_id,text);
         const intent=NPC_DEFS[npc_id]?.intents[intent_id];
-        return intent?{jp:intent.jp,en:intent.en}:null;
+        return intent?{jp:intent.jp,en:intent.en,tokens:null}:null;
       }
     }
 
@@ -513,10 +926,11 @@
       if (!cur_npc_id) return;
       const text=inp.value.trim(); if (!text) return;
       inp.value=""; inp.disabled=true; send_btn.disabled=true;
-      npc_jp.textContent=""; npc_en.textContent=""; thinking.classList.add("visible");
+      npc_jp.innerHTML=""; npc_en.textContent=""; npc_en.style.display=''; reveal_btn.style.display='none';
+      thinking.classList.add("visible");
       const response=await _generate(cur_npc_id,text);
       thinking.classList.remove("visible");
-      if (response){npc_jp.textContent=response.jp; npc_en.textContent=response.en;}
+      if (response) _show_jp(response.jp, response.en, response.tokens);
       send_btn.disabled=false; inp.disabled=false; inp.focus();
     }
 
@@ -525,18 +939,16 @@
       cur_npc_id=npc_id;
       const greeting = LANG.current==='ko' && npc.greeting_ko ? npc.greeting_ko : npc.greeting;
       _histories[npc_id]=[{role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en})}];
-      document.getElementById("ws-empty").style.display="none";
       document.getElementById("ws-panel").classList.remove("open");
       dlg_el.classList.add("open");
-      avatar.style.background=npc.color; name_el.textContent=`${npc.name_jp} — ${npc.name_en}`;
-      npc_jp.textContent=greeting.jp; npc_en.textContent=greeting.en;
+      avatar.style.background=npc.color; name_el.textContent=`${LANG.current==='ko'&&npc.name_ko?npc.name_ko:npc.name_jp} — ${npc.name_en}`;
+      _show_jp(greeting.jp, greeting.en, null);
       inp.placeholder = LANG.current==='ko' ? '한국어로 말을 걸어보세요…' : '日本語で話しかけてください…';
       thinking.classList.remove("visible"); inp.value=""; inp.disabled=false; send_btn.disabled=false; inp.focus();
     }
 
     function close() {
       cur_npc_id=null; dlg_el.classList.remove("open");
-      document.getElementById("ws-empty").style.display="";
     }
 
     send_btn.addEventListener("click",_send);

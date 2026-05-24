@@ -84,12 +84,13 @@ function P(sx, sy, img) {
 }
 
 const CHARS = {
-  player:       P( 80,  0),               // people.png col5 row0
-  librarian:    P(112,  0, 'people2'),     // people2.png col7 row0
-  receptionist: P(128, 96),               // people.png col8 row3
-  play_staff:   P( 48, 64),               // people.png col3 row2
-  salon_staff:  P( 80, 96),               // people.png col5 row3
-  guide:        P(208, 32),               // people.png col13 row1
+  player:         P( 80,  0),               // people.png col5 row0
+  librarian:      P(112,  0, 'people2'),     // people2.png col7 row0
+  receptionist:   P(128, 96),               // people.png col8 row3
+  play_staff:     P( 48, 64),               // people.png col3 row2
+  salon_staff:    P( 80, 96),               // people.png col5 row3
+  guide:          P(208, 32),               // people.png col13 row1
+  house_resident: P( 64, 32),               // people.png col4 row1
 };
 
 // ── Tree sprites (measured zero-density column boundaries in band0) ─────────

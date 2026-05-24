@@ -209,6 +209,55 @@ const NPC_DEFS = {
     }
   },
 
+  house_resident: {
+    name_jp: "住人",
+    name_ko: "거주자",
+    name_en: "Resident",
+    room: "house",
+    hotspot: "npc_house_resident",
+    color: "#5c3a1e",
+    greeting: {
+      jp: "おかえりなさい！ゆっくりしていってね。",
+      en: "Welcome back! Make yourself at home."
+    },
+    greeting_ko: {
+      jp: "어서 오세요! 편히 쉬다 가세요.",
+      en: "Welcome! Please relax and stay a while."
+    },
+    intents: {
+      greeting: {
+        keywords: ["こんにちは","おはよう","ただいま","おかえり","こんばん"],
+        jp: "ただいま！疲れたでしょう。こたつでゆっくりしてね。",
+        en: "You're home! You must be tired. Rest by the kotatsu."
+      },
+      ask_food: {
+        keywords: ["食べ","飲み","お茶","ご飯","何か","腹","お腹","空いた","夕飯","カレー"],
+        jp: "今日はカレーライスですよ。台所にお茶もあるので、先にどうぞ。",
+        en: "Tonight's dinner is curry rice. There's also tea in the kitchen — help yourself."
+      },
+      ask_house: {
+        keywords: ["家","いえ","うち","部屋","こたつ","畳","たたみ","居間","玄関"],
+        jp: "この家は古いけど居心地がいいでしょう？畳の匂いが大好きなんです。",
+        en: "This house is old, but cozy, isn't it? I love the smell of tatami."
+      },
+      ask_outside: {
+        keywords: ["外","そと","図書館","どこ","行く","出る","帰る","出口"],
+        jp: "外に出るなら左の出口から。外は気持ちいいですよ。",
+        en: "If you're heading out, use the exit on the left. It's lovely outside."
+      },
+      ask_shoes: {
+        keywords: ["くつ","靴","玄関","脱ぐ","ぬぐ","どこに"],
+        jp: "玄関でくつをぬいでから上がってね。それが家のルールです。",
+        en: "Please take off your shoes at the entrance. That's the house rule."
+      },
+      confused: {
+        keywords: [],
+        jp: "ごめんなさい、もう一度言ってもらえますか？",
+        en: "Sorry, could you say that again?"
+      }
+    }
+  },
+
   outdoor_guide: {
     name_jp: "ガイド",
     name_ko: "가이드",
