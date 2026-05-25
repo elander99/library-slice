@@ -117,7 +117,7 @@
     .ws-token.selected { color:#fff; background:rgba(139,58,30,0.82); padding:1px 3px; margin:0 -3px; border-radius:2px; text-decoration-color:transparent; }
     .ws-token.done     { color:#4fc38a; text-decoration-color:transparent; text-shadow:0 0 16px rgba(79,195,138,0.2); }
     .ws-token-reading  { font-family:'DM Mono',monospace; font-size:10px; color:rgba(184,134,11,0.8); letter-spacing:0.05em; margin-bottom:2px; text-decoration:none; }
-    .ws-token-meaning  { font-family:'DM Mono',monospace; font-size:13px; color:#3a8060; letter-spacing:0.04em; margin-top:3px; text-decoration:none; }
+    .ws-token-meaning  { font-family:'DM Mono',monospace; font-size:13px; color:#3a8060; letter-spacing:0.04em; margin-top:3px; text-decoration:none; min-height:1.2em; }
     .ws-token.done .ws-token-meaning { color:#2d6a4f; }
     .ws-token-parts    { display:flex; flex-direction:row; gap:1px; align-items:flex-end; }
     .ws-part {
@@ -129,7 +129,7 @@
     .ws-part.selected { background:rgba(139,58,30,0.82); color:#fff; }
     .ws-part.done     { color:#4fc38a; text-shadow:0 0 16px rgba(79,195,138,0.2); }
     .ws-part-reading  { font-family:'DM Mono',monospace; font-size:9px; color:rgba(184,134,11,0.8); letter-spacing:0.05em; margin-bottom:1px; min-height:11px; }
-    .ws-particle       { color:rgba(184,134,11,0.6); cursor:default; }
+    .ws-particle       { color:rgba(184,134,11,0.6); cursor:default; padding-top:14px; padding-bottom:19px; }
 
     /* body row: definition + input */
     #ws-body { flex:1; display:flex; align-items:center; gap:0; padding:0 22px; overflow:hidden; }
@@ -206,12 +206,6 @@
     }
     .dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:17px; color:#ede4ce; line-height:1.7; flex-wrap:wrap; display:flex; gap:2px; align-items:baseline; }
     .dlg-npc-en { font-family:'DM Mono',monospace; font-size:12px; color:#b09070; letter-spacing:0.04em; margin-top:2px; }
-    .dlg-reveal-btn {
-      display:block; background:none; border:none; font-family:'DM Mono',monospace;
-      font-size:11px; color:rgba(184,134,11,0.55); cursor:pointer; padding:2px 0; text-align:left;
-      letter-spacing:0.12em; text-transform:uppercase; transition:color 0.15s;
-    }
-    .dlg-reveal-btn:hover { color:#e8b020; }
     #ws-dlg-thinking { display:none; gap:6px; align-items:center; margin-top:4px; }
     #ws-dlg-thinking.visible { display:flex; }
     #ws-dlg-thinking span { width:5px; height:5px; background:rgba(184,134,11,0.6); border-radius:50%; animation:dlg-pulse 1.4s ease-in-out infinite; }
@@ -502,6 +496,7 @@
     }
 
     function _normRomaji(s) { return s.toLowerCase().replace(/[-\s]+/g,"").replace(/ou/g,"o").replace(/uu/g,"u").replace(/aa/g,"a"); }
+    function _isNumericToken(token) { return /\d/.test(token.text); }
     function _checkWhat(word, raw, res) {
       const val=raw.trim().toLowerCase(), val_ns=val.replace(/\s+/g,"");
       if (!val) return null;
@@ -576,17 +571,15 @@
           });
           span.appendChild(partsRow);
         }
+        const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
         if (isDone&&token.meaning) {
           const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
-          const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
           mspan.textContent=raw.split("/")[0].trim();
-          span.appendChild(mspan);
         } else if (!hasParts&&(res.meaning)&&token.meaning) {
           const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
-          const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
           mspan.textContent=raw.split("/")[0].trim();
-          span.appendChild(mspan);
         }
+        span.appendChild(mspan);
         const _i=tok_idx;
         span.draggable = true;
         span.addEventListener("dragstart", e => {
@@ -809,6 +802,12 @@
         if (/^\d+$/.test(k)) word_results[+k]={...saved[k]};
         else word_results[k]={...saved[k]};
       });
+      sign.tokens.forEach((tok,i)=>{
+        if (_isNumericToken(tok)) { word_results[i]=word_results[i]||{}; word_results[i].meaning=true; }
+        if (tok.parts) tok.parts.forEach((part,pi)=>{
+          if (_isNumericToken(part)) { const pk=`${i}p${pi}`; word_results[pk]=word_results[pk]||{}; word_results[pk].meaning=true; }
+        });
+      });
       if (sign_id==='__npc__') {
         const vocab=NPC_VOCAB.getAll(), sign=SIGN_BY_ID['__npc__'];
         if (sign) sign.tokens.forEach((tok,i)=>{
@@ -820,7 +819,7 @@
           }
         });
       }
-      lbl_el.textContent=sign.label||sign_id;
+      lbl_el.textContent=sign.label||'';
       const koMode=LANG.current==='ko';
       speak_all.style.display=koMode?'':'none'; voice_pick.style.display=koMode?'':'none';
       def_jp.textContent=def_read.textContent=def_mean.textContent="";
@@ -931,20 +930,9 @@
       }
       const reading=active.romaji||active.furigana;
       const meaning=active.meaning.split("/")[0].trim();
-      if (!res.romaji) {
-        res.romaji=true;
-        if (cur_part_idx!=null) WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,"romaji");
-        else WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,"romaji");
-      }
-      if (!res.meaning) {
-        res.meaning=true;
-        if (cur_part_idx!=null) WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,"meaning");
-        else WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,"meaning");
-      }
       def_read.textContent=_fmt_read(active.furigana,reading);
-      def_mean.textContent="✓ "+meaning;
+      def_mean.textContent=meaning;
       fb.textContent=`${reading}  ·  ${meaning}`; fb.style.color="#b8860b";
-      inp.disabled=true; inp.placeholder="—";
       _render_chips();
       sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); inp.focus();
     });
@@ -1123,13 +1111,8 @@
       turn.appendChild(jp_row);
 
       const en_row = document.createElement('div');
-      en_row.className = 'dlg-npc-en'; en_row.textContent = en; en_row.style.display = 'none';
+      en_row.className = 'dlg-npc-en'; en_row.textContent = en;
       turn.appendChild(en_row);
-
-      const reveal = document.createElement('button');
-      reveal.className = 'dlg-reveal-btn'; reveal.textContent = 'show translation';
-      reveal.addEventListener('click', () => { en_row.style.display=''; reveal.style.display='none'; });
-      turn.appendChild(reveal);
 
       body_el.insertBefore(turn, thinking);
       body_el.scrollTop = body_el.scrollHeight;
@@ -1165,7 +1148,7 @@
       const history=_histories[_hk(npc_id)]||[];
       try {
         const res=await fetch(OLLAMA_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:"10m",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:true,options:{temperature:0.3,num_predict:120}})});
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:"10m",format:"json",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:true,options:{temperature:0.3,num_predict:256}})});
         if (!res.ok) throw new Error();
         const reader=res.body.getReader(), dec=new TextDecoder();
         let raw="", buf="", showed_partial=false;
