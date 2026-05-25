@@ -9,12 +9,21 @@ const WORLD_SIGNS_KO = [
     color: "#1a3a5c",
     japanese: "도서관 · 어린이 살롱\n요리실 · 완구 전시관",
     tokens: [
-      { text: "도서관", furigana: "도서관", romaji: "doseogwan", meaning: "library" },
+      { text: "도서관", furigana: "도서관", romaji: "doseogwan", meaning: "library", parts: [
+        { text: "도서", furigana: "도서", romaji: "doseo", meaning: "books / reading material / literature" },
+        { text: "관",   furigana: "관",   romaji: "gwan",  meaning: "building / hall / institute" },
+      ]},
       { text: "어린이", furigana: "어린이", romaji: "eorini",    meaning: "child / children" },
       { text: "살롱",   furigana: "살롱",   romaji: "sallong",   meaning: "salon / lounge" },
-      { text: "요리실", furigana: "요리실", romaji: "yorisil",   meaning: "cooking room / kitchen" },
+      { text: "요리실", furigana: "요리실", romaji: "yorisil",     meaning: "cooking room / kitchen", parts: [
+        { text: "요리", furigana: "요리", romaji: "yori", meaning: "cooking / cuisine" },
+        { text: "실",   furigana: "실",   romaji: "sil",  meaning: "room / chamber / office" },
+      ]},
       { text: "완구",   furigana: "완구",   romaji: "wangu",     meaning: "toys / playthings / toy" },
-      { text: "전시관", furigana: "전시관", romaji: "jeonshigwan", meaning: "exhibition hall / gallery / display hall" },
+      { text: "전시관", furigana: "전시관", romaji: "jeonshigwan", meaning: "exhibition hall / gallery / display hall", parts: [
+        { text: "전시", furigana: "전시", romaji: "jeonsi", meaning: "exhibition / display / showcase" },
+        { text: "관",   furigana: "관",   romaji: "gwan",   meaning: "building / hall / institute" },
+      ]},
     ]
   },
   {
@@ -106,7 +115,10 @@ const WORLD_SIGNS_KO = [
     japanese: "짚라인 이용자가 지나가요\n주의하세요!",
     tokens: [
       { text: "짚라인",   furigana: "짚라인",   romaji: "jiprain",  meaning: "zipline" },
-      { text: "이용자",   furigana: "이용자",   romaji: "iyongja",  meaning: "user / rider / person using" },
+      { text: "이용자",   furigana: "이용자",   romaji: "iyongja",  meaning: "user / rider / person using", parts: [
+        { text: "이용", furigana: "이용", romaji: "iyong", meaning: "use / usage / utilizing" },
+        { text: "자",   furigana: "자",   romaji: "ja",    meaning: "person / one who (suffix)" },
+      ]},
       { text: "지나가",   furigana: "지나가",   romaji: "jinaga",   meaning: "pass / go through / pass by" },
       { text: "주의",     furigana: "주의",     romaji: "juui",     meaning: "caution / attention / careful / warning / watch out" },
     ]

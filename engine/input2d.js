@@ -20,6 +20,7 @@ class Input2D {
       const p = this._pos(e);
       renderer._hover_x = p.x;
       renderer._hover_y = p.y;
+      this._update_cursor(p.x, p.y);
     });
     canvas.addEventListener('click', e => this._on_click(e));
     canvas.addEventListener('touchstart', e => {
@@ -134,6 +135,12 @@ class Input2D {
     const wx = x + cam.cx;
     const wy = (y - R.VP_Y) + cam.cy;
 
+    // Speech bubble dismiss (X button)
+    if (R._bubble_close_btn && S.state.librarian.alert && R._pt_in(R._bubble_close_btn, x, y)) {
+      S.state.librarian.alert = null;
+      return;
+    }
+
     // Check NPC clicks
     for (const npc_def of (room.npcs||[])) {
       const nx = npc_def.col*TS + TS/2;
@@ -211,5 +218,70 @@ class Input2D {
     const actions = this.sim.get_actions(obj_id);
     if (!actions.length) return;
     this.renderer.action_menu = { object_id:obj_id, items:actions, x:sx, y:sy, _item_rects:[] };
+  }
+
+  _update_cursor(x, y) {
+    const R = this.renderer;
+    const S = this.sim;
+    let cursor = 'default';
+
+    // End-screen restart button
+    if (S.state.session_ended) {
+      if (R._end_btn && R._pt_in(R._end_btn, x, y)) cursor = 'pointer';
+      this.canvas.style.cursor = cursor;
+      return;
+    }
+
+    // Action menu items
+    if (R.action_menu) {
+      const items = R.action_menu._item_rects || [];
+      for (const r of items) {
+        if (r && R._pt_in(r, x, y)) { cursor = 'pointer'; break; }
+      }
+      this.canvas.style.cursor = cursor;
+      return;
+    }
+
+    // Speech bubble close button
+    if (R._bubble_close_btn && S.state.librarian && S.state.librarian.alert && R._pt_in(R._bubble_close_btn, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+
+    // Only check world-space interactables if click is in viewport
+    if (y >= R.VP_Y && y <= R.VP_Y + R.VP_H) {
+      const cam = R._camera(S.state);
+      const wx = x + cam.cx;
+      const wy = (y - R.VP_Y) + cam.cy;
+      const room = ROOM_MAP_DATA[S.state.room];
+
+      if (room) {
+        // NPCs
+        for (const npc_def of (room.npcs || [])) {
+          const nx = npc_def.col * TS + TS / 2;
+          const ny = npc_def.row * TS + TS;
+          if (Math.abs(wx - nx) < TS && Math.abs(wy - ny) < TS * 1.5) { cursor = 'pointer'; break; }
+        }
+
+        // Signs
+        if (cursor === 'default') {
+          const sign_rects = R._sign_world_rects || {};
+          for (const sg of (room.signs || [])) {
+            const r = sign_rects[sg.sign_id];
+            if (r && wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h) { cursor = 'pointer'; break; }
+          }
+        }
+
+        // Objects
+        if (cursor === 'default') {
+          for (const obj of (room.objects || [])) {
+            const ox = obj.col * TS, oy = obj.row * TS;
+            if (wx >= ox && wx <= ox + TS && wy >= oy && wy <= oy + TS) { cursor = 'pointer'; break; }
+          }
+        }
+      }
+    }
+
+    this.canvas.style.cursor = cursor;
   }
 }

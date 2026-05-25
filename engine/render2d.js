@@ -69,38 +69,47 @@ class Renderer2D {
     if (!room) return { cx:0, cy:0 };
     const map_px_w = room.cols * TS;
     const map_px_h = room.rows * TS;
+    const dpr = this._dpr;
     let cx = s.px - this.VP_W / 2;
     let cy = s.py - this.VP_H / 2;
     cx = Math.max(0, Math.min(cx, map_px_w - this.VP_W));
     cy = Math.max(0, Math.min(cy, map_px_h - this.VP_H));
+    // Snap to physical pixel so tile edges always land on whole screen pixels
+    cx = Math.round(cx * dpr) / dpr;
+    cy = Math.round(cy * dpr) / dpr;
     return { cx, cy };
   }
 
-  // ── Draw tile ─────────────────────────────────────────────────────────────
+  // ── Unified blit ─────────────────────────────────────────────────────────
+  // Single draw call for all sprite types. Source size: tw/th (T16) or sw/sh (T, trees),
+  // defaulting to 32. Dest size: dw/dh from def, defaulting to TS×TS.
+  // DPR-snaps destination so tile edges land on physical pixels.
 
-  _draw_tile(tile_key, dx, dy) {
-    if (!tile_key) return;
-    const def = TILES[tile_key];
+  _blit(def, dx, dy) {
     if (!def) return;
-    const ctx = this.ctx;
+    const sw  = def.tw ?? def.sw ?? 32;
+    const sh  = def.th ?? def.sh ?? 32;
+    const dw  = def.dw ?? TS;
+    const dh  = def.dh ?? TS;
     const img = this._imgs[def.img];
-    // tw/th: source crop size (16 for T16 tiles, 32 for legacy T tiles)
-    const sw = def.tw || 32, sh = def.th || 32;
+    const dpr = this._dpr;
+    const fdx = Math.round(dx * dpr) / dpr;
+    const fdy = Math.round(dy * dpr) / dpr;
     if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, def.sx, def.sy, sw, sh, dx, dy, TS, TS);
+      this.ctx.drawImage(img, def.sx, def.sy, sw, sh, fdx, fdy, dw, dh);
     } else {
-      ctx.fillStyle = def.color || '#888';
-      ctx.fillRect(dx, dy, TS, TS);
+      this.ctx.fillStyle = def.color || '#888';
+      this.ctx.fillRect(fdx, fdy, dw, dh);
     }
   }
 
-  // Draw a single 9-patch tile definition (T16 descriptor) at screen (dx, dy)
+  _draw_tile(tile_key, dx, dy) {
+    if (!tile_key) return;
+    this._blit(TILES[tile_key], dx, dy);
+  }
+
   _draw_patch_tile(ptile, dx, dy) {
-    if (!ptile) return;
-    const img = this._imgs[ptile.img];
-    if (img && img.complete && img.naturalWidth > 0) {
-      this.ctx.drawImage(img, ptile.sx, ptile.sy, ptile.tw, ptile.th, dx, dy, TS, TS);
-    }
+    this._blit(ptile, dx, dy);
   }
 
   // ── Autotile / 9-patch helpers ────────────────────────────────────────────
@@ -141,22 +150,25 @@ class Renderer2D {
     return patch.MC; // fully surrounded — interior wall fill
   }
 
-  _draw_floor_tile(room, dx, dy) {
-    this._draw_tile(room.floor, dx, dy);
+  _draw_floor_tile(room, col, row, dx, dy) {
+    const variants = FLOOR_VARIANTS[room.floor];
+    if (variants) {
+      const h = (Math.imul(col ^ (col << 5), 0x9e3779b9) ^ Math.imul(row ^ (row << 7), 0x85ebca6b)) >>> 0;
+      this._draw_tile(variants[h % variants.length], dx, dy);
+    } else {
+      this._draw_tile(room.floor, dx, dy);
+    }
   }
 
   // Draw a tree sprite at world pixel (wx,wy) — trees are taller than one tile.
   // wx,wy = bottom-center of tree trunk. Sprite drawn upward from that point.
+  // Uses _blit so dw/dh (2× source) are applied consistently with other tiles.
   _draw_tree(spr, wx, wy, cam) {
-    const img = this._imgs[spr.img];
-    const dx = wx - cam.cx - spr.sw / 2;
-    const dy = (wy - cam.cy) - spr.sh;
-    if (!img || !img.complete || !img.naturalWidth) {
-      this.ctx.fillStyle = '#2a6a10';
-      this.ctx.fillRect(dx, dy, spr.sw, spr.sh);
-    } else {
-      this.ctx.drawImage(img, spr.sx, spr.sy, spr.sw, spr.sh, dx, dy, spr.sw, spr.sh);
-    }
+    const dw = spr.dw ?? spr.sw;
+    const dh = spr.dh ?? spr.sh;
+    const dx = wx - cam.cx - dw / 2;
+    const dy = wy - cam.cy - dh;
+    this._blit(spr, dx, dy);
   }
 
   // ── Draw sprite (character/object) ────────────────────────────────────────
@@ -177,6 +189,7 @@ class Renderer2D {
     const ctx = this.ctx;
     const dpr = this._dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, this.W, this.H);
 
     const s   = this.sim.state;
@@ -236,7 +249,7 @@ class Renderer2D {
       for (let col = 0; col < room.cols; col++) {
         const dx = col*TS - cx, dy = row*TS - cy;
         if (dx > -TS && dx < this.VP_W + TS && dy > -TS && dy < this.VP_H + TS) {
-          this._draw_floor_tile(room, dx, dy);
+          this._draw_floor_tile(room, col, row, dx, dy);
           const code = room.tiles[row][col];
           if (code) {
             // 9-patch autotile: select the right border tile based on neighbors
@@ -262,23 +275,7 @@ class Renderer2D {
     // Sort by wy so southerly trees draw on top
     this._tree_draws.sort((a, b) => a.wy - b.wy);
 
-    // Pass 1: ground shadows — drawn before sprites so they sit behind the canopy
-    const ctx = this.ctx;
-    const room = this._tree_room;
-    const TREE_KEYS = new Set(['TREE', 'TREE2', 'TREE3']);
-    for (const { col, row } of this._tree_draws) {
-      if (room) {
-        const code_below = (row + 1 < room.rows) ? room.tiles[row + 1][col] : null;
-        if (code_below && TREE_KEYS.has(code_below)) continue;
-      }
-      const dx = col*TS - cam.cx, dy = row*TS - cam.cy;
-      ctx.fillStyle = 'rgba(30,20,10,0.55)';
-      ctx.beginPath();
-      ctx.ellipse(dx + TS/2, dy + TS - 4, 8, 5, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // Pass 2: tree sprites on top of shadows
+    // Tree sprites (shadows are baked into the sprite art)
     for (const { spr, wx, wy } of this._tree_draws) {
       this._draw_tree(spr, wx, wy, cam);
     }
@@ -297,9 +294,9 @@ class Renderer2D {
       ctx.fillStyle = this._obj_color(obj.id, s);
       ctx.fillRect(dx+4, dy+4, TS-8, TS-8);
       ctx.fillStyle = '#fff';
-      ctx.font = `9px ${this.FONT_MONO}`;
+      ctx.font = `12px ${this.FONT_MONO}`;
       ctx.textAlign = 'center';
-      ctx.fillText(this._obj_label(obj.id, s), dx+TS/2, dy+TS-6);
+      ctx.fillText(this._obj_label(obj.id, s), dx+TS/2, dy+TS-4);
     }
   }
 
@@ -360,6 +357,8 @@ class Renderer2D {
       // Speech bubble
       if (npc_def.npc_id === 'librarian' && s.librarian.alert) {
         this._draw_bubble(s.librarian.alert, dx, dy - 38, ctx);
+      } else if (npc_def.npc_id === 'librarian') {
+        this._bubble_close_btn = null;
       }
     }
   }
@@ -371,14 +370,25 @@ class Renderer2D {
     const bw = 200, bh = 44;
     const px = Math.min(Math.max(bx - bw/2, 4), this.VP_W - bw - 4);
     const py = by - bh - 10;
+    // Store X button rect in full screen coords for click detection
+    const XS = 14;
+    this._bubble_close_btn = { x: px + bw - XS - 4, y: py + 4 + this.VP_Y, w: XS, h: XS };
     ctx.fillStyle = 'rgba(250,248,240,0.97)';
     ctx.strokeStyle = '#5c3317';
     ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.roundRect(px, py, bw, bh, 6); ctx.fill(); ctx.stroke();
+    // X button
+    const xbx = px + bw - XS - 4, xby = py + 4;
+    ctx.fillStyle = 'rgba(92,51,23,0.18)';
+    ctx.beginPath(); ctx.roundRect(xbx, xby, XS, XS, 3); ctx.fill();
+    ctx.strokeStyle = '#5c3317'; ctx.lineWidth = 1.5;
+    const cx = xbx + XS/2, cy = xby + XS/2, d = 3.5;
+    ctx.beginPath(); ctx.moveTo(cx-d,cy-d); ctx.lineTo(cx+d,cy+d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx+d,cy-d); ctx.lineTo(cx-d,cy+d); ctx.stroke();
     ctx.fillStyle = '#1a1209';
     ctx.font = `12px ${this.FONT_JP}`;
     ctx.textAlign = 'center';
-    ctx.fillText(text, px+bw/2, py+26, bw-10);
+    ctx.fillText(text, px+bw/2, py+26, bw-24);
   }
 
   // ── Player sprite ─────────────────────────────────────────────────────────
@@ -466,16 +476,16 @@ class Renderer2D {
     if (tooltip) {
       const { sdx, sdy, sw, sign } = tooltip;
       const label = sign.label_en || sign.label || sign.id;
-      ctx.font = `10px ${this.FONT_MONO}`;
-      const tw = ctx.measureText(label).width + 14;
-      const th = 18;
+      ctx.font = `12px ${this.FONT_MONO}`;
+      const tw = ctx.measureText(label).width + 16;
+      const th = 22;
       const tx = Math.max(2, Math.min(sdx + sw / 2 - tw / 2, this.VP_W - tw - 2));
       const ty = sdy - th - 4;
       ctx.fillStyle = 'rgba(20,16,10,0.92)';
       ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.roundRect(tx, ty, tw, th, 3); ctx.fill(); ctx.stroke();
       ctx.fillStyle = '#b8860b'; ctx.textAlign = 'left';
-      ctx.fillText(label, tx + 7, ty + 12);
+      ctx.fillText(label, tx + 8, ty + 15);
     }
 
     this.canvas.style.cursor = any_hov ? 'pointer' : '';
@@ -495,7 +505,7 @@ class Renderer2D {
     ctx.fillStyle = pct>0.6?'#2d6a4f':pct>0.3?'#b8860b':'#c0392b';
     ctx.fillRect(BAR_X, BAR_Y, Math.floor(BAR_W*pct), BAR_H);
     ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.strokeRect(BAR_X,BAR_Y,BAR_W,BAR_H);
-    ctx.fillStyle='#f5f0e8'; ctx.font=`11px ${this.FONT_MONO}`;
+    ctx.fillStyle='#f5f0e8'; ctx.font=`12px ${this.FONT_MONO}`;
     ctx.textAlign='left';
     ctx.fillText('充実感', BAR_X, BAR_Y-2);
     ctx.fillText(`${Math.round(s.juujitsukan)}`, BAR_X+BAR_W+6, BAR_Y+12);
@@ -506,16 +516,16 @@ class Renderer2D {
       ctx.fillStyle = '#b8860b';
       ctx.font = `15px ${this.FONT_JP}`;
       ctx.fillText(LANG.current === 'ko' && room.name_ko ? room.name_ko : room.name_jp, W/2, 21);
-      ctx.fillStyle = '#c8a87a';
-      ctx.font = `10px ${this.FONT_MONO}`;
-      ctx.fillText(room.name_en.toUpperCase(), W/2, 38);
+      ctx.fillStyle = '#d4b890';
+      ctx.font = `12px ${this.FONT_MONO}`;
+      ctx.fillText(room.name_en.toUpperCase(), W/2, 40);
     }
 
     if (s.room==='library') {
       const gx = W-220;
-      ctx.font=`11px ${this.FONT_MONO}`; ctx.textAlign='left';
+      ctx.font=`12px ${this.FONT_MONO}`; ctx.textAlign='left';
       [{g:s.goals.study,t:'Read textbook',y:16},{g:s.goals.notes,t:'Take notes',y:34}].forEach(({g,t,y})=>{
-        ctx.fillStyle = g.complete?'#2d6a4f':'#aaa';
+        ctx.fillStyle = g.complete?'#2d6a4f':'#c8c0b0';
         ctx.fillText((g.complete?'✓ ':'○ ')+t, gx, y);
         if (!g.complete && g.progress>0) {
           ctx.fillStyle='#333'; ctx.fillRect(gx+98,y-10,90,3);
@@ -524,7 +534,7 @@ class Renderer2D {
       });
     }
 
-    ctx.textAlign='right'; ctx.fillStyle='#888'; ctx.font=`10px ${this.FONT_MONO}`;
+    ctx.textAlign='right'; ctx.fillStyle='#aaa'; ctx.font=`12px ${this.FONT_MONO}`;
     ctx.fillText('WASD/arrows · click to move · E to interact', W-10, H-6);
   }
 
@@ -654,3 +664,5 @@ class Renderer2D {
 }
 
 function ctx_save_restore(ctx, fn) { ctx.save(); fn(); ctx.restore(); }
+
+if (typeof module !== 'undefined') module.exports = { Renderer2D };

@@ -16,7 +16,10 @@ const SIGNS_KO = [
     tokens: [
       { text: "콘센트", furigana: "콘센트", romaji: "konsenteu", meaning: "outlet / socket / power outlet / plug" },
       { text: "는",     furigana: "는",     romaji: "neun",      meaning: "topic marker (after vowel)" },
-      { text: "도서관", furigana: "도서관", romaji: "doseogwan", meaning: "library" },
+      { text: "도서관", furigana: "도서관", romaji: "doseogwan", meaning: "library", parts: [
+        { text: "도서", furigana: "도서", romaji: "doseo",  meaning: "books / reading material / literature" },
+        { text: "관",   furigana: "관",   romaji: "gwan",   meaning: "building / hall / institute" },
+      ]},
       { text: "업무",   furigana: "업무",   romaji: "eommu",     meaning: "work / duties / business / operations" },
       { text: "전용",   furigana: "전용",   romaji: "jeonyong",  meaning: "exclusively for / dedicated / reserved for" },
       { text: "으로",   furigana: "으로",   romaji: "euro",      meaning: "by / for / as (direction/means particle)" },
@@ -39,7 +42,10 @@ const SIGNS_KO = [
       { text: "조용히",   furigana: "조용히",   romaji: "joyonghi",      meaning: "quietly / silently / please be quiet" },
       { text: "해",       furigana: "해",       romaji: "hae",           meaning: "do / please do (casual form of 하다)" },
       { text: "주세요",   furigana: "주세요",   romaji: "juseyo",        meaning: "please / please do" },
-      { text: "휴대전화", furigana: "휴대전화", romaji: "hyudaejeonhwa", meaning: "mobile phone / cell phone / smartphone" },
+      { text: "휴대전화", furigana: "휴대전화", romaji: "hyudaejeonhwa", meaning: "mobile phone / cell phone / smartphone", parts: [
+        { text: "휴대", furigana: "휴대", romaji: "hyudae",  meaning: "portable / handheld / carry" },
+        { text: "전화", furigana: "전화", romaji: "jeonhwa", meaning: "telephone / phone / call" },
+      ]},
       { text: "통화",     furigana: "통화",     romaji: "tonghwa",       meaning: "phone call / call / calling" },
       { text: "는",       furigana: "는",       romaji: "neun",          meaning: "topic marker (after vowel)" },
       { text: "삼가",     furigana: "삼가",     romaji: "samga",         meaning: "refrain / please refrain / hold back" },
@@ -56,7 +62,10 @@ const SIGNS_KO = [
     tokens: [
       { text: "관내",     furigana: "관내",     romaji: "gwannae",   meaning: "inside / in the building / indoors" },
       { text: "에서",     furigana: "에서",     romaji: "eseo",      meaning: "at / in / from (location particle)" },
-      { text: "음식물",   furigana: "음식물",   romaji: "eumsigmul", meaning: "food and drink / food or drink / refreshments" },
+      { text: "음식물",   furigana: "음식물",   romaji: "eumsigmul", meaning: "food and drink / food or drink / refreshments", parts: [
+        { text: "음식", furigana: "음식", romaji: "eumsik", meaning: "food / food and drink" },
+        { text: "물",   furigana: "물",   romaji: "mul",    meaning: "matter / substance / stuff (suffix 物)" },
+      ]},
       { text: "섭취",     furigana: "섭취",     romaji: "seopchwi",  meaning: "consumption / intake / eating and drinking" },
       { text: "는",       furigana: "는",       romaji: "neun",      meaning: "topic marker (after vowel)" },
       { text: "금지",     furigana: "금지",     romaji: "geunji",    meaning: "prohibited / banned / forbidden / not allowed" },

@@ -43,7 +43,15 @@ const TILES = {
   F_BLUE:    T('interior', 2, 0, false, '#87B9CD'),  // blue-tinted mat
   F_TATAMI:  T('interior', 6, 3, false, '#B7B899'),  // warm green-gray tatami
   F_TAN:     T('interior', 0, 6, false, '#8E7850'),  // tan/light wood
-  F_GRASS:   T('terrain',  2, 0, false, '#536C2A'),  // dark olive green grass
+  // Grass floor — 8 variants confirmed by pixel analysis (cols 2-4, rows 0-2 of terrain.png)
+  F_GRASS:   T('terrain',  2, 0, false, '#536C2A'),
+  F_GRASS_B: T('terrain',  3, 0, false, '#536C2A'),
+  F_GRASS_C: T('terrain',  2, 1, false, '#536C2A'),
+  F_GRASS_D: T('terrain',  3, 1, false, '#536C2A'),
+  F_GRASS_E: T('terrain',  4, 1, false, '#536C2A'),
+  F_GRASS_F: T('terrain',  2, 2, false, '#536C2A'),
+  F_GRASS_G: T('terrain',  3, 2, false, '#536C2A'),
+  F_GRASS_H: T('terrain',  4, 2, false, '#536C2A'),
   F_STONE:   T('terrain',  3, 3, false, '#737373'),  // gray stone/concrete
   F_LIGHT:   T('terrain',  6, 1, false, '#EEEEEE'),  // near-white paved
   F_SAND:    T('terrain',  4, 4, false, '#CEC284'),  // sandy path
@@ -94,16 +102,18 @@ const CHARS = {
 };
 
 // ── Tree sprites (measured zero-density column boundaries in band0) ─────────
+// Art is 16px native (same scale as T16 terrain tiles), so display at 2× source size.
 // Band 0 top half (y=0-87): trees separated at x=32, x=61-68, x=107-122, x=148-154
 // Band 1 (x=160-207): pine/conifer,  tight y=2..255 — use top 88px for crown
 // Band 2 (x=216-246): shrub/small tree, tight y=1..180 — use top 88px
+const _TS = TS / TS_ART; // art-to-game scale factor (2)
 const TREE_SPRITES = {
-  leafy_sm: { img:'trees', sx:0,   sy:0, sw:32, sh:88 },  // x0-31
-  leafy_md: { img:'trees', sx:33,  sy:0, sw:28, sh:88 },  // x33-60
-  leafy_lg: { img:'trees', sx:69,  sy:0, sw:38, sh:88 },  // x69-106
-  leafy_xl: { img:'trees', sx:123, sy:0, sw:25, sh:88 },  // x123-147
-  pine:     { img:'trees', sx:160, sy:2, sw:48, sh:88 },  // band1 top
-  shrub:    { img:'trees', sx:216, sy:1, sw:31, sh:88 },  // band2 top
+  leafy_sm: { img:'trees', sx:0,   sy:0, sw:32, sh:88, dw:32*_TS, dh:88*_TS },
+  leafy_md: { img:'trees', sx:33,  sy:0, sw:28, sh:88, dw:28*_TS, dh:88*_TS },
+  leafy_lg: { img:'trees', sx:69,  sy:0, sw:38, sh:88, dw:38*_TS, dh:88*_TS },
+  leafy_xl: { img:'trees', sx:123, sy:0, sw:25, sh:88, dw:25*_TS, dh:88*_TS },
+  pine:     { img:'trees', sx:160, sy:2, sw:48, sh:88, dw:48*_TS, dh:88*_TS },
+  shrub:    { img:'trees', sx:216, sy:1, sw:31, sh:88, dw:31*_TS, dh:88*_TS },
 };
 
 // ── Library bookshelf strip (measured: y=127-175, full 256px wide) ───────────
@@ -172,4 +182,9 @@ const NINE_PATCH = {
     ML: T16('terrain3', 0, 1), MC: T16('terrain3', 1, 1), MR: T16('terrain3', 3, 1),
     BL: T16('terrain3', 0, 3), BC: T16('terrain3', 1, 3), BR: T16('terrain3', 3, 3),
   },
+};
+
+// Grass variant pool — pixel-verified from terrain.png (cols 2-4, rows 0-2)
+const FLOOR_VARIANTS = {
+  F_GRASS: ['F_GRASS','F_GRASS_B','F_GRASS_C','F_GRASS_D','F_GRASS_E','F_GRASS_F','F_GRASS_G','F_GRASS_H'],
 };

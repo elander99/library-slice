@@ -75,7 +75,6 @@ const ROOM_DEFS = {
     object_hotspots: (W, FY, SY) => ({
       outdoor_bench:   { x: Math.round(W * 0.6),      y: FY - 38,  w: 120, h: 38  },
       zipline_post:    { x: Math.round(W * 0.1) - 20, y: FY - 170, w: 40,  h: 170 },
-      npc_outdoor_guide:{ x: Math.round(W * 0.5) - 22, y: FY - 90, w: 44, h: 90  },
     }),
   },
   house: {

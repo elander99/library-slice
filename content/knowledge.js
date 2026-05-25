@@ -43,19 +43,6 @@ const NPC_KNOWLEDGE = {
     "The outdoor play area and ジップライン (zipline) are accessible by going through the library and past the salon.",
   ],
 
-  outdoor_guide: [
-    "You are a guide for the outdoor play area of 富山県こどもみらい館.",
-    "The main attraction is the ジップライン (zipline), which runs diagonally across the outdoor area.",
-    "The zipline is for elementary school students (小学生) and above. Preschoolers (未就学児) need an adult with them.",
-    "Always follow staff instructions before and during zipline use.",
-    "Never stand under the zipline cable — passing riders are a serious hazard.",
-    "Do not run on the outdoor area surfaces — it is easy to fall.",
-    "There are ベンチ (benches) for resting. Toilets (トイレ) are inside the building.",
-    "Stay hydrated, especially in warm weather.",
-    "There are trees, open grass, and general outdoor space for free play.",
-    "There are no electronic games (ゲーム) or toys in the outdoor area; it is an active outdoor play space.",
-  ],
-
   librarian: [
     "You work in the 図書館 (library) on the 2nd floor.",
     "The library has bookshelves with a range of books. Use the catalogue (カタログ) to find specific titles.",

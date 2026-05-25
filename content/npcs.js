@@ -209,6 +209,50 @@ const NPC_DEFS = {
     }
   },
 
+  outdoor_guide: {
+    name_jp: "外スタッフ",
+    name_ko: "야외 직원",
+    name_en: "Outdoor Guide",
+    room: "outdoor",
+    hotspot: "npc_outdoor_guide",
+    color: "#2d6a1f",
+    greeting: {
+      jp: "こんにちは！ジップラインをご利用の方は、順番をお守りください。",
+      en: "Hello! If you're using the zipline, please wait your turn."
+    },
+    greeting_ko: {
+      jp: "안녕하세요! 짚라인을 이용하시려면 차례를 지켜 주세요.",
+      en: "Hello! Please wait your turn to use the zipline."
+    },
+    intents: {
+      greeting: {
+        keywords: ["こんにちは","おはよう","はじめまして","こんばん","どうも"],
+        jp: "こんにちは！外の空気は気持ちいいですね。何かお手伝いできますか？",
+        en: "Hello! The fresh air is nice, isn't it? Can I help you with something?"
+      },
+      ask_zipline: {
+        keywords: ["ジップライン","zipline","乗り方","使い方","順番","並ぶ","並んで","待つ"],
+        jp: "ジップラインは順番にご利用ください。小さいお子様は保護者の方と一緒にどうぞ。",
+        en: "Please take turns on the zipline. Small children should use it with a guardian."
+      },
+      ask_rules: {
+        keywords: ["ルール","決まり","約束","危ない","危険","注意","してはいけない"],
+        jp: "走らないでください。ジップラインは一人ずつご利用いただき、終わったら次の方に譲ってください。",
+        en: "Please don't run. Use the zipline one at a time and yield to the next person when you're done."
+      },
+      ask_inside: {
+        keywords: ["図書館","中","建物","入る","どこ","トイレ","休憩"],
+        jp: "建物の中は左の入口から入れます。図書館やサロンは2階にありますよ。",
+        en: "You can enter the building through the entrance on the left. The library and salon are on the 2nd floor."
+      },
+      confused: {
+        keywords: [],
+        jp: "すみません、もう少しゆっくり話してもらえますか？",
+        en: "Sorry, could you speak a little more slowly?"
+      }
+    }
+  },
+
   house_resident: {
     name_jp: "住人",
     name_ko: "거주자",
@@ -258,54 +302,6 @@ const NPC_DEFS = {
     }
   },
 
-  outdoor_guide: {
-    name_jp: "ガイド",
-    name_ko: "가이드",
-    name_en: "Outdoor Guide",
-    room: "outdoor",
-    hotspot: "npc_outdoor_guide",
-    color: "#2a4a6c",
-    greeting: {
-      jp: "こんにちは！今日は天気がいいですね。外でのルールを守って楽しんでください！",
-      en: "Hello! Nice weather today. Please follow the outdoor rules and enjoy yourself!"
-    },
-    greeting_ko: {
-      jp: "안녕하세요! 오늘 날씨 좋죠? 야외 규칙을 지키며 즐겨 주세요!",
-      en: "Hello! Nice weather today. Please follow the outdoor rules and enjoy yourself!"
-    },
-    intents: {
-      greeting: {
-        keywords: ["こんにちは","おはよう","はじめまして","よろしく","天気"],
-        jp: "こんにちは！外は気持ちいいですね。安全に楽しんでください。",
-        en: "Hello! It's lovely outside. Please enjoy yourself safely."
-      },
-      ask_zipline: {
-        keywords: ["ジップ","ライン","ロープ","渡る","飛ぶ","乗る","速い","怖","危"],
-        jp: "ジップラインは係員の指示に従ってください。ライン下には絶対に立たないでください。とても危険です。",
-        en: "Please follow staff instructions for the zipline. Never stand under the cable. It's very dangerous."
-      },
-      ask_safety: {
-        keywords: ["ルール","危ない","安全","注意","禁止","守","転ぶ"],
-        jp: "走らないようにしてください。転ぶと危ないですよ。係員の指示に必ず従ってください。",
-        en: "Please don't run — it's dangerous to fall. Always follow staff instructions."
-      },
-      ask_age: {
-        keywords: ["何歳","年齢","対象","才","歳","小学","子供","こども"],
-        jp: "ジップラインは小学生以上が対象です。未就学児は保護者の付き添いが必要です。",
-        en: "The zipline is for elementary school students and above. Preschoolers need a guardian with them."
-      },
-      ask_rest: {
-        keywords: ["疲れ","休み","ベンチ","座","トイレ","水","飲み"],
-        jp: "疲れたらあちらのベンチでお休みください。水分補給も忘れずに。トイレは建物の中にあります。",
-        en: "If you're tired, rest on the bench over there. Don't forget to stay hydrated. Toilets are inside the building."
-      },
-      confused: {
-        keywords: [],
-        jp: "すみません、もう一度聞かせてもらえますか？",
-        en: "I'm sorry, could you say that again?"
-      }
-    }
-  }
 };
 
 // Maps hotspot ids to NPC ids

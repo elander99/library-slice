@@ -71,9 +71,6 @@ const LIBRARY_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(1, 15, 1, 25, _S),
     // Reception desk (left side)
     ...rect(3, 9, 6, 11, _R),
-    // Warm-wood aisle runners between desk banks
-    ...rect(9, 12, 49, 15, _FT),
-    ...rect(9, 20, 49, 21, _FT),
     // Study desk bank 1
     ...rect(10, 9, 20, 10, _D),
     ...rect(23, 9, 33, 10, _D),
