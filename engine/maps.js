@@ -294,7 +294,7 @@ const ROOM_MAP_DATA = {
     wall_patch: 'stone_border',
     tiles: LOBBY_MAP, npcs: LOBBY_NPCS, objects: [], signs: LOBBY_SIGNS,
     exits: [{ dir:'right', room:'play_area', my_col:59, my_rows:_EX, enter_col:1 }],
-    name_jp: 'ロビー', name_en: 'Lobby',
+    name_jp: 'ロビー', name_ko: '로비', name_en: 'Lobby',
   },
   play_area: {
     id: 'play_area', floor: 'F_GRASS', cols: _COLS, rows: _ROWS,
@@ -304,7 +304,7 @@ const ROOM_MAP_DATA = {
       { dir:'left',  room:'lobby',   my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'library', my_col:59, my_rows:_EX, enter_col:1  },
     ],
-    name_jp: '遊び場', name_en: 'Play Area',
+    name_jp: '遊び場', name_ko: '놀이 공간', name_en: 'Play Area',
   },
   library: {
     id: 'library', floor: 'F_WOOD', cols: _COLS, rows: _ROWS,
@@ -314,17 +314,17 @@ const ROOM_MAP_DATA = {
       { dir:'left',  room:'play_area', my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'salon',     my_col:59, my_rows:_EX, enter_col:1  },
     ],
-    name_jp: '図書館', name_en: 'Library',
+    name_jp: '図書館', name_ko: '도서관', name_en: 'Library',
   },
   salon: {
-    id: 'salon', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
+    id: 'salon', floor: 'F_BLUE', cols: _COLS, rows: _ROWS,
     wall_patch: 'stone_border',
     tiles: SALON_MAP, npcs: SALON_NPCS, objects: [], signs: SALON_SIGNS,
     exits: [
       { dir:'left',  room:'library', my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'outdoor', my_col:59, my_rows:_EX, enter_col:1  },
     ],
-    name_jp: 'こどもサロン', name_en: "Children's Salon",
+    name_jp: 'こどもサロン', name_ko: '어린이 살롱', name_en: "Children's Salon",
   },
   outdoor: {
     id: 'outdoor', floor: 'F_GRASS', cols: _COLS, rows: _ROWS,
@@ -333,7 +333,7 @@ const ROOM_MAP_DATA = {
       { dir:'left',  room:'salon', my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'house', my_col:59, my_rows:_EX, enter_col:1  },
     ],
-    name_jp: '屋外', name_en: 'Outdoor',
+    name_jp: '屋外', name_ko: '야외', name_en: 'Outdoor',
   },
   house: {
     id: 'house', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,

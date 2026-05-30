@@ -4,5 +4,18 @@
       "Bash(node -e \"require\\('pngjs'\\)\")",
       "Bash(node *)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "lsof -ti:8080 > /dev/null 2>&1 || (nohup node /workspace/Dwarf/library-slice/server.js > /tmp/dwarf-server.log 2>&1 &)",
+            "async": true
+          }
+        ]
+      }
+    ]
   }
 }

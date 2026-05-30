@@ -10,290 +10,409 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --gold:       #c49a1a;
+      --gold-dim:   rgba(196,154,26,0.7);
+      --gold-faint: rgba(196,154,26,0.1);
+      --gold-glow:  rgba(196,154,26,0.2);
+      --cream:      #ede4ce;
+      --cream-dim:  #b8a888;
+      --jade:       #52c98e;
+      --jade-dim:   #2f6e4e;
+      --ember:      #c0392b;
+      --bg:         #0b0905;
+      --border:     rgba(196,154,26,0.13);
+      --border-md:  rgba(196,154,26,0.26);
+    }
+
     body {
-      background: #0d0b07;
+      background: var(--bg);
       font-family: 'DM Mono', monospace;
-      color: #f5f0e8;
+      color: var(--cream);
       overflow: hidden;
     }
 
     #game-wrap { position: fixed; inset: 0; }
     canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 
+    /* ── Start screen ───────────────────────────────────────────────────────── */
     #start-screen {
       position: fixed; inset: 0;
       background: rgba(10,8,4,0.97);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 20px; z-index: 10;
+      gap: 22px; z-index: 10;
     }
-    #start-screen h1 { font-family: 'Noto Serif JP', serif; font-size: 28px; color: #b8860b; letter-spacing: 0.1em; }
-    #start-screen .subtitle { font-size: 12px; color: #888; text-align: center; max-width: 400px; line-height: 1.8; }
-    #start-screen .goal-box { border: 1px solid #3a2810; padding: 16px 24px; max-width: 420px; line-height: 2; }
-    #start-screen .goal-box .label { font-size: 12px; color: #888; letter-spacing: 0.1em; margin-bottom: 8px; }
-    #start-screen .goal-box li { font-size: 13px; color: #c8b89a; list-style: none; }
-    #start-screen .goal-box li::before { content: "○  "; color: #b8860b; }
+    #start-screen h1 { font-family: 'Noto Serif JP', serif; font-size: 30px; color: var(--gold); letter-spacing: 0.12em; }
     #start-btn {
-      padding: 12px 36px; background: none; border: 1px solid #b8860b;
-      color: #b8860b; font-family: 'DM Mono', monospace; font-size: 14px;
-      cursor: pointer; letter-spacing: 0.1em; transition: background 0.15s, color 0.15s;
+      padding: 11px 38px; background: none; border: 1px solid var(--gold);
+      color: var(--gold); font-family: 'DM Mono', monospace; font-size: 13px;
+      cursor: pointer; letter-spacing: 0.12em; border-radius: 24px;
+      transition: background 0.18s, color 0.18s, box-shadow 0.18s;
     }
-    #start-btn:hover { background: #b8860b; color: #0d0b07; }
-    .hint-line { font-size: 12px; color: #666; }
+    #start-btn:hover { background: var(--gold); color: var(--bg); box-shadow: 0 0 22px rgba(196,154,26,0.35); }
 
     /* ── Workspace panel ────────────────────────────────────────────────────── */
     #workspace {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 0; background: transparent; pointer-events: none;
       z-index: 15; display: flex; flex-direction: column; overflow: hidden;
-      transition: height 0.28s cubic-bezier(0.16,1,0.3,1), background 0.2s;
+      transition: height 0.3s cubic-bezier(0.16,1,0.3,1), background 0.2s;
     }
     #workspace.active {
-      height: 180px; pointer-events: auto;
-      background: rgba(7,4,1,0.72);
-      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    }
-    /* double gold inlay rule — only visible when active */
-    #workspace.active::before {
-      content: ''; position: absolute; top: 0; left: 48px; right: 48px; height: 1px; pointer-events: none; z-index: 1;
-      background: linear-gradient(90deg, transparent, rgba(184,134,11,0.75) 25%, rgba(184,134,11,0.75) 75%, transparent);
-    }
-    #workspace.active::after {
-      content: ''; position: absolute; top: 4px; left: 96px; right: 96px; height: 1px; pointer-events: none; z-index: 1;
-      background: linear-gradient(90deg, transparent, rgba(184,134,11,0.18) 25%, rgba(184,134,11,0.18) 75%, transparent);
+      height: 190px; pointer-events: auto;
+      background: rgba(9,6,2,0.78);
+      backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+      border-top: 1px solid var(--border-md);
+      box-shadow: 0 -1px 0 rgba(196,154,26,0.06), 0 -24px 60px rgba(0,0,0,0.45);
     }
     @keyframes ws-slide-up {
-      from { transform: translateY(14px); opacity: 0; }
+      from { transform: translateY(12px); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
 
-    /* idle state — hidden (panel only shows when content is open) */
     #ws-empty { display: none; }
 
-    /* sign panel */
-    #ws-panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
-    #ws-panel.open { display:flex; animation: ws-slide-up 0.34s cubic-bezier(0.16,1,0.3,1) both; }
+    #ws-panel { display:none; flex:1; flex-direction:column; overflow:visible; position:relative; }
+    #ws-panel.open { display:flex; animation: ws-slide-up 0.32s cubic-bezier(0.16,1,0.3,1) both; }
 
-    /* chips row — the full sign text strip */
+    /* chips row */
     #ws-chips-row {
-      display:flex; align-items:center; justify-content:center; gap:0; padding:10px 22px 8px;
-      border-bottom:1px solid rgba(184,134,11,0.1); overflow-x:auto; overflow-y:hidden;
+      position:relative; display:flex; align-items:center; justify-content:center; gap:0;
+      padding:10px 44px 8px;
+      border-bottom:1px solid var(--border); overflow-x:auto; overflow-y:hidden;
       scrollbar-width:none; flex-shrink:0;
-      background: rgba(184,134,11,0.025);
     }
     #ws-chips-row::-webkit-scrollbar { display:none; }
     #ws-sign-label {
-      font-family:'DM Mono',monospace; font-size:12px; color:rgba(184,134,11,0.85);
-      white-space:nowrap; margin-right:18px; flex-shrink:0;
-      letter-spacing:0.18em; text-transform:uppercase;
+      font-family:'DM Mono',monospace; font-size:12px; color:var(--gold-dim);
+      white-space:nowrap; margin-right:16px; flex-shrink:0;
+      letter-spacing:0.2em; text-transform:uppercase;
     }
     #ws-speak-all {
-      background:none; border:1px solid rgba(184,134,11,0.7); color:#d4a020;
-      font-family:'DM Mono',monospace; font-size:12px; padding:3px 10px; border-radius:2px;
-      cursor:pointer; white-space:nowrap; flex-shrink:0; letter-spacing:0.08em;
+      position:absolute; left:10px; top:50%; transform:translateY(-50%);
+      background:none; border:none; color:var(--gold-dim);
+      font-size:18px; line-height:1; cursor:pointer; padding:4px 6px; border-radius:6px;
+      transition:color 0.15s, background 0.15s;
+    }
+    #ws-speak-all:hover { color:var(--gold); background:var(--gold-faint); }
+
+    /* ── Settings button & panel ─────────────────────────────────────────────── */
+    #settings-btn {
+      position:fixed; bottom:200px; left:18px; z-index:25;
+      background:rgba(12,8,4,0.94); border:1px solid rgba(196,154,26,0.32); color:var(--gold);
+      font-family:'DM Mono',monospace; font-size:12px; padding:7px 16px;
+      border-radius:20px; cursor:pointer; display:none; letter-spacing:0.08em;
+      box-shadow:0 4px 18px rgba(0,0,0,0.4);
+      transition:background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    #settings-btn:hover { background:rgba(12,8,4,0.94); border-color:var(--gold); box-shadow:0 4px 20px rgba(196,154,26,0.4); }
+    #settings-panel {
+      position:fixed; inset:0; z-index:30; background:rgba(8,5,2,0.94);
+      display:none; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:40px 20px; overflow-y:auto;
+      backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    }
+    #settings-panel.open { display:flex; }
+    #settings-inner { width:100%; max-width:480px; }
+    #settings-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+    #settings-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--gold); font-weight:400; letter-spacing:0.1em; }
+    #settings-close {
+      background:rgba(255,255,255,0.04); border:1px solid var(--border-md); color:var(--cream-dim);
+      font-family:'DM Mono',monospace; font-size:12px; padding:5px 14px; border-radius:20px; cursor:pointer;
       transition:border-color 0.15s, color 0.15s, background 0.15s;
     }
-    #ws-speak-all:hover { border-color:rgba(184,134,11,0.95); background:rgba(184,134,11,0.14); color:#f0c040; }
+    #settings-close:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-faint); }
+    .settings-row { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid var(--border); }
+    .settings-row:last-child { border-bottom:none; }
+    .settings-label { font-family:'DM Mono',monospace; font-size:12px; color:var(--cream-dim); flex:1; letter-spacing:0.06em; }
     #ws-voice-pick {
-      background:transparent; border:1px solid rgba(184,134,11,0.7); color:#d4a020;
-      font-family:'DM Mono',monospace; font-size:12px; padding:2px 6px; border-radius:2px;
-      cursor:pointer; flex-shrink:0; max-width:140px;
+      background:var(--gold-faint); border:1px solid var(--border-md); color:var(--gold);
+      font-family:'DM Mono',monospace; font-size:12px; padding:5px 10px; border-radius:8px;
+      cursor:pointer; max-width:240px; transition:border-color 0.15s;
     }
-    #ws-voice-pick:hover { border-color:rgba(184,134,11,0.95); }
+    #ws-voice-pick:hover { border-color:var(--gold); }
 
-    /* merged text display */
+    /* token display */
     .ws-merged-chip {
-      font-family:'Noto Serif JP',serif; font-size:21px; color:#d4c4a0;
+      font-family:'Noto Serif JP',serif; font-size:21px; color:#cfc0a0;
       display:inline-flex; align-items:flex-end; flex-shrink:0; white-space:nowrap;
       letter-spacing:0.03em; gap:8px;
     }
     .ws-token {
-      cursor:pointer; padding:1px 0; border-radius:1px;
+      cursor:pointer; padding:2px 5px; border-radius:6px;
       display:inline-flex; flex-direction:column; align-items:center;
-      transition:color 0.1s, text-decoration-color 0.1s;
+      position:relative;
+      transition:color 0.12s, background 0.12s;
       text-decoration:underline; text-underline-offset:6px;
-      text-decoration-color:rgba(184,134,11,0.25); text-decoration-thickness:1px;
+      text-decoration-color:rgba(196,154,26,0.2); text-decoration-thickness:1px;
     }
-    .ws-token:hover    { color:#ede4ce; text-decoration-color:rgba(184,134,11,0.5); }
-    .ws-token.selected { color:#fff; background:rgba(139,58,30,0.82); padding:1px 3px; margin:0 -3px; border-radius:2px; text-decoration-color:transparent; }
-    .ws-token.done     { color:#4fc38a; text-decoration-color:transparent; text-shadow:0 0 16px rgba(79,195,138,0.2); }
-    .ws-token-reading  { font-family:'DM Mono',monospace; font-size:10px; color:rgba(184,134,11,0.8); letter-spacing:0.05em; margin-bottom:2px; text-decoration:none; }
-    .ws-token-meaning  { font-family:'DM Mono',monospace; font-size:13px; color:#3a8060; letter-spacing:0.04em; margin-top:3px; text-decoration:none; min-height:1.2em; }
-    .ws-token.done .ws-token-meaning { color:#2d6a4f; }
+    /* copy badge — shows on token hover */
+    .ws-token-copy-btn {
+      display:none; position:absolute; top:-11px; right:-8px;
+      background:rgba(9,6,2,0.94); border:1px solid var(--border-md);
+      color:var(--gold-dim); font-family:'DM Mono',monospace; font-size:13px;
+      padding:3px 8px; border-radius:6px; cursor:pointer; z-index:4;
+      letter-spacing:0; line-height:1.5; white-space:nowrap;
+      transition:color 0.1s, border-color 0.1s, background 0.1s;
+    }
+    .ws-token:hover .ws-token-copy-btn { display:block; }
+    .ws-token-copy-btn:hover { color:var(--gold); border-color:var(--gold-dim); background:rgba(196,154,26,0.08); }
+    .ws-token-copy-btn.flash  { color:var(--jade); border-color:rgba(82,201,142,0.4); }
+    .ws-token:hover    { color:var(--cream); background:rgba(196,154,26,0.07); text-decoration-color:rgba(196,154,26,0.4); }
+    .ws-token.selected { color:#fff; background:rgba(148,54,24,0.72); border-radius:6px; text-decoration-color:transparent; box-shadow:inset 0 0 0 1px rgba(148,54,24,0.45); }
+    .ws-token.done     { color:var(--jade); text-decoration-color:transparent; text-shadow:0 0 14px rgba(82,201,142,0.18); }
+    /* ── token input slots ─────────────────────────────────────────────────── */
+    /* reading slot — above the kanji */
+    .ws-token-reading {
+      font-family:'DM Mono',monospace; font-size:12px; color:rgba(196,154,26,0.8);
+      letter-spacing:0.05em; min-height:16px; display:flex; align-items:center;
+      justify-content:center; width:100%; border-radius:4px; padding:1px 3px;
+      text-decoration:none; box-sizing:border-box;
+      transition:background 0.1s, border-color 0.1s, min-height 0.15s ease;
+    }
+    .ws-token-reading.slot-active { min-height:26px; }
+    .ws-token-reading.slot-empty {
+      border:1px dashed rgba(196,154,26,0.22); cursor:pointer;
+    }
+    .ws-token-reading.slot-empty:hover {
+      border-color:rgba(196,154,26,0.48); background:rgba(196,154,26,0.06);
+    }
+    /* meaning slot — below the kanji */
+    .ws-token-meaning {
+      font-family:'DM Mono',monospace; font-size:12px; color:#4aaa78;
+      letter-spacing:0.03em; min-height:16px; display:flex; align-items:center;
+      justify-content:center; width:100%; border-radius:4px; padding:1px 3px;
+      text-decoration:none; box-sizing:border-box;
+      transition:background 0.1s, border-color 0.1s, min-height 0.15s ease;
+    }
+    .ws-token-meaning.slot-active { min-height:26px; }
+    .ws-token-meaning.slot-empty {
+      border:1px dashed rgba(82,201,142,0.16); cursor:pointer;
+    }
+    .ws-token-meaning.slot-empty:hover {
+      border-color:rgba(82,201,142,0.4); background:rgba(82,201,142,0.05);
+    }
+    .ws-token-meaning.slot-done { color:var(--jade-dim); }
+    .ws-token.done .ws-token-meaning { color:var(--jade-dim); }
     .ws-token-parts    { display:flex; flex-direction:row; gap:1px; align-items:flex-end; }
     .ws-part {
       display:inline-flex; flex-direction:column; align-items:center;
-      cursor:pointer; padding:1px 3px; border-radius:1px;
-      transition:background 0.1s, color 0.1s; text-decoration:none;
+      cursor:pointer; padding:2px 4px; border-radius:5px;
+      transition:background 0.12s, color 0.12s; text-decoration:none;
     }
-    .ws-part:hover    { background:rgba(184,134,11,0.15); }
-    .ws-part.selected { background:rgba(139,58,30,0.82); color:#fff; }
-    .ws-part.done     { color:#4fc38a; text-shadow:0 0 16px rgba(79,195,138,0.2); }
-    .ws-part-reading  { font-family:'DM Mono',monospace; font-size:9px; color:rgba(184,134,11,0.8); letter-spacing:0.05em; margin-bottom:1px; min-height:11px; }
-    .ws-particle       { color:rgba(184,134,11,0.6); cursor:default; padding-top:14px; padding-bottom:19px; }
+    .ws-part:hover    { background:var(--gold-faint); }
+    .ws-part.selected { background:rgba(148,54,24,0.72); color:#fff; }
+    .ws-part.done     { color:var(--jade); text-shadow:0 0 14px rgba(82,201,142,0.18); }
+    .ws-part-reading {
+      font-family:'DM Mono',monospace; font-size:11px; color:rgba(196,154,26,0.72);
+      letter-spacing:0.05em; min-height:13px; display:flex; align-items:center;
+      justify-content:center; width:100%; border-radius:3px; padding:1px 2px;
+      box-sizing:border-box; transition:background 0.1s, min-height 0.15s ease;
+    }
+    .ws-part-reading.slot-active { min-height:26px; }
+    .ws-part-reading.slot-empty { border:1px dashed rgba(196,154,26,0.18); cursor:pointer; }
+    .ws-part-reading.slot-empty:hover { border-color:rgba(196,154,26,0.44); background:rgba(196,154,26,0.05); }
+    .ws-part-meaning {
+      font-family:'DM Mono',monospace; font-size:11px; color:#4aaa78;
+      letter-spacing:0.03em; min-height:13px; display:flex; align-items:center;
+      justify-content:center; width:100%; border-radius:3px; padding:1px 2px;
+      box-sizing:border-box; transition:background 0.1s, min-height 0.15s ease;
+    }
+    .ws-part-meaning.slot-active { min-height:26px; }
+    .ws-part-meaning.slot-empty { border:1px dashed rgba(82,201,142,0.13); cursor:pointer; }
+    .ws-part-meaning.slot-empty:hover { border-color:rgba(82,201,142,0.38); background:rgba(82,201,142,0.04); }
+    .ws-part-meaning.slot-done { color:var(--jade-dim); }
+    .ws-particle { color:rgba(196,154,26,0.48); cursor:default; padding-top:17px; padding-bottom:17px; }
 
-    /* body row: definition + input */
-    #ws-body { flex:1; display:flex; align-items:center; gap:0; padding:0 22px; overflow:hidden; }
-    #ws-def {
-      display:flex; flex-direction:column; justify-content:center;
-      min-width:170px; max-width:210px; gap:2px;
-      padding-right:22px; border-right:1px solid rgba(184,134,11,0.1); flex-shrink:0;
-    }
-    #ws-def-jp      { font-family:'Noto Serif JP',serif; font-size:24px; color:#ede4ce; line-height:1.2; letter-spacing:0.05em; }
-    #ws-def-reading { font-family:'DM Mono',monospace; font-size:12px; color:rgba(184,134,11,0.9); letter-spacing:0.06em; }
-    #ws-def-meaning { font-family:'DM Mono',monospace; font-size:12px; color:#4aaa80; letter-spacing:0.04em; }
-    #ws-def-hint    { font-family:'DM Mono',monospace; font-size:12px; color:#b89a78; letter-spacing:0.1em; }
-    #ws-input-area  { flex:1; display:flex; flex-direction:column; gap:7px; justify-content:center; padding-left:22px; }
+    /* ── inline input (shared; JS moves it into the active slot) ────────────── */
     #ws-input {
-      width:100%; background:transparent; border:none;
-      border-bottom:1px solid rgba(184,134,11,0.22);
-      color:#ede4ce; font-family:'DM Mono',monospace; font-size:14px;
-      padding:6px 2px; outline:none; border-radius:0; letter-spacing:0.08em;
-      caret-color:#b8860b; transition:border-color 0.2s;
+      width:100%; min-width:72px;
+      background:rgba(255,255,255,0.03); border:1px solid rgba(196,154,26,0.38);
+      color:var(--cream); font-family:'DM Mono',monospace; font-size:11px;
+      padding:3px 6px; outline:none; border-radius:5px; letter-spacing:0.07em;
+      caret-color:var(--gold); transition:border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
-    #ws-input:focus        { border-bottom-color:rgba(184,134,11,0.8); }
-    #ws-input:disabled     { opacity:0.25; }
-    #ws-input::placeholder { color:#8a6848; letter-spacing:0.06em; }
-    #ws-input.correct      { border-bottom-color:rgba(79,195,138,0.6); caret-color:#4fc38a; }
-    #ws-input.wrong        { border-bottom-color:rgba(139,58,30,0.7); }
-    #ws-input-bottom { display:flex; align-items:center; gap:10px; }
-    #ws-feedback { font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.07em; flex:1; min-height:14px; }
-    #ws-lookup {
-      background:none; border:1px solid rgba(184,134,11,0.7); color:#e8b020;
-      font-family:'DM Mono',monospace; font-size:12px; padding:4px 12px; border-radius:2px;
-      cursor:pointer; white-space:nowrap; flex-shrink:0; letter-spacing:0.1em;
-      transition:border-color 0.15s, color 0.15s, background 0.15s;
+    #ws-input:focus { border-color:rgba(196,154,26,0.6); background:rgba(196,154,26,0.05); box-shadow:0 0 0 2px rgba(196,154,26,0.07); }
+    #ws-input::placeholder { color:#4a3820; letter-spacing:0.05em; }
+    #ws-input.correct { border-color:rgba(82,201,142,0.45); background:rgba(82,201,142,0.04); caret-color:var(--jade); }
+    @keyframes ws-wrong-flash {
+      0%,100% { border-color:rgba(192,57,43,0.5); background:rgba(192,57,43,0.04); }
+      40%     { border-color:rgba(192,57,43,0.9); background:rgba(192,57,43,0.18); }
     }
-    #ws-lookup:disabled { color:#5a3e1e; border-color:#3a2810; cursor:default; }
-    #ws-lookup:not(:disabled):hover { border-color:rgba(184,134,11,0.95); background:rgba(184,134,11,0.14); color:#f5c840; }
+    #ws-input.wrong { animation: ws-wrong-flash 0.18s ease-in-out 2; }
 
-    /* ── NPC dialogue (floats above panel) ───────────────────────────────────── */
+    /* ── bottom bar ─────────────────────────────────────────────────────────── */
+    #ws-hint-row {
+      display:flex; align-items:center; gap:12px; padding:4px 16px 2px; flex-shrink:0;
+    }
+    #ws-hint-read { font-family:'DM Mono',monospace; font-size:13px; color:var(--gold); letter-spacing:0.07em; }
+    #ws-hint-mean { font-family:'DM Mono',monospace; font-size:13px; color:var(--jade); letter-spacing:0.04em; }
+    #ws-bottom-bar { display:flex; align-items:center; gap:10px; padding:3px 16px 8px; flex-shrink:0; }
+    #ws-feedback { font-family:'DM Mono',monospace; font-size:11px; letter-spacing:0.07em; flex:1; min-height:13px; }
+    #ws-lookup, #ws-copy-sentence {
+      background:var(--gold-faint); border:1px solid var(--border-md); color:var(--gold);
+      font-family:'DM Mono',monospace; font-size:11px; padding:4px 12px; border-radius:18px;
+      cursor:pointer; white-space:nowrap; flex-shrink:0; letter-spacing:0.07em;
+      transition:border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    #ws-lookup:disabled { color:#a07820; border-color:rgba(196,154,26,0.35); background:rgba(196,154,26,0.06); cursor:default; }
+    #ws-lookup:not(:disabled):hover { border-color:var(--gold); background:var(--gold-glow); color:#f5c840; box-shadow:0 0 10px rgba(196,154,26,0.18); }
+    #ws-lookup-wrap { position:relative; flex-shrink:0; }
+    #ws-lookup-bar {
+      position:absolute; bottom:0; left:3px; right:3px; height:3px;
+      background:var(--gold); border-radius:0 0 18px 18px;
+      transform-origin:left center; transition:width 0.95s linear;
+      width:0; pointer-events:none;
+    }
+    #ws-copy-sentence:hover { border-color:var(--gold); background:var(--gold-glow); color:#f5c840; box-shadow:0 0 10px rgba(196,154,26,0.18); }
+    #ws-copy-sentence.copied { color:var(--jade); border-color:rgba(82,201,142,0.4); }
+
+    /* ── NPC dialogue ────────────────────────────────────────────────────────── */
     @keyframes dlg-appear {
-      from { opacity:0; transform:translateX(-50%) translateY(8px); }
+      from { opacity:0; transform:translateX(-50%) translateY(10px); }
       to   { opacity:1; transform:translateX(-50%) translateY(0); }
     }
     #ws-dialogue {
       display:none; flex-direction:column;
-      position:fixed; bottom:196px; left:50%; transform:translateX(-50%);
-      width:min(480px, calc(100vw - 32px));
-      background:rgba(5,3,1,0.97); border:1px solid rgba(184,134,11,0.18);
-      border-radius:3px; z-index:20; overflow:hidden;
-      box-shadow:0 -6px 36px rgba(0,0,0,0.55), inset 0 1px 0 rgba(184,134,11,0.1);
+      position:fixed; bottom:200px; left:50%; transform:translateX(-50%);
+      width:min(500px, calc(100vw - 28px));
+      background:rgba(8,5,2,0.96); border:1px solid var(--border-md);
+      border-radius:14px; z-index:20; overflow:hidden;
+      box-shadow:0 8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.35), inset 0 1px 0 rgba(196,154,26,0.07);
     }
-    #ws-dialogue.open { display:flex; animation:dlg-appear 0.24s cubic-bezier(0.16,1,0.3,1) both; }
+    #ws-dialogue.open { display:flex; animation:dlg-appear 0.26s cubic-bezier(0.16,1,0.3,1) both; }
     #ws-dlg-header {
-      display:flex; align-items:center; gap:10px; padding:9px 16px;
-      border-bottom:1px solid rgba(184,134,11,0.09); flex-shrink:0;
-      background:rgba(184,134,11,0.035);
+      display:flex; align-items:center; gap:10px; padding:10px 16px;
+      border-bottom:1px solid var(--border); flex-shrink:0;
+      background:rgba(196,154,26,0.04);
     }
     #ws-dlg-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; }
-    #ws-dlg-name   { font-family:'DM Mono',monospace; font-size:12px; color:rgba(184,134,11,0.9); flex:1; letter-spacing:0.16em; text-transform:uppercase; }
-    #ws-dlg-close  { background:none; border:none; color:rgba(184,134,11,0.6); font-size:14px; cursor:pointer; padding:2px 6px; transition:color 0.15s; }
-    #ws-dlg-close:hover { color:#e8b020; }
-    #ws-dlg-body {
-      flex:1; display:flex; flex-direction:column; padding:6px 18px 8px;
-      overflow-y:auto; gap:0; max-height:min(320px,44vh);
-      scrollbar-width:thin; scrollbar-color:rgba(184,134,11,0.25) transparent;
+    #ws-dlg-name   { font-family:'DM Mono',monospace; font-size:12px; color:var(--gold); flex:1; letter-spacing:0.18em; text-transform:uppercase; }
+    #ws-dlg-close  {
+      background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--cream-dim);
+      font-size:12px; cursor:pointer; padding:3px 9px; border-radius:20px;
+      transition:background 0.15s, border-color 0.15s, color 0.15s;
     }
-    #ws-dlg-body::-webkit-scrollbar { width:4px; }
-    #ws-dlg-body::-webkit-scrollbar-thumb { background:rgba(184,134,11,0.25); border-radius:2px; }
+    #ws-dlg-close:hover { background:var(--gold-faint); border-color:var(--gold-dim); color:var(--gold); }
+    #ws-dlg-body {
+      flex:1; display:flex; flex-direction:column; padding:8px 16px 10px;
+      overflow-y:auto; gap:0; max-height:min(320px,44vh);
+      scrollbar-width:thin; scrollbar-color:rgba(196,154,26,0.18) transparent;
+    }
+    #ws-dlg-body::-webkit-scrollbar { width:3px; }
+    #ws-dlg-body::-webkit-scrollbar-thumb { background:rgba(196,154,26,0.2); border-radius:2px; }
     .dlg-turn { padding:6px 0; }
-    .dlg-turn + .dlg-turn { border-top:1px solid rgba(184,134,11,0.07); margin-top:2px; padding-top:8px; }
+    .dlg-turn + .dlg-turn { border-top:1px solid rgba(196,154,26,0.06); margin-top:2px; padding-top:8px; }
     .dlg-turn-player { display:flex; justify-content:flex-end; }
+    .dlg-copy-btn {
+      display:inline-block; margin-left:8px;
+      background:none; border:1px solid rgba(255,255,255,0.35); border-radius:3px;
+      font-family:'DM Mono',monospace; font-size:12px;
+      color:#ffffff; cursor:pointer; padding:1px 5px;
+      transition:border-color 0.15s, background 0.15s; letter-spacing:0.05em;
+      vertical-align:middle; opacity:1;
+    }
+    .dlg-copy-btn:hover { border-color:#fff; background:rgba(255,255,255,0.12); }
     .dlg-turn-player-text {
       font-family:'Noto Serif JP',serif; font-size:14px; color:#b09070;
-      background:rgba(184,134,11,0.07); border-radius:3px; padding:4px 10px;
+      background:rgba(196,154,26,0.08); border-radius:10px 10px 3px 10px; padding:6px 12px;
       max-width:85%; line-height:1.5;
     }
-    .dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:17px; color:#ede4ce; line-height:1.7; flex-wrap:wrap; display:flex; gap:2px; align-items:baseline; }
-    .dlg-npc-en { font-family:'DM Mono',monospace; font-size:12px; color:#b09070; letter-spacing:0.04em; margin-top:2px; }
+    .dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:17px; color:var(--cream); line-height:1.7; flex-wrap:wrap; display:flex; gap:2px; align-items:baseline; }
+    .dlg-npc-en { font-family:'DM Mono',monospace; font-size:12px; color:rgba(184,168,136,0.65); letter-spacing:0.04em; margin-top:2px; display:flex; align-items:center; gap:0; }
     #ws-dlg-thinking { display:none; gap:6px; align-items:center; margin-top:4px; }
     #ws-dlg-thinking.visible { display:flex; }
-    #ws-dlg-thinking span { width:5px; height:5px; background:rgba(184,134,11,0.6); border-radius:50%; animation:dlg-pulse 1.4s ease-in-out infinite; }
+    #ws-dlg-thinking span { width:5px; height:5px; background:rgba(196,154,26,0.55); border-radius:50%; animation:dlg-pulse 1.4s ease-in-out infinite; }
     #ws-dlg-thinking span:nth-child(2) { animation-delay:0.25s; }
     #ws-dlg-thinking span:nth-child(3) { animation-delay:0.5s; }
     @keyframes dlg-pulse { 0%,80%,100%{transform:scale(0.6);opacity:0.3;} 40%{transform:scale(1);opacity:1;} }
-    #ws-dlg-input-row { display:flex; gap:10px; padding:8px 16px; border-top:1px solid rgba(184,134,11,0.09); flex-shrink:0; }
+    #ws-dlg-input-row { display:flex; gap:8px; padding:10px 14px; border-top:1px solid var(--border); flex-shrink:0; align-items:center; }
     #ws-dlg-input {
-      flex:1; background:transparent; border:none; border-bottom:1px solid rgba(184,134,11,0.18);
-      color:#ede4ce; font-family:'Noto Serif JP',serif; font-size:14px;
-      padding:5px 2px; outline:none; border-radius:0; caret-color:#b8860b; transition:border-color 0.2s;
+      flex:1; background:rgba(255,255,255,0.03); border:1px solid var(--border-md);
+      color:var(--cream); font-family:'Noto Serif JP',serif; font-size:14px;
+      padding:7px 12px; outline:none; border-radius:8px; caret-color:var(--gold);
+      transition:border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
-    #ws-dlg-input:focus { border-bottom-color:rgba(184,134,11,0.55); }
-    #ws-dlg-input::placeholder { color:rgba(184,134,11,0.45); }
+    #ws-dlg-input:focus { border-color:rgba(196,154,26,0.48); background:rgba(196,154,26,0.04); box-shadow:0 0 0 3px rgba(196,154,26,0.07); }
+    #ws-dlg-input::placeholder { color:rgba(196,154,26,0.32); }
     #ws-dlg-send {
-      background:rgba(184,134,11,0.1); border:1px solid rgba(184,134,11,0.55);
-      color:#d4a020; font-family:'DM Mono',monospace; font-size:12px;
-      padding:5px 18px; border-radius:2px; cursor:pointer; letter-spacing:0.1em;
-      transition:background 0.15s, border-color 0.15s, color 0.15s;
+      background:var(--gold-faint); border:1px solid var(--border-md);
+      color:var(--gold); font-family:'DM Mono',monospace; font-size:15px;
+      width:34px; height:34px; border-radius:50%; cursor:pointer; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      transition:background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
     }
-    #ws-dlg-send:hover    { background:rgba(184,134,11,0.2); border-color:rgba(184,134,11,0.85); color:#f0c040; }
-    #ws-dlg-send:disabled { opacity:0.25; cursor:default; }
+    #ws-dlg-send:hover    { background:var(--gold-glow); border-color:var(--gold); color:#f0c040; box-shadow:0 0 10px rgba(196,154,26,0.2); }
+    #ws-dlg-send:disabled { opacity:0.2; cursor:default; }
     .dlg-word {
-      cursor:grab; user-select:none; border-radius:2px; padding:0 2px;
+      cursor:grab; user-select:none; border-radius:4px; padding:0 2px;
       transition:background 0.1s, color 0.1s;
     }
-    .dlg-word:hover { background:rgba(184,134,11,0.14); }
-    .dlg-word.active { background:rgba(184,134,11,0.22); }
+    .dlg-word:hover { background:rgba(196,154,26,0.11); }
+    .dlg-word.active { background:rgba(196,154,26,0.19); }
     .dlg-word.drag-src { opacity:0.4; }
-    .dlg-word.done { color:#4fc38a; text-shadow:0 0 14px rgba(79,195,138,0.2); }
-    .dlg-word.done:hover { background:rgba(79,195,138,0.08); }
+    .dlg-word.done { color:var(--jade); text-shadow:0 0 14px rgba(82,201,142,0.18); }
+    .dlg-word.done:hover { background:rgba(82,201,142,0.07); }
     .ws-token.drag-src { opacity:0.4; }
-    #ws-dlg-input.drag-over { border-bottom-color:rgba(184,134,11,0.7); background:rgba(184,134,11,0.05); }
+    #ws-dlg-input.drag-over { border-color:rgba(196,154,26,0.55); background:rgba(196,154,26,0.05); }
 
+    /* ── Vocab button & panel ────────────────────────────────────────────────── */
     #vocab-btn {
-      position:fixed; bottom:120px; right:20px; z-index:25;
-      background:rgba(20,16,10,0.97); border:1px solid #8b6914; color:#b8860b;
-      font-family:'DM Mono',monospace; font-size:12px; padding:6px 14px;
-      border-radius:4px; cursor:pointer; display:none;
+      position:fixed; bottom:240px; left:18px; z-index:25;
+      background:rgba(12,8,4,0.94); border:1px solid rgba(196,154,26,0.32); color:var(--gold);
+      font-family:'DM Mono',monospace; font-size:12px; padding:7px 16px;
+      border-radius:20px; cursor:pointer; display:none; letter-spacing:0.08em;
+      box-shadow:0 4px 18px rgba(0,0,0,0.4);
+      transition:background 0.15s, border-color 0.15s, box-shadow 0.15s;
     }
-    #vocab-btn:hover { background:#8b6914; color:#0d0b07; }
+    #vocab-btn:hover { background:rgba(12,8,4,0.94); border-color:var(--gold); box-shadow:0 4px 20px rgba(196,154,26,0.4); }
     #vocab-panel {
-      position:fixed; inset:0; z-index:30; background:rgba(8,6,3,0.92);
-      display:none; flex-direction:column; align-items:center; justify-content:flex-start;
-      padding:40px 20px; overflow-y:auto;
+      position:fixed; top:0; left:0; bottom:0; width:340px; z-index:30;
+      background:rgba(8,5,2,0.97); border-right:1px solid var(--border);
+      display:none; flex-direction:column; overflow:hidden;
+      transition: bottom 0.3s cubic-bezier(0.16,1,0.3,1);
     }
+    body:has(#ws-panel.open) #vocab-panel { bottom: 190px; }
     #vocab-panel.open { display:flex; }
-    #vocab-inner { width:100%; max-width:640px; }
-    #vocab-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:10px; border-bottom:1px solid #3a2810; }
-    #vocab-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:#b8860b; font-weight:400; letter-spacing:0.08em; }
-    #vocab-close { background:none; border:1px solid #6a4828; color:#aaa; font-family:'DM Mono',monospace; font-size:12px; padding:4px 10px; border-radius:3px; cursor:pointer; }
-    #vocab-close:hover { border-color:#b8860b; color:#e8b020; }
-    .vocab-sign-header { font-family:'Noto Serif JP',serif; font-size:13px; color:#9a7848; margin:18px 0 6px; letter-spacing:0.05em; }
+    #vocab-inner { flex:1; overflow-y:auto; padding:16px; }
+    #vocab-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; padding:16px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+    #vocab-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--gold); font-weight:400; letter-spacing:0.1em; }
+    #vocab-close {
+      background:rgba(255,255,255,0.04); border:1px solid var(--border-md); color:var(--cream-dim);
+      font-family:'DM Mono',monospace; font-size:12px; padding:5px 14px; border-radius:20px; cursor:pointer;
+      transition:border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    #vocab-close:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-faint); }
+    .vocab-sign-header { font-family:'Noto Serif JP',serif; font-size:13px; color:#8a6838; margin:20px 0 6px; letter-spacing:0.05em; }
     .vocab-sign-header:first-child { margin-top:0; }
-    .vocab-row { display:grid; grid-template-columns:80px 180px 1fr; gap:12px; align-items:baseline; padding:5px 4px; border-bottom:1px solid #1a1408; }
-    .vocab-row:hover { background:rgba(184,134,11,0.05); }
-    .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:#f5f0e8; }
-    .vocab-reading { font-family:'DM Mono',monospace; font-size:12px; color:#b8860b; }
-    .vocab-reading.locked { color:#5a5040; }
-    .vocab-meaning { font-family:'DM Mono',monospace; font-size:12px; color:#4aaa80; }
-    .vocab-meaning.locked { color:#2a5038; }
-    #vocab-empty { font-size:12px; color:#666; text-align:center; margin-top:40px; }
+    .vocab-row {
+      display:grid; grid-template-columns:60px 1fr 1fr; gap:8px; align-items:baseline;
+      padding:7px 8px; border-radius:7px; margin-bottom:1px; transition:background 0.1s;
+    }
+    .vocab-row:hover { background:rgba(196,154,26,0.06); }
+    .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--cream); }
+    .vocab-reading { font-family:'DM Mono',monospace; font-size:12px; color:var(--gold); }
+    .vocab-reading.locked { color:#302818; }
+    .vocab-meaning { font-family:'DM Mono',monospace; font-size:12px; color:var(--jade); }
+    .vocab-meaning.locked { color:#1a3228; }
+    #vocab-empty { font-size:12px; color:#444; text-align:center; margin-top:40px; }
 
+    /* ── Lang button ─────────────────────────────────────────────────────────── */
     #lang-btn {
       position: fixed; top: 10px; right: 10px; z-index: 100;
-      background: none; border: 1px solid #6a4820; color: #c8a060;
+      background: rgba(12,8,4,0.88); border: 1px solid rgba(196,154,26,0.26); color: var(--cream-dim);
       font-family: 'DM Mono', monospace; font-size: 12px;
-      padding: 5px 12px; cursor: pointer; letter-spacing: 0.06em;
-      transition: border-color 0.15s, color 0.15s;
+      padding: 5px 14px; cursor: pointer; letter-spacing: 0.08em; border-radius: 20px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
     }
-    #lang-btn:hover { border-color: #d4a020; color: #e8b020; }
+    #lang-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-faint); }
   </style>
 </head>
 <body>
 
 <div id="start-screen">
   <h1>図書館</h1>
-  <p class="subtitle">A library simulation. Signs are in Japanese — walk up to them to read and translate.</p>
-  <div class="goal-box">
-    <p class="label">TODAY'S GOALS</p>
-    <ul>
-      <li>Read the textbook</li>
-      <li>Take notes on your laptop (library work only)</li>
-      <li>Maintain your 充実感 (well-being)</li>
-    </ul>
-  </div>
-  <button id="start-btn">Enter the library</button>
-  <p class="hint-line">WASD / arrows to move · E or click to interact · walk to signs to study them</p>
+  <button id="start-btn">Start game</button>
 </div>
 
 <div id="game-wrap">
@@ -310,35 +429,46 @@
     <div id="ws-dlg-thinking"><span></span><span></span><span></span></div>
   </div>
   <div id="ws-dlg-input-row">
-    <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="日本語で話しかけてください…">
+    <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="">
     <button id="ws-dlg-send">→</button>
   </div>
 </div>
 <div id="workspace">
   <div id="ws-empty">walk up to a sign and press E · talk to characters to practice Japanese</div>
   <div id="ws-panel">
-    <div id="ws-chips-row"><span id="ws-sign-label"></span></div>
-    <div id="ws-body">
-      <div id="ws-def">
-        <span id="ws-def-jp"></span>
-        <span id="ws-def-reading"></span>
-        <span id="ws-def-meaning"></span>
-        <span id="ws-def-hint">click a word above</span>
-      </div>
-      <div id="ws-input-area">
-        <input id="ws-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="select a word first" disabled>
-        <div id="ws-input-bottom">
-          <span id="ws-feedback"></span>
-          <select id="ws-voice-pick" style="display:none"></select>
-          <button id="ws-speak-all" style="display:none">🔊 say it</button>
-          <button id="ws-lookup" disabled>📱 look up</button>
-        </div>
-      </div>
+    <div id="ws-chips-row">
+      <button id="ws-speak-all" style="display:none">🔊</button>
+      <span id="ws-sign-label"></span>
+    </div>
+    <input id="ws-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="" style="display:none">
+    <div id="ws-hint-row">
+      <div id="ws-lookup-wrap"><button id="ws-lookup" disabled>📱 look up</button><div id="ws-lookup-bar"></div></div>
+      <span id="ws-hint-read"></span>
+      <span id="ws-hint-mean"></span>
+    </div>
+    <div id="ws-bottom-bar">
+      <span id="ws-feedback"></span>
+      <button id="ws-copy-sentence">⎘ copy</button>
     </div>
   </div>
 </div>
 <button id="lang-btn"></button>
 <button id="vocab-btn">📓 vocab</button>
+<button id="settings-btn">⚙ settings</button>
+<div id="settings-panel">
+  <div id="settings-inner">
+    <div id="settings-header">
+      <h2>設定 — Settings</h2>
+      <button id="settings-close">✕ close</button>
+    </div>
+    <div id="settings-content">
+      <div class="settings-row" id="settings-voice-row" style="display:none">
+        <span class="settings-label">Korean voice</span>
+        <select id="ws-voice-pick"></select>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="vocab-panel">
   <div id="vocab-inner">
     <div id="vocab-header">
@@ -466,16 +596,41 @@
     const lbl_el    = document.getElementById("ws-sign-label");
     const speak_all = document.getElementById("ws-speak-all");
     const voice_pick = document.getElementById("ws-voice-pick");
-    const def_jp    = document.getElementById("ws-def-jp");
-    const def_read  = document.getElementById("ws-def-reading");
-    const def_mean  = document.getElementById("ws-def-meaning");
-    const def_hint  = document.getElementById("ws-def-hint");
     const inp       = document.getElementById("ws-input");
+    inp.addEventListener("mousedown", e => e.stopPropagation());
+    inp.addEventListener("click",     e => e.stopPropagation());
     const fb        = document.getElementById("ws-feedback");
+    const hint_read = document.getElementById("ws-hint-read");
+    const hint_mean = document.getElementById("ws-hint-mean");
     const lkp       = document.getElementById("ws-lookup");
+    const lkp_bar   = document.getElementById("ws-lookup-bar");
+    const copy_btn  = document.getElementById("ws-copy-sentence");
+
+    function _show_hint(reading, meaning) {
+      hint_read.textContent = reading || '';
+      hint_mean.textContent = meaning  || '';
+    }
+    function _clear_hint() {
+      hint_read.textContent=''; hint_mean.textContent='';
+    }
 
     let cur_sign_id = null, cur_word_idx = null, cur_part_idx = null, word_results = {}, _lkp_timer = null, _checking = false;
+    let _active_field = null; // 'romaji' | 'meaning'
+    let _hint_by_key = {}; // res_key → {reading, meaning} — persists lookup results per word
     let _npc_defs = {};
+
+    function _copy_text(text, flashEl) {
+      if (!text) return;
+      navigator.clipboard.writeText(text).catch(() => {
+        const ta=document.createElement("textarea"); ta.value=text;
+        ta.style.cssText="position:fixed;top:-999px;left:-999px;opacity:0;";
+        document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+      });
+      if (flashEl) {
+        flashEl.classList.add("flash","ws-popup-copied");
+        setTimeout(() => flashEl.classList.remove("flash","ws-popup-copied"), 900);
+      }
+    }
 
     function _fmt_read(furi, rom) {
       const f=furi||'', r=rom||'';
@@ -484,19 +639,32 @@
 
     const OLLAMA_URL = "/ollama/api/chat", OLLAMA_MODEL = "llama3.1:8b";
 
-    async function _llama_judge_meaning(token, player_input) {
+    async function _llama_judge_meaning(token, player_input, on_status) {
+      const ctl = new AbortController();
+      const tid = setTimeout(() => ctl.abort(), 30000);
       try {
+        const lang = LANG.current === 'ko' ? 'Korean' : 'Japanese';
+        on_status?.('asking LLM…');
         const res = await fetch(OLLAMA_URL, { method:"POST", headers:{"Content-Type":"application/json"},
+          signal: ctl.signal,
           body: JSON.stringify({ model:OLLAMA_MODEL, messages:[{role:"user", content:
-            `Japanese word: ${token.text}\nAccepted meanings: ${token.meaning}\nStudent answer: ${player_input}\nIs the student's answer close enough in meaning to be marked correct? Reply yes or no only.`
+            `${lang} word: ${token.text}\nAccepted meanings: ${token.meaning}\nStudent answer: ${player_input}\nIs the student's answer close enough in meaning to be marked correct? Reply yes or no only.`
           }], stream:false, options:{temperature:0, num_predict:5} }) });
-        if (!res.ok) throw new Error();
-        return (await res.json()).message?.content?.trim().toLowerCase().startsWith("yes") || false;
-      } catch { return false; }
+        clearTimeout(tid);
+        if (!res.ok) { on_status?.(`LLM error: HTTP ${res.status}`); return false; }
+        const reply = (await res.json()).message?.content?.trim() || '';
+        const ok = reply.toLowerCase().startsWith("yes");
+        on_status?.(`LLM: "${reply}" → ${ok ? '✓ correct' : '✗ wrong'}`);
+        return ok;
+      } catch(e) {
+        clearTimeout(tid);
+        on_status?.(e.name === 'AbortError' ? 'LLM timed out (30s)' : `LLM error: ${e.message}`);
+        return false;
+      }
     }
 
     function _normRomaji(s) { return s.toLowerCase().replace(/[-\s]+/g,"").replace(/ou/g,"o").replace(/uu/g,"u").replace(/aa/g,"a"); }
-    function _isNumericToken(token) { return /\d/.test(token.text); }
+    function _isNumericToken(token) { return /^\d+$/.test(token.text); }
     function _checkWhat(word, raw, res) {
       const val=raw.trim().toLowerCase(), val_ns=val.replace(/\s+/g,"");
       if (!val) return null;
@@ -506,7 +674,7 @@
       }
       if (!res.meaning) {
         const norm=s=>s.replace(/[?!.,]+$/,"");
-        const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split("/").map(p=>norm(p.trim())).filter(Boolean);
+        const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split(/\s*[/,]\s*/).map(p=>norm(p.trim()).replace(/^to\s+/,'')).filter(Boolean);
         const v=norm(val), v_ns=norm(val_ns);
         if (parts.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return "meaning";
       }
@@ -516,7 +684,8 @@
     function _update_lkp() {
       const cd=sim.state.phone.lookup_cooldown;
       lkp.disabled=cd>0||cur_word_idx==null;
-      lkp.textContent=cd>0?`📱 (${cd}s)`:'📱 look up';
+      lkp.textContent=cd>0?`📱 ${cd}s`:'📱 look up';
+      lkp_bar.style.width=cd>0?`${(cd/60)*100}%`:'0%';
     }
     function _start_lkp_timer() {
       if (_lkp_timer) return;
@@ -524,13 +693,21 @@
     }
 
     function _render_chips() {
+      // Rescue inp from being removed along with old chips
+      panel_el.appendChild(inp); inp.style.display='none';
       [...chips_row.querySelectorAll(".ws-merged-chip")].forEach(c=>c.remove());
       const merged=document.createElement("div"); merged.className="ws-merged-chip";
       const sign=SIGN_BY_ID[cur_sign_id]; if (!sign) return;
       const tokens=sign.tokens||[];
-      // Walk the full sign text; place interactive token spans and dim particle spans
       const full=(sign.japanese||tokens.map(t=>t.text).join('')).replace(/\n/g,' ');
       let pos=0, tok_idx=0;
+
+      // Helper: place inp in a slot (reading or meaning)
+      function _placeInp(slotEl) {
+        slotEl.appendChild(inp);
+        inp.style.display='';
+      }
+
       while (pos<=full.length && tok_idx<tokens.length) {
         const token=tokens[tok_idx];
         const found=full.indexOf(token.text, pos);
@@ -546,53 +723,116 @@
           ? token.parts.every((_,pi)=>{ const r=word_results[`${tok_idx}p${pi}`]||{}; return r.romaji&&r.meaning; })
           : (res.romaji&&res.meaning);
         if (isDone) span.classList.add("done");
+        const _i=tok_idx;
+
         if (!hasParts) {
           if (tok_idx===cur_word_idx&&cur_part_idx==null) span.classList.add("selected");
+
+          // — reading slot (above kanji) —
           const rspan=document.createElement("span"); rspan.className="ws-token-reading";
-          rspan.textContent=(res.romaji&&(token.romaji||token.furigana))?(token.romaji||token.furigana):'';
+          if (res.romaji&&(token.romaji||token.furigana)) {
+            rspan.textContent=token.romaji||token.furigana;
+          } else if (tok_idx===cur_word_idx&&cur_part_idx==null&&_active_field==='romaji') {
+            rspan.classList.add("slot-active"); _placeInp(rspan);
+          } else if (!res.romaji) {
+            rspan.classList.add("slot-empty");
+            rspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,null,'romaji'); });
+          }
           span.appendChild(rspan);
+
+          // — kanji text —
           const textNode=document.createElement("span"); textNode.textContent=token.text;
           span.appendChild(textNode);
+
+          // — meaning slot (below kanji) —
+          const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
+          if (res.meaning&&token.meaning) {
+            const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
+            mspan.textContent=raw.split("/")[0].trim(); mspan.classList.add("slot-done");
+          } else if (tok_idx===cur_word_idx&&cur_part_idx==null&&_active_field==='meaning') {
+            mspan.classList.add("slot-active"); _placeInp(mspan);
+          } else if (!res.meaning) {
+            mspan.classList.add("slot-empty");
+            mspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,null,'meaning'); });
+          }
+          span.appendChild(mspan);
+
         } else {
+          // — parts token: each part gets its own reading + meaning slots —
           const partsRow=document.createElement("span"); partsRow.className="ws-token-parts";
           token.parts.forEach((part,pi)=>{
             const pres=word_results[`${tok_idx}p${pi}`]||{};
             const pspan=document.createElement("span"); pspan.className="ws-part";
             if (pres.romaji&&pres.meaning) pspan.classList.add("done");
             if (tok_idx===cur_word_idx&&pi===cur_part_idx) pspan.classList.add("selected");
+            const _pi=pi;
+
+            // part reading slot
             const prspan=document.createElement("span"); prspan.className="ws-part-reading";
-            prspan.textContent=pres.romaji?(part.romaji||part.furigana||''):'';
+            if (pres.romaji&&(part.romaji||part.furigana)) {
+              prspan.textContent=part.romaji||part.furigana||'';
+            } else if (tok_idx===cur_word_idx&&pi===cur_part_idx&&_active_field==='romaji') {
+              prspan.classList.add("slot-active"); _placeInp(prspan);
+            } else if (!pres.romaji) {
+              prspan.classList.add("slot-empty");
+              prspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,_pi,'romaji'); });
+            }
             pspan.appendChild(prspan);
+
+            // part kanji text
             const ptspan=document.createElement("span"); ptspan.textContent=part.text;
             pspan.appendChild(ptspan);
-            const _pi=pi;
-            pspan.addEventListener("click",e=>{ e.stopPropagation(); _select(tok_idx,_pi); });
+
+            // part meaning slot
+            const pmspan=document.createElement("span"); pmspan.className="ws-part-meaning";
+            if (pres.meaning&&part.meaning) {
+              const raw=Array.isArray(part.meaning)?part.meaning[0]:part.meaning;
+              pmspan.textContent=raw.split("/")[0].trim(); pmspan.classList.add("slot-done");
+            } else if (tok_idx===cur_word_idx&&pi===cur_part_idx&&_active_field==='meaning') {
+              pmspan.classList.add("slot-active"); _placeInp(pmspan);
+            } else if (!pres.meaning) {
+              pmspan.classList.add("slot-empty");
+              pmspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,_pi,'meaning'); });
+            }
+            pspan.appendChild(pmspan);
+
+            pspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,_pi); });
             partsRow.appendChild(pspan);
           });
           span.appendChild(partsRow);
+
+          // compound meaning — read-only, shown when all parts done
+          const cmspan=document.createElement("span"); cmspan.className="ws-token-meaning slot-done";
+          if (isDone&&token.meaning) {
+            const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
+            cmspan.textContent=raw.split("/")[0].trim();
+          }
+          span.appendChild(cmspan);
         }
-        const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
-        if (isDone&&token.meaning) {
-          const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
-          mspan.textContent=raw.split("/")[0].trim();
-        } else if (!hasParts&&(res.meaning)&&token.meaning) {
-          const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
-          mspan.textContent=raw.split("/")[0].trim();
-        }
-        span.appendChild(mspan);
-        const _i=tok_idx;
-        span.draggable = true;
-        span.addEventListener("dragstart", e => {
-          span.classList.add("drag-src");
-          e.dataTransfer.setData("dlg-word", token.text);
-          e.dataTransfer.effectAllowed = "copy";
+
+        // copy badge
+        const copyBtn=document.createElement("span"); copyBtn.className="ws-token-copy-btn"; copyBtn.textContent="⎘";
+        copyBtn.title="copy"; copyBtn.addEventListener("click",e=>{
+          e.stopPropagation(); _copy_text(token.text, copyBtn);
         });
-        span.addEventListener("dragend", () => span.classList.remove("drag-src"));
+        span.appendChild(copyBtn);
+        span.draggable=true;
+        span.addEventListener("dragstart",e=>{ span.classList.add("drag-src"); e.dataTransfer.setData("dlg-word",token.text); e.dataTransfer.effectAllowed="copy"; });
+        span.addEventListener("dragend",()=>span.classList.remove("drag-src"));
         span.addEventListener("click",()=>{
           if (hasParts) {
-            const first=token.parts.findIndex((_,pi)=>{ const r=word_results[`${_i}p${pi}`]||{}; return !r.romaji||!r.meaning; });
-            _select(_i, first>=0?first:0);
-          } else { _select(_i); }
+            // find first undone part + field
+            let fi=-1, ff='romaji';
+            for (let pi=0;pi<token.parts.length;pi++) {
+              const r=word_results[`${_i}p${pi}`]||{};
+              if (!r.romaji){fi=pi;ff='romaji';break;}
+              if (!r.meaning){fi=pi;ff='meaning';break;}
+            }
+            _select(_i, fi>=0?fi:0, ff);
+          } else {
+            const r=word_results[_i]||{};
+            _select(_i, null, !r.romaji?'romaji':'meaning');
+          }
         });
         merged.appendChild(span);
         pos=found+token.text.length; tok_idx++;
@@ -605,84 +845,227 @@
     }
 
     const _KO_FALLBACK = {
-      '안녕하세요':{reading:'annyeonghaseyo',meaning:'hello (formal)'},
-      '안녕':      {reading:'annyeong',      meaning:'hi / bye (informal)'},
-      '어서':      {reading:'eoseo',         meaning:'come / quickly'},
-      '오세요':    {reading:'oseyo',         meaning:'please come'},
-      '무엇을':    {reading:'mueoseul',      meaning:'what (object)'},
-      '무엇이':    {reading:'mueosi',        meaning:'what (subject)'},
+      // ── greetings & conversation ──────────────────────────────────────────
+      '안녕하세요':{reading:'annyeonghaseyo',   meaning:'hello (formal)'},
+      '안녕':      {reading:'annyeong',         meaning:'hi / bye (informal)'},
+      '어서':      {reading:'eoseo',            meaning:'come / quickly'},
+      '오세요':    {reading:'oseyo',            meaning:'please come'},
+      '무엇을':    {reading:'mueoseul',         meaning:'what (object)'},
+      '무엇이':    {reading:'mueosi',           meaning:'what (subject)'},
       '도와드릴까요':{reading:'dowadeurilkkayo',meaning:'shall I help you?'},
-      '도와줄까요': {reading:'dowajulkkayo', meaning:'shall I help you?'},
-      '오늘':      {reading:'oneul',         meaning:'today'},
-      '놀러':      {reading:'nolleo',        meaning:'to play / visit'},
-      '오셨어요':  {reading:'osyeosseoyo',   meaning:'did you come?'},
-      '재미있게':  {reading:'jaemiitge',     meaning:'enjoyably / have fun'},
-      '놀아요':    {reading:'norayo',        meaning:'play / have fun'},
-      '어린이':    {reading:'eorini',        meaning:'child / children'},
-      '살롱에':    {reading:'sallonge',      meaning:'at the salon'},
-      '오신':      {reading:'osin',          meaning:'(who) came (honorific)'},
-      '것을':      {reading:'geoseul',       meaning:'thing (object)'},
-      '환영해요':  {reading:'hwanyeonghaeyo',meaning:'welcome'},
+      '도와줄까요': {reading:'dowajulkkayo',    meaning:'shall I help you?'},
+      '오늘':      {reading:'oneul',            meaning:'today'},
+      '놀러':      {reading:'nolleo',           meaning:'play / visit / hang out'},
+      '오셨어요':  {reading:'osyeosseoyo',      meaning:'did you come?'},
+      '재미있게':  {reading:'jaemiitge',        meaning:'enjoyably / have fun'},
+      '놀아요':    {reading:'norayo',           meaning:'play / have fun'},
+      '오신':      {reading:'osin',             meaning:'(who) came (honorific)'},
+      '것':        {reading:'geot',             meaning:'thing / fact / it (bound noun)'},
+      '것을':      {reading:'geoseul',          meaning:'thing (object)'},
+      '것이':      {reading:'geosi',            meaning:'thing (subject)'},
+      '것은':      {reading:'geoseun',          meaning:'thing (topic)'},
+      '것도':      {reading:'geotdo',           meaning:'thing (also)'},
+      '게':        {reading:'ge',               meaning:'thing / it (contracted 것이)'},
+      '걸':        {reading:'geol',             meaning:'thing / it (contracted 것을)'},
+      '환영해요':  {reading:'hwanyeonghaeyo',   meaning:'welcome'},
       '환영합니다': {reading:'hwanyeonghamnida',meaning:'welcome (formal)'},
-      '천천히':    {reading:'cheoncheonhi',  meaning:'slowly / take your time'},
-      '즐기세요':  {reading:'jeulgiseyo',    meaning:'please enjoy'},
-      '즐겨':      {reading:'jeulgeo',       meaning:'enjoy'},
-      '편히':      {reading:'pyeonhi',       meaning:'comfortably'},
-      '쉬다':      {reading:'swida',         meaning:'to rest'},
-      '가세요':    {reading:'gaseyo',        meaning:'please go / stay a while'},
-      '날씨':      {reading:'nalssi',        meaning:'weather'},
-      '좋죠':      {reading:'jochyo',        meaning:"nice, right?"},
-      '야외':      {reading:'yaoe',          meaning:'outdoors'},
-      '규칙을':    {reading:'gyuchikceul',   meaning:'rules (object)'},
-      '지키며':    {reading:'jikyimyeo',     meaning:'while following'},
-      '주세요':    {reading:'juseyo',        meaning:'please'},
-      '잘':        {reading:'jal',           meaning:'well / fine'},
-      '죄송해요':  {reading:'joesonghaeyo',  meaning:"I'm sorry (formal) / sorry"},
-      '미안해요':  {reading:'mianhaeyo',     meaning:"I'm sorry / sorry"},
-      '이해하지':  {reading:'ihaehaji',      meaning:'understand (negative form)'},
-      '못했어요':  {reading:'mothaesseoyo',  meaning:"couldn't / wasn't able to"},
-      '다시':      {reading:'dasi',          meaning:'again'},
-      '한번':      {reading:'hanbeon',       meaning:'once / one more time'},
-      '말씀해':    {reading:'malsseum-hae',  meaning:'please say / speak'},
-      '주시겠어요':{reading:'jusigesseoyo',  meaning:'would you please?'},
-      '네':        {reading:'ne',            meaning:'yes'},
-      '아니요':    {reading:'aniyo',         meaning:'no'},
-      '아니에요':  {reading:'anieyo',        meaning:"isn't / no"},
-      '감사합니다':{reading:'gamsahamnida',  meaning:'thank you (formal)'},
-      '감사해요':  {reading:'gamsahaeyo',    meaning:'thank you'},
-      '고마워요':  {reading:'gomawoyo',      meaning:'thank you (informal)'},
-      '괜찮아요':  {reading:'gwaenchanayo',  meaning:"it's okay / fine"},
-      '괜찮아':    {reading:'gwaenchana',    meaning:"it's okay (informal)"},
-      '알겠어요':  {reading:'algeseoyo',     meaning:'I understand'},
-      '모르겠어요':{reading:'moreugeseoyo',  meaning:"I don't know"},
-      '좋아요':    {reading:'joayo',         meaning:'good / I like it'},
-      '있어요':    {reading:'isseoyo',       meaning:'there is / I have'},
-      '없어요':    {reading:'eopseoyo',      meaning:"there isn't / I don't have"},
-      '그래요':    {reading:'geuraeyo',      meaning:"I see / that's right"},
-      '맞아요':    {reading:'majayo',        meaning:"that's right / correct"},
-      '여기':      {reading:'yeogi',         meaning:'here'},
-      '거기':      {reading:'geogi',         meaning:'there'},
-      '지금':      {reading:'jigeum',        meaning:'now'},
-      '정말':      {reading:'jeongmal',      meaning:'really / truly'},
-      '조금':      {reading:'jogeum',        meaning:'a little'},
-      '많이':      {reading:'mani',          meaning:'a lot / many'},
-      '빨리':      {reading:'ppalli',        meaning:'quickly / fast'},
-      '잠깐만요':  {reading:'jamkkanmanyo',  meaning:'just a moment'},
-      '어떻게':    {reading:'eotteoke',      meaning:'how'},
-      '왜':        {reading:'wae',           meaning:'why'},
-      '언제':      {reading:'eonje',         meaning:'when'},
-      '어디':      {reading:'eodi',          meaning:'where'},
-      '누구':      {reading:'nugu',          meaning:'who'},
-      '저는':      {reading:'jeoneun',       meaning:'I'},
-      '놀이공간':  {reading:'noligonggan',   meaning:'play area'},
-      '가시고':    {reading:'gasigo',        meaning:'to be visible / to appear / visible / appear'},
+      '천천히':    {reading:'cheoncheonhi',     meaning:'slowly / take your time'},
+      '즐기세요':  {reading:'jeulgiseyo',       meaning:'please enjoy'},
+      '즐겨':      {reading:'jeulgeo',          meaning:'enjoy'},
+      '편히':      {reading:'pyeonhi',          meaning:'comfortably'},
+      '쉬다':      {reading:'swida',            meaning:'rest / relax / take a break'},
+      '가세요':    {reading:'gaseyo',           meaning:'please go / stay a while'},
+      '날씨':      {reading:'nalssi',           meaning:'weather'},
+      '좋죠':      {reading:'jochyo',           meaning:"nice, right?"},
+      '야외':      {reading:'yaoe',             meaning:'outdoors'},
+      '규칙을':    {reading:'gyuchikceul',      meaning:'rules (object)'},
+      '지키며':    {reading:'jikyimyeo',        meaning:'while following'},
+      '주세요':    {reading:'juseyo',           meaning:'please'},
+      '잘':        {reading:'jal',              meaning:'well / fine'},
+      '죄송해요':  {reading:'joesonghaeyo',     meaning:"I'm sorry (formal) / sorry"},
+      '미안해요':  {reading:'mianhaeyo',        meaning:"I'm sorry / sorry"},
+      '이해하지':  {reading:'ihaehaji',         meaning:'understand (negative form)'},
+      '못했어요':  {reading:'mothaesseoyo',     meaning:"couldn't / wasn't able to"},
+      '다시':      {reading:'dasi',             meaning:'again'},
+      '한번':      {reading:'hanbeon',          meaning:'once / one more time'},
+      '말씀해':    {reading:'malsseum-hae',     meaning:'please say / speak'},
+      '주시겠어요':{reading:'jusigesseoyo',     meaning:'would you please?'},
+      '네':        {reading:'ne',               meaning:'yes'},
+      '아니요':    {reading:'aniyo',            meaning:'no'},
+      '아니에요':  {reading:'anieyo',           meaning:"isn't / no"},
+      '감사합니다':{reading:'gamsahamnida',     meaning:'thank you (formal)'},
+      '감사해요':  {reading:'gamsahaeyo',       meaning:'thank you'},
+      '고마워요':  {reading:'gomawoyo',         meaning:'thank you (informal)'},
+      '괜찮아요':  {reading:'gwaenchanayo',     meaning:"it's okay / fine"},
+      '괜찮아':    {reading:'gwaenchana',       meaning:"it's okay (informal)"},
+      '알겠어요':  {reading:'algeseoyo',        meaning:'I understand'},
+      '모르겠어요':{reading:'moreugeseoyo',     meaning:"I don't know"},
+      '좋아요':    {reading:'joayo',            meaning:'good / I like it'},
+      '있어요':    {reading:'isseoyo',          meaning:'there is / is / are / exist / exists / have / has / I have'},
+      '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have"},
+      '그래요':    {reading:'geuraeyo',         meaning:"I see / that's right"},
+      '맞아요':    {reading:'majayo',           meaning:"that's right / correct"},
+      '여기':      {reading:'yeogi',            meaning:'here'},
+      '거기':      {reading:'geogi',            meaning:'there'},
+      '지금':      {reading:'jigeum',           meaning:'now'},
+      '정말':      {reading:'jeongmal',         meaning:'really / truly'},
+      '조금':      {reading:'jogeum',           meaning:'a little'},
+      '많이':      {reading:'mani',             meaning:'a lot / many'},
+      '빨리':      {reading:'ppalli',           meaning:'quickly / fast'},
+      '잠깐만요':  {reading:'jamkkanmanyo',     meaning:'just a moment'},
+      '어떻게':    {reading:'eotteoke',         meaning:'how'},
+      '왜':        {reading:'wae',              meaning:'why'},
+      '언제':      {reading:'eonje',            meaning:'when'},
+      '어디':      {reading:'eodi',             meaning:'where'},
+      '누구':      {reading:'nugu',             meaning:'who'},
+      '저는':      {reading:'jeoneun',          meaning:'I'},
+      '놀이공간':  {reading:'noligonggan',      meaning:'play area'},
+      '가시고':    {reading:'gasigo',           meaning:'go (honorific)'},
+      // ── rules / instructions ──────────────────────────────────────────────
+      '지켜':      {reading:'jikyeo',           meaning:'protect / keep / follow (rules)'},
+      '지켜요':    {reading:'jikyeoyo',         meaning:'protects / keeps (polite)'},
+      '지켜줘':    {reading:'jikyeojwo',        meaning:'please protect / keep for me'},
+      '지키세요':  {reading:'jikiséyo',         meaning:'please follow / please keep'},
+      '지키고':    {reading:'jikigo',           meaning:'following / keeping (and…)'},
+      '조용히':    {reading:'joyonghi',         meaning:'quietly / silently / please be quiet'},
+      '삼가':      {reading:'samga',            meaning:'refrain / please refrain / hold back'},
+      '삼가세요':  {reading:'samgaseyo',        meaning:'please refrain / please hold back'},
+      '금지':      {reading:'geunji',           meaning:'prohibited / banned / forbidden / not allowed'},
+      '주의':      {reading:'juui',             meaning:'caution / attention / careful / warning'},
+      '양보':      {reading:'yangbo',           meaning:'yield / give way / let pass / make way / priority'},
+      '반입':      {reading:'banip',            meaning:'bringing in / bringing inside / carrying in'},
+      '가능':      {reading:'ganeung',          meaning:'possible / allowed / OK / permissible'},
+      '합니다':    {reading:'hamnida',          meaning:'is / does (formal sentence ending)'},
+      '있습니다':  {reading:'itsseumnida',      meaning:'is / exists / there is (formal)'},
+      '되어':      {reading:'dweo',             meaning:'become / is (passive connector)'},
+      // ── library sign ──────────────────────────────────────────────────────
+      '콘센트':    {reading:'konsenteu',        meaning:'outlet / socket / power outlet / plug'},
+      '도서관':    {reading:'doseogwan',        meaning:'library'},
+      '도서':      {reading:'doseo',            meaning:'books / reading material / literature'},
+      '관':        {reading:'gwan',             meaning:'building / hall / institute'},
+      '업무':      {reading:'eommu',            meaning:'work / duties / business / operations'},
+      '전용':      {reading:'jeonyong',         meaning:'exclusively for / dedicated / reserved for'},
+      '사용':      {reading:'sayong',           meaning:'use / usage / using'},
+      '해':        {reading:'hae',              meaning:'do / please do (casual form of 하다)'},
+      '하세요':    {reading:'haseyo',          meaning:'please do / are you doing (polite honorific)'},
+      '해요':      {reading:'haeyo',           meaning:'do / does (polite)'},
+      '하다':      {reading:'hada',            meaning:'do / make / act'},
+      '하면':      {reading:'hamyeon',         meaning:'if you do / when you do'},
+      '하고':      {reading:'hago',            meaning:'doing / and'},
+      '해서':      {reading:'haeseo',          meaning:'doing / because'},
+      '하시면':    {reading:'hasimyeon',       meaning:'if you do (honorific)'},
+      '했어요':    {reading:'haesseoyo',       meaning:'did (past polite)'},
+      '했습니다':  {reading:'haesseumnida',    meaning:'did (past formal)'},
+      '하겠어요':  {reading:'hagesseoyo',      meaning:'will do (polite)'},
+      '하겠습니다':{reading:'hagesseumnida',   meaning:'will do (formal)'},
+      '하십시오':  {reading:'hasipsio',        meaning:'please do (formal honorific)'},
+      '겠어요':    {reading:'gesseoyo',        meaning:'will / intend to (polite)'},
+      '겠습니다':  {reading:'gesseumnida',     meaning:'will / intend to (formal)'},
+      '습니다':    {reading:'seumnida',        meaning:'is / does (formal sentence ending)'},
+      '관내':      {reading:'gwannae',          meaning:'inside the building / indoors'},
+      '휴대전화':  {reading:'hyudaejeonhwa',    meaning:'mobile phone / cell phone / smartphone'},
+      '휴대':      {reading:'hyudae',           meaning:'portable / handheld / carry'},
+      '전화':      {reading:'jeonhwa',          meaning:'telephone / phone / call'},
+      '통화':      {reading:'tonghwa',          meaning:'phone call / call / calling'},
+      '음식물':    {reading:'eumsigmul',        meaning:'food and drink / refreshments'},
+      '음식':      {reading:'eumsik',           meaning:'food / food and drink'},
+      '물':        {reading:'mul',              meaning:'water / substance (suffix 物)'},
+      '섭취':      {reading:'seopchwi',         meaning:'consumption / intake / eating and drinking'},
+      // ── children's area signs ─────────────────────────────────────────────
+      '어린이':    {reading:'eorini',           meaning:'child / children'},
+      '어린':      {reading:'eorin',            meaning:'young / little / small'},
+      '아이':      {reading:'ai',               meaning:'child / children / kid'},
+      '어른':      {reading:'eoreun',           meaning:'adult / grown-up'},
+      '살롱':      {reading:'sallong',          meaning:'salon / lounge'},
+      '살롱에':    {reading:'sallonge',         meaning:'at the salon'},
+      '요리실':    {reading:'yorisil',          meaning:'cooking room / kitchen'},
+      '요리':      {reading:'yori',             meaning:'cooking / cuisine'},
+      '실':        {reading:'sil',              meaning:'room / chamber / office'},
+      '완구':      {reading:'wangu',            meaning:'toys / playthings / toy'},
+      '전시관':    {reading:'jeonshigwan',      meaning:'exhibition hall / gallery / display hall'},
+      '전시':      {reading:'jeonsi',           meaning:'exhibition / display / showcase'},
+      '접수':      {reading:'jeopsu',           meaning:'reception / front desk / check-in / registration'},
+      '마감':      {reading:'magam',            meaning:'closed / deadline / end / finished'},
+      '신발':      {reading:'sinbal',           meaning:'shoes / footwear'},
+      '벗어':      {reading:'beoseo',           meaning:'take off / remove'},
+      '함께':      {reading:'hamkke',           meaning:'together / with / along with'},
+      '위한':      {reading:'wihan',            meaning:'for / intended for / for the sake of'},
+      '공간':      {reading:'gonggan',          meaning:'space / area / place'},
+      '차례차례':  {reading:'charyecharye',     meaning:'in turns / one by one / taking turns'},
+      '사이좋게':  {reading:'saijokke',         meaning:'friendly / harmoniously / nicely / amicably'},
+      '수분':      {reading:'subun',            meaning:'water / hydration / moisture'},
+      '보충':      {reading:'bochung',          meaning:'replenishment / supplement / refill'},
+      '이상':      {reading:'isang',            meaning:'and over / or older / or more / at least / above'},
+      // ── zipline sign ──────────────────────────────────────────────────────
+      '짚라인':    {reading:'jiprain',          meaning:'zipline'},
+      '짚라인을':  {reading:'jiprainerul',      meaning:'zipline (object)'},
+      '이용':      {reading:'iyong',            meaning:'use / utilization / usage'},
+      '이용하시려면':{reading:'iyong hashiryeomyeon', meaning:'if you want to use (honorific)'},
+      '이용자':    {reading:'iyongja',          meaning:'user / rider / person using'},
+      '자':        {reading:'ja',               meaning:'person / one who (suffix)'},
+      '지나가':    {reading:'jinaga',           meaning:'pass / go through / pass by'},
+      '차례':      {reading:'charye',           meaning:"turn / one's turn / order"},
+      '차례를':    {reading:'charyereul',       meaning:"turn / one's turn (object)"},
+      // ── age markers (signs) ───────────────────────────────────────────────
+      '살':        {reading:'sal',              meaning:'years old / age (counter)'},
+      '3살':       {reading:'se sal',           meaning:'3 years old'},
+      '6살':       {reading:'yeoseot sal',      meaning:'6 years old'},
+      '7살':       {reading:'ilgop sal',        meaning:'7 years old'},
     };
-    const _KO_PARTICLES = ['에서','에게','으로','하고','까지','부터','이라','라고','이나','으나','이고','이면','를','을','가','이','는','은','에','로','와','과','도','만','의'];
-    function _ko_base(w) {
+    // Compound verb endings listed longest-first so the greedy match works correctly
+    const _KO_PARTICLES = [
+      '하시려면','하려면','하시겠어요','하겠습니다','하겠어요','했습니다','했어요',
+      '하십시오','하시면','하세요','합니까','합니다','해요','해서','하면','하다','하고',
+      '시려면','겠습니다','겠어요','습니다','었어요','았어요','으면','려면',
+      '에서','에게','으로','까지','부터','이라','라고','이나','으나','이고','이면',
+      '를','을','가','이','는','은','에','로','와','과','도','만','의',
+    ];
+    const _KO_NO_SPLIT = new Set([
+      '안녕하세요','안녕하십시오','감사합니다','감사해요','죄송합니다','죄송해요',
+      '괜찮아요','괜찮습니다','실례합니다','어서오세요','잘부탁합니다',
+    ]);
+    function _ko_base_raw(w) {
       for (const p of _KO_PARTICLES) {
         if (w.length > p.length && w.endsWith(p)) return w.slice(0, -p.length);
       }
       return null;
+    }
+    function _ko_base(w) {
+      if (_KO_NO_SPLIT.has(w)) return null;
+      return _ko_base_raw(w);
+    }
+    function _ko_split_words(words, defs) {
+      const out_words = [], out_defs = [];
+      words.forEach((w, i) => {
+        const clean = w.replace(/[.!?,;:…]+$/, '');
+        const punct = w.slice(clean.length);
+        if (_KO_NO_SPLIT.has(clean)) {
+          // Keep as one word; attach sub-parts for interactive breakdown
+          const base = _ko_base_raw(clean);
+          out_words.push(w);
+          out_defs.push({
+            text: w, reading: '', meaning: '',
+            parts: base ? [
+              {text: base,                    reading: '', meaning: ''},
+              {text: clean.slice(base.length), reading: '', meaning: ''}
+            ] : null
+          });
+        } else {
+          const base = _ko_base_raw(clean);
+          if (base) {
+            const suffix = clean.slice(base.length) + punct;
+            out_words.push(base, suffix);
+            out_defs.push(
+              {text: base,   reading: '', meaning: ''},
+              {text: suffix, reading: '', meaning: ''}
+            );
+          } else {
+            out_words.push(w);
+            out_defs.push(defs ? (defs[i] || {text:w, reading:'', meaning:''}) : {text:w, reading:'', meaning:''});
+          }
+        }
+      });
+      return {words: out_words, defs: out_defs};
     }
     function _sign_lookup(text) {
       for (const id of Object.keys(SIGN_BY_ID)) {
@@ -708,10 +1091,12 @@
       }
       const lang_name = LANG.current==='ko'?'Korean':'Japanese';
       try {
-        const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:'user',content:
+        const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),65000);
+        const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:'10m',messages:[{role:'user',content:
             `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
+        clearTimeout(tid);
         if (!res.ok) throw new Error();
         const raw=(await res.json()).message?.content?.trim()||'';
         let p=null; try{p=JSON.parse(raw);}catch{}
@@ -754,28 +1139,40 @@
       speechSynthesis.speak(u);
     }
 
-    function _select(idx, part_idx=null) {
+    function _select(idx, part_idx=null, field=null) {
       cur_word_idx=idx; cur_part_idx=part_idx;
       const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[idx];
       const active=(part_idx!=null&&token.parts)?token.parts[part_idx]:token;
       const res_key=part_idx!=null?`${idx}p${part_idx}`:idx;
       const res=word_results[res_key]||{};
+      if (!field) field=!res.romaji?'romaji':'meaning';
+      _active_field=field;
       if (LANG.current==='ko') _speak(active.text);
-      def_jp.textContent=active.text;
-      def_read.textContent=res.romaji?_fmt_read(active.furigana,active.romaji):"";
-      def_mean.textContent=res.meaning&&active.meaning?"✓ "+active.meaning.split("/")[0].trim():"";
-      def_hint.textContent="";
-      const _romPlaceholder=LANG.current==='ko'?'romanization…':'romaji…';
-      inp.disabled=res.romaji&&res.meaning; inp.placeholder=res.romaji?'english meaning…':_romPlaceholder;
-      if (res.romaji&&res.meaning) inp.placeholder="—";
+      inp.placeholder=field==='meaning'?'english meaning…':'';
       inp.value=""; inp.className=""; fb.textContent=""; fb.style.color="";
-      _render_chips(); _update_lkp(); inp.focus();
-      if (cur_sign_id==='__npc__'&&part_idx==null&&!token.romaji&&!token.furigana) {
-        _npc_lookup(token.text).then(def=>{
-          if (def&&cur_word_idx===idx&&cur_sign_id==='__npc__') {
-            token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning;
+      const _res_key_sel=part_idx!=null?`${idx}p${part_idx}`:idx;
+      const _saved_hint=_hint_by_key[_res_key_sel];
+      if (_saved_hint) _show_hint(_saved_hint.reading, _saved_hint.meaning); else _clear_hint();
+      _render_chips();
+      _update_lkp();
+      if (inp.parentElement!==panel_el) inp.focus();
+      if (cur_sign_id==='__npc__') {
+        if (part_idx!=null&&token.parts) {
+          const part=token.parts[part_idx];
+          if (!part.romaji&&!part.furigana) {
+            _npc_lookup(part.text).then(def=>{
+              if (def&&cur_word_idx===idx&&cur_part_idx===part_idx&&cur_sign_id==='__npc__') {
+                part.romaji=def.reading; part.furigana=def.reading; part.meaning=def.meaning;
+              }
+            });
           }
-        });
+        } else if (part_idx==null&&!token.parts&&!token.romaji&&!token.furigana) {
+          _npc_lookup(token.text).then(def=>{
+            if (def&&cur_word_idx===idx&&cur_sign_id==='__npc__') {
+              token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning;
+            }
+          });
+        }
       }
     }
 
@@ -786,17 +1183,24 @@
           const clean=text.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'');
           if (clean) _npc_defs[clean]={reading:td.reading,meaning:td.meaning||''};
         }
-        return {text, furigana:td?.reading||'', romaji:td?.reading||'', meaning:td?.meaning||''};
+        const tok={text, furigana:td?.reading||'', romaji:td?.reading||'', meaning:td?.meaning||''};
+        if (td?.parts) tok.parts=td.parts;
+        return tok;
       });
       SIGN_BY_ID['__npc__']={id:'__npc__', label:npc_label||'', japanese:jp_text||words.join(''), tokens};
       open('__npc__');
-      _select(clicked_idx);
+      const _ct=tokens[clicked_idx];
+      if (_ct?.parts?.length) {
+        let fi=0,ff='romaji';
+        for (let pi=0;pi<_ct.parts.length;pi++){const r=word_results[`${clicked_idx}p${pi}`]||{};if(!r.romaji){fi=pi;ff='romaji';break;}if(!r.meaning){fi=pi;ff='meaning';break;}}
+        _select(clicked_idx,fi,ff);
+      } else { _select(clicked_idx); }
     }
 
     function open(sign_id) {
       chips_row.style.display='';
       const sign=SIGN_BY_ID[sign_id]; if (!sign) return;
-      cur_sign_id=sign_id; cur_word_idx=null; cur_part_idx=null;
+      cur_sign_id=sign_id; cur_word_idx=null; cur_part_idx=null; _active_field=null; _hint_by_key={};
       const saved=sign_id==='__npc__'?{}:WORD_PROGRESS.getSign(sign_id); word_results={};
       Object.keys(saved).forEach(k=>{
         if (/^\d+$/.test(k)) word_results[+k]={...saved[k]};
@@ -811,21 +1215,29 @@
       if (sign_id==='__npc__') {
         const vocab=NPC_VOCAB.getAll(), sign=SIGN_BY_ID['__npc__'];
         if (sign) sign.tokens.forEach((tok,i)=>{
-          const e=vocab.find(v=>v.text===tok.text);
-          if (e) {
-            word_results[i]={};
-            if (e.romaji)          { word_results[i].romaji=true; tok.romaji=e.reading; tok.furigana=e.reading; }
-            if (e.meaning_unlocked){ word_results[i].meaning=true; tok.meaning=e.meaning; }
+          if (tok.parts) {
+            tok.parts.forEach((part,pi)=>{
+              const e=vocab.find(v=>v.text===part.text);
+              if (e) {
+                const pk=`${i}p${pi}`; word_results[pk]={};
+                if (e.romaji)          { word_results[pk].romaji=true; part.romaji=e.reading; part.furigana=e.reading; }
+                if (e.meaning_unlocked){ word_results[pk].meaning=true; part.meaning=e.meaning; }
+              }
+            });
+          } else {
+            const e=vocab.find(v=>v.text===tok.text);
+            if (e) {
+              word_results[i]={};
+              if (e.romaji)          { word_results[i].romaji=true; tok.romaji=e.reading; tok.furigana=e.reading; }
+              if (e.meaning_unlocked){ word_results[i].meaning=true; tok.meaning=e.meaning; }
+            }
           }
         });
       }
       lbl_el.textContent=sign.label||'';
       const koMode=LANG.current==='ko';
-      speak_all.style.display=koMode?'':'none'; voice_pick.style.display=koMode?'':'none';
-      def_jp.textContent=def_read.textContent=def_mean.textContent="";
-      def_hint.textContent='click a word above';
-      inp.disabled=true; inp.placeholder="select a word first"; inp.value=""; inp.className="";
-      fb.textContent=""; fb.style.color="";
+      speak_all.style.display=koMode?'':'none';
+      fb.textContent=""; fb.style.color=""; hint_read.textContent=""; hint_mean.textContent="";
       empty_el.style.display="none";
       if (sign_id!=='__npc__') document.getElementById("ws-dialogue").classList.remove("open");
       panel_el.classList.add("open"); ws_el.classList.add("active");
@@ -835,7 +1247,7 @@
 
     function clear() {
       chips_row.style.display='';
-      cur_sign_id=null; cur_word_idx=null; cur_part_idx=null;
+      cur_sign_id=null; cur_word_idx=null; cur_part_idx=null; _active_field=null;
       panel_el.classList.remove("open"); ws_el.classList.remove("active");
       empty_el.style.display="";
       renderer.sign_panel=null;
@@ -847,20 +1259,22 @@
         if (cur_part_idx!=null) WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,matched);
         else WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
       } else NPC_VOCAB.add(token, matched);
+      // Advance to meaning slot if reading was just answered
+      if (matched==='romaji'&&!res.meaning) {
+        _active_field='meaning';
+        inp.placeholder='';
+      }
       inp.value=""; inp.className="correct";
       setTimeout(()=>{ inp.className=""; },500);
-      inp.placeholder=(res.romaji&&res.meaning)?"—":res.romaji?'english meaning…':(LANG.current==='ko'?'romanization…':'romaji…');
-      inp.disabled=res.romaji&&res.meaning;
-      def_read.textContent=res.romaji?_fmt_read(token.furigana,token.romaji):"";
-      def_mean.textContent=res.meaning&&token.meaning?"✓ "+token.meaning.split("/")[0].trim():"";
-      fb.textContent=""; fb.style.color=""; _render_chips();
+      fb.textContent=""; fb.style.color="";
+      _render_chips();
       if (cur_sign_id==='__npc__') DialoguePanel.refreshWordColors();
       const sign=SIGN_BY_ID[cur_sign_id];
       const allDone=sign&&sign.tokens.every((t,i)=>{
         if (t.parts&&t.parts.length) return t.parts.every((_,pi)=>{ const r=word_results[`${i}p${pi}`]||{}; return r.romaji&&r.meaning; });
         const r=word_results[i]||{}; return r.romaji&&r.meaning;
       });
-      if (allDone) SoundFX.chime(); else SoundFX.ding();
+      if (allDone) SoundFX.chime(); else { SoundFX.ding(); if (inp.parentElement!==panel_el) inp.focus(); }
     }
 
     inp.addEventListener("keydown", async e => {
@@ -875,29 +1289,41 @@
       const matched=_checkWhat(active,raw,res);
       if (matched) { _accept(active,matched,res); }
       else if (res.romaji&&!res.meaning) {
-        _checking=true; inp.disabled=true; fb.textContent="checking…"; fb.style.color="#b8860b";
-        const ok=await _llama_judge_meaning(active,raw.trim());
-        _checking=false; inp.disabled=false;
+        _checking=true; fb.textContent="checking…"; fb.style.color="#b8860b";
+        const ok=await _llama_judge_meaning(active,raw.trim(), msg=>{ fb.textContent=msg; fb.style.color="#b8860b"; });
+        _checking=false;
         if (ok){ inp.value=""; _accept(active,"meaning",res); }
-        else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
-        inp.focus();
+        else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
       } else if (cur_sign_id==='__npc__'&&cur_part_idx==null&&!token.romaji&&!token.furigana&&!token.meaning) {
-        _checking=true; inp.disabled=true; fb.textContent='looking up…'; fb.style.color='#b8860b';
+        _checking=true; fb.textContent='looking up…'; fb.style.color='#b8860b';
         const def=await _npc_lookup(token.text);
-        _checking=false; inp.disabled=false;
-        if (def) {
-          token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning;
-        }
+        _checking=false;
+        if (def) { token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning; }
         const m2=_checkWhat(token,raw,res);
         if (m2) { _accept(token,m2,res); }
-        else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
-        inp.focus();
-      } else { inp.className="wrong"; fb.textContent="try again"; fb.style.color="#c0392b"; setTimeout(()=>{inp.className="";fb.textContent="";},700); }
+        else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
+      } else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); }
     });
 
     speak_all.addEventListener("click", () => {
       const sign = SIGN_BY_ID[cur_sign_id]; if (!sign) return;
       _speak(sign.japanese.replace(/\n/g, ' '));
+    });
+
+    let _copy_flash = null;
+    copy_btn.addEventListener("click", () => {
+      const sign = SIGN_BY_ID[cur_sign_id]; if (!sign) return;
+      const tokens = sign.tokens || [];
+      const text = (sign.japanese || tokens.map(t => t.text).join('')).replace(/\n/g, ' ');
+      _copy_text(text, null);
+      copy_btn.textContent = "✓ copied";
+      copy_btn.classList.add("copied");
+      if (_copy_flash) clearTimeout(_copy_flash);
+      _copy_flash = setTimeout(() => {
+        copy_btn.textContent = "⎘ copy";
+        copy_btn.classList.remove("copied");
+        _copy_flash = null;
+      }, 1400);
     });
 
     lkp.addEventListener("click", async () => {
@@ -917,27 +1343,27 @@
           if (def) { if(!_token.romaji)_token.romaji=def.reading; if(!_token.furigana)_token.furigana=def.reading; if(!_token.meaning)_token.meaning=def.meaning; }
         }
         const reading=_token.romaji||_token.furigana;
-        const meaning=(_token.meaning||'').split("/")[0].trim();
-        if (!reading&&!meaning) { _update_lkp(); inp.focus(); return; }
-        def_read.textContent=_fmt_read(_token.furigana||reading,reading);
-        def_mean.textContent=meaning;
+        const meaning=(_token.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
         fb.textContent=''; fb.style.color='';
-        if (!res.romaji&&reading) { res.romaji=true; NPC_VOCAB.add(_token,'romaji'); }
-        if (!res.meaning&&meaning) { res.meaning=true; NPC_VOCAB.add(_token,'meaning'); }
-        _render_chips();
-        sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); inp.focus();
+        if (!reading&&!meaning) { fb.textContent='not found'; fb.style.color='#888'; _update_lkp(); return; }
+        const _hr=_fmt_read(_token.furigana||reading,reading);
+        _hint_by_key[res_key]={reading:_hr, meaning};
+        _show_hint(_hr, meaning);
+        sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer();
+        if (inp.parentElement!==panel_el) inp.focus();
         return;
       }
+      // non-NPC: show reading+meaning as hint only — player must still type to get credit
       const reading=active.romaji||active.furigana;
-      const meaning=active.meaning.split("/")[0].trim();
-      def_read.textContent=_fmt_read(active.furigana,reading);
-      def_mean.textContent=meaning;
-      fb.textContent=`${reading}  ·  ${meaning}`; fb.style.color="#b8860b";
-      _render_chips();
-      sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); inp.focus();
+      const meaning=(active.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
+      const _hr2=_fmt_read(active.furigana,reading);
+      _hint_by_key[res_key]={reading:_hr2, meaning};
+      _show_hint(_hr2, meaning);
+      sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer();
+      if (inp.parentElement!==panel_el) inp.focus();
     });
 
-    return { open, clear, open_npc_sentence, speak: _speak, prefetch: words => words.forEach(w => _npc_lookup(w)) };
+    return { open, clear, open_npc_sentence, speak: _speak, prefetch: words => words.forEach(w => _npc_lookup(w)), split_ko_words: _ko_split_words };
   })();
 
   const sim      = new Sim2D();
@@ -947,6 +1373,7 @@
   document.getElementById("start-btn").addEventListener("click", () => {
     document.getElementById("start-screen").style.display = "none";
     document.getElementById("vocab-btn").style.display = "block";
+    document.getElementById("settings-btn").style.display = "block";
     sim.start();
   });
 
@@ -1003,11 +1430,28 @@
       }
       if (!total){ const e=document.createElement("p"); e.id="vocab-empty"; e.textContent="No words unlocked yet."; content.appendChild(e); }
     }
-    function open(){ _populate(); panel.classList.add("open"); }
-    function close_panel(){ panel.classList.remove("open"); }
+    function _set_panel_w(w){ window._left_panel_w=w; window.dispatchEvent(new Event('resize')); }
+    function open(){ _populate(); panel.classList.add("open"); _set_panel_w(340); }
+    function close_panel(){ panel.classList.remove("open"); _set_panel_w(0); }
     btn.addEventListener("click",open); close.addEventListener("click",close_panel);
     panel.addEventListener("click",e=>{ if(e.target===panel) close_panel(); });
     return {open,close:close_panel,refresh:_populate};
+  })();
+
+  const SettingsPanel = (() => {
+    const panel=document.getElementById("settings-panel");
+    const btn=document.getElementById("settings-btn");
+    const close=document.getElementById("settings-close");
+    const voice_row=document.getElementById("settings-voice-row");
+    function open() {
+      voice_row.style.display = LANG.current==='ko' ? '' : 'none';
+      panel.classList.add("open");
+    }
+    function close_panel() { panel.classList.remove("open"); }
+    btn.addEventListener("click", open);
+    close.addEventListener("click", close_panel);
+    panel.addEventListener("click", e=>{ if(e.target===panel) close_panel(); });
+    return { open, close: close_panel };
   })();
 
   const DialoguePanel = (() => {
@@ -1087,7 +1531,11 @@
 
       const jp_row = document.createElement('div');
       jp_row.className = 'dlg-npc-jp';
-      const all_words = tokens ? tokens.map(t=>t.text) : _tokenize(jp);
+      let all_words = tokens ? tokens.map(t=>t.text) : _tokenize(jp);
+      if (LANG.current === 'ko') {
+        const split = WorkspacePanel.split_ko_words(all_words, tokens);
+        all_words = split.words; tokens = split.defs;
+      }
       if (!tokens) WorkspacePanel.prefetch(all_words);
       const vocab = NPC_VOCAB.getAll();
       all_words.forEach((word, i) => {
@@ -1110,9 +1558,16 @@
       });
       turn.appendChild(jp_row);
 
-      const en_row = document.createElement('div');
-      en_row.className = 'dlg-npc-en'; en_row.textContent = en;
-      turn.appendChild(en_row);
+      const copy_btn = document.createElement('button');
+      copy_btn.className = 'dlg-copy-btn';
+      copy_btn.textContent = 'copy';
+      copy_btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(jp).then(() => {
+          copy_btn.textContent = '✓';
+          setTimeout(() => { copy_btn.textContent = 'copy'; }, 1200);
+        });
+      });
+      turn.appendChild(copy_btn);
 
       body_el.insertBefore(turn, thinking);
       body_el.scrollTop = body_el.scrollHeight;
@@ -1139,7 +1594,11 @@
       const lang = ko ? 'Korean' : 'Japanese';
       const style = ko ? '존댓말' : '丁寧語';
       const reading_label = ko ? 'romanization' : 'romaji';
-      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: {"jp": "${lang} response", "en": "English translation", "tokens": [{"text": "word", "reading": "${reading_label}", "meaning": "English meaning"}]}\n- The tokens array must list every word/morpheme in your ${lang} response in order\n- If asked about something not covered above, say politely that you don't know\n- Do not include any text outside the JSON`;
+      const format = ko
+        ? `{"jp": "Korean response", "en": "English translation"}`
+        : `{"jp": "Japanese response", "en": "English translation", "tokens": [{"text": "word", "reading": "${reading_label}", "meaning": "English meaning"}]}`;
+      const token_instruction = ko ? '' : '\n- The tokens array must list every word/morpheme in your Japanese response in order';
+      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: ${format}${token_instruction}\n- If asked about something not covered above, say politely that you don't know\n- Do not include any text outside the JSON`;
     }
 
     const _hk = (npc_id) => `${npc_id}_${LANG.current}`;
@@ -1148,29 +1607,10 @@
       const history=_histories[_hk(npc_id)]||[];
       try {
         const res=await fetch(OLLAMA_URL,{method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:"10m",format:"json",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:true,options:{temperature:0.3,num_predict:256}})});
-        if (!res.ok) throw new Error();
-        const reader=res.body.getReader(), dec=new TextDecoder();
-        let raw="", buf="", showed_partial=false;
-        outer: while (true) {
-          const {done,value}=await reader.read(); if (done) break;
-          buf+=dec.decode(value,{stream:true});
-          let nl;
-          while ((nl=buf.indexOf('\n'))!==-1) {
-            const line=buf.slice(0,nl).trim(); buf=buf.slice(nl+1);
-            if (!line) continue;
-            let obj; try{obj=JSON.parse(line);}catch{continue;}
-            if (obj.message?.content) raw+=obj.message.content;
-            // Show jp text progressively as tokens arrive
-            const full=raw.match(/"jp"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-            const partial=full||raw.match(/"jp"\s*:\s*"((?:[^"\\]|\\.)*)/);
-            if (partial?.[1]) {
-              if (!showed_partial){thinking.classList.remove("visible");showed_partial=true;}
-              npc_jp.textContent=partial[1].replace(/\\n/g,'\n').replace(/\\"/g,'"');
-            }
-            if (obj.done) break outer;
-          }
-        }
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:"10m",format:"json",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:LANG.current==='ko'?128:512}})});
+        if (!res.ok) throw new Error('http '+res.status);
+        const json=await res.json();
+        const raw=json.message?.content||'';
         let parsed=null;
         try{parsed=JSON.parse(raw);}catch{}
         if (!parsed){const m=raw.match(/\{[\s\S]*\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
@@ -1178,8 +1618,9 @@
           _histories[_hk(npc_id)]=[...history,{role:"user",content:text},{role:"assistant",content:raw}];
           return {jp:parsed.jp,en:parsed.en,tokens:Array.isArray(parsed.tokens)?parsed.tokens:null};
         }
-        throw new Error();
-      } catch {
+        throw new Error('parse: '+raw.slice(0,120));
+      } catch(err) {
+        console.error('[NPC] failed — error:', err?.message, '| type:', err?.name, '| npc:', npc_id, '| url:', OLLAMA_URL);
         if (LANG.current==='ko') {
           return {jp:'죄송해요, 잘 이해하지 못했어요. 다시 한번 말씀해 주시겠어요?', en:"Sorry, I didn't quite understand. Could you say that again?", tokens:null};
         }
@@ -1194,6 +1635,7 @@
       const text=inp.value.trim(); if (!text) return;
       inp.value=""; inp.disabled=true; send_btn.disabled=true;
       _append_player_turn(text);
+      WorkspacePanel.speak(text);
       thinking.classList.add("visible");
       body_el.scrollTop = body_el.scrollHeight;
       const response=await _generate(cur_npc_id,text);
@@ -1209,10 +1651,10 @@
       _histories[_hk(npc_id)]=[{role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en})}];
       document.getElementById("ws-panel").classList.remove("open");
       dlg_el.classList.add("open");
-      avatar.style.background=npc.color; name_el.textContent=`${LANG.current==='ko'&&npc.name_ko?npc.name_ko:npc.name_jp} — ${npc.name_en}`;
+      avatar.style.background=npc.color; name_el.textContent='';
       body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
       _append_npc_turn(greeting.jp, greeting.en, null);
-      inp.placeholder = LANG.current==='ko' ? '한국어로 말을 걸어보세요…' : '日本語で話しかけてください…';
+      inp.placeholder = '';
       thinking.classList.remove("visible"); inp.value=""; inp.disabled=false; send_btn.disabled=false; inp.focus();
     }
 
@@ -1248,11 +1690,6 @@
       btn.style.color   = lang === 'ko' ? '#c0392b' : '#555';
       btn.style.borderColor = lang === 'ko' ? '#c0392b' : '#3a2810';
     }
-    // Update start-screen text so the switch is obviously visible
-    const sub = document.querySelector('#start-screen .subtitle');
-    if (sub) sub.textContent = lang === 'ko'
-      ? 'A library simulation. Signs are in Korean — walk up to them to read and translate.'
-      : 'A library simulation. Signs are in Japanese — walk up to them to read and translate.';
     const h1 = document.querySelector('#start-screen h1');
     if (h1) h1.textContent = lang === 'ko' ? '도서관' : '図書館';
   }

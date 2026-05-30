@@ -88,6 +88,37 @@ canvas { display: block; image-rendering: pixelated; }
   border-radius: 3px; color: #b8860b; font-size: 12px;
   pointer-events: none;
 }
+
+/* ── 9-patch mode ─── */
+#mode-toggle { display:flex; border-bottom:1px solid #2a2418; flex-shrink:0; }
+.mode-btn { flex:1; padding:7px 4px; background:#1a1612; border:none; border-bottom:3px solid transparent;
+  color:#888; font-family:inherit; font-size:12px; cursor:pointer; letter-spacing:0.04em; }
+.mode-btn:hover { color:#c8b880; }
+.mode-btn.active { color:#b8860b; border-bottom-color:#b8860b; background:#1e1a14; }
+#section-variants, #section-ninepatch { display:flex; flex-direction:column; flex:1; overflow:hidden; min-height:0; }
+#section-ninepatch { padding:10px 14px; gap:8px; }
+#np-header { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+#np-header label { color:#888; font-size:11px; text-transform:uppercase; }
+#np-header input { background:#0d0b08; border:1px solid #444; color:#e8e0d0; padding:3px 7px;
+  font-family:inherit; font-size:12px; width:120px; }
+#np-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; flex-shrink:0; }
+.np-slot { padding:10px 4px; background:#0d0b08; border:2px solid #333; color:#888;
+  font-family:inherit; font-size:11px; cursor:pointer; text-align:center; line-height:1.4; border-radius:3px; }
+.np-slot:hover { border-color:#666; color:#c8b880; }
+.np-slot.active { border-color:#b8860b; color:#b8860b; background:#1e1a10; }
+.np-slot.assigned { background:#0d1408; }
+.np-slot .coords { font-size:10px; color:#6a8; display:block; margin-top:2px; }
+.np-slot .flips  { display:none; gap:2px; margin-top:3px; justify-content:center; }
+.np-slot.assigned .flips { display:flex; }
+.flip-btn { font-size:10px; padding:1px 4px; background:#1a1612; border:1px solid #444;
+  color:#888; cursor:pointer; border-radius:2px; line-height:1.4; }
+.flip-btn:hover { border-color:#888; color:#c8b880; }
+.flip-btn.on { border-color:#6a8; color:#6a8; background:#0d1408; }
+#np-output-section { flex:1; display:flex; flex-direction:column; gap:6px; overflow:hidden; min-height:0; }
+#np-output-section label { color:#888; font-size:11px; text-transform:uppercase; flex-shrink:0; }
+#np-output { flex:1; background:#0d0b08; border:1px solid #2a2418; padding:8px; overflow:auto;
+  white-space:pre; font-size:11px; line-height:1.7; color:#c8c0b0; min-height:0; }
+#np-actions { display:flex; gap:6px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -112,31 +143,64 @@ canvas { display: block; image-rendering: pixelated; }
   </div>
 
   <div id="sidebar">
-    <h2>Label</h2>
-    <div id="labels">
-      <div id="label-btns"></div>
-      <div id="custom-row">
-        <input type="text" id="custom-label" placeholder="new label…">
-        <button class="btn" onclick="addCustomLabel()">Add</button>
+    <div id="mode-toggle">
+      <button class="mode-btn active" id="mode-btn-variants" onclick="setMode('variants')">Floor Variants</button>
+      <button class="mode-btn"        id="mode-btn-ninepatch" onclick="setMode('ninepatch')">9-Patch</button>
+    </div>
+
+    <!-- ── Floor-variants mode ── -->
+    <div id="section-variants">
+      <div id="labels">
+        <div id="label-btns"></div>
+        <div id="custom-row">
+          <input type="text" id="custom-label" placeholder="new label…">
+          <button class="btn" onclick="addCustomLabel()">Add</button>
+        </div>
+      </div>
+      <div id="actions">
+        <button class="btn" onclick="clearCurrent()">Clear label</button>
+        <button class="btn" onclick="clearAll()">Clear all</button>
+        <button class="btn primary" onclick="copyOutput()">Copy</button>
+        <button class="btn" onclick="saveJSON()">Save JSON</button>
+        <label class="btn" style="cursor:pointer">
+          Load JSON
+          <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadJSON(this)">
+        </label>
+        <button class="btn primary" onclick="pickOutputFile()" title="Pick engine/tiles-labeler.js">Set output file</button>
+      </div>
+      <div id="output-section">
+        <label>Generated code</label>
+        <div id="output">(paint some tiles)</div>
+        <div id="status">Ready — load an image above or use the embedded terrain sheet</div>
       </div>
     </div>
 
-    <div id="actions">
-      <button class="btn" onclick="clearCurrent()">Clear label</button>
-      <button class="btn" onclick="clearAll()">Clear all</button>
-      <button class="btn primary" onclick="copyOutput()">Copy</button>
-      <button class="btn" onclick="saveJSON()">Save JSON</button>
-      <label class="btn" style="cursor:pointer">
-        Load JSON
-        <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadJSON(this)">
-      </label>
-      <button class="btn primary" onclick="pickOutputFile()" title="Pick engine/tiles-labeler.js">Set output file</button>
-    </div>
-
-    <div id="output-section">
-      <label>Generated code</label>
-      <div id="output">(paint some tiles)</div>
-      <div id="status">Ready — load an image above or use the embedded terrain sheet</div>
+    <!-- ── 9-patch mode ── -->
+    <div id="section-ninepatch" style="display:none">
+      <div id="np-header">
+        <label>Group name</label>
+        <input type="text" id="np-name" value="sand_path" oninput="updateNpOutput()">
+      </div>
+      <div id="np-grid">
+        <button class="np-slot active" data-slot="TL" onclick="selectNpSlot('TL')">TL<span class="coords" id="np-TL">—</span><span class="flips"><span class="flip-btn" id="fx-TL" onclick="toggleFlip(event,'TL','x')">↔</span><span class="flip-btn" id="fy-TL" onclick="toggleFlip(event,'TL','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="TC" onclick="selectNpSlot('TC')">TC<span class="coords" id="np-TC">—</span><span class="flips"><span class="flip-btn" id="fx-TC" onclick="toggleFlip(event,'TC','x')">↔</span><span class="flip-btn" id="fy-TC" onclick="toggleFlip(event,'TC','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="TR" onclick="selectNpSlot('TR')">TR<span class="coords" id="np-TR">—</span><span class="flips"><span class="flip-btn" id="fx-TR" onclick="toggleFlip(event,'TR','x')">↔</span><span class="flip-btn" id="fy-TR" onclick="toggleFlip(event,'TR','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="ML" onclick="selectNpSlot('ML')">ML<span class="coords" id="np-ML">—</span><span class="flips"><span class="flip-btn" id="fx-ML" onclick="toggleFlip(event,'ML','x')">↔</span><span class="flip-btn" id="fy-ML" onclick="toggleFlip(event,'ML','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="MC" onclick="selectNpSlot('MC')">MC<span class="coords" id="np-MC">—</span><span class="flips"><span class="flip-btn" id="fx-MC" onclick="toggleFlip(event,'MC','x')">↔</span><span class="flip-btn" id="fy-MC" onclick="toggleFlip(event,'MC','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="MR" onclick="selectNpSlot('MR')">MR<span class="coords" id="np-MR">—</span><span class="flips"><span class="flip-btn" id="fx-MR" onclick="toggleFlip(event,'MR','x')">↔</span><span class="flip-btn" id="fy-MR" onclick="toggleFlip(event,'MR','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="BL" onclick="selectNpSlot('BL')">BL<span class="coords" id="np-BL">—</span><span class="flips"><span class="flip-btn" id="fx-BL" onclick="toggleFlip(event,'BL','x')">↔</span><span class="flip-btn" id="fy-BL" onclick="toggleFlip(event,'BL','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="BC" onclick="selectNpSlot('BC')">BC<span class="coords" id="np-BC">—</span><span class="flips"><span class="flip-btn" id="fx-BC" onclick="toggleFlip(event,'BC','x')">↔</span><span class="flip-btn" id="fy-BC" onclick="toggleFlip(event,'BC','y')">↕</span></span></button>
+        <button class="np-slot"        data-slot="BR" onclick="selectNpSlot('BR')">BR<span class="coords" id="np-BR">—</span><span class="flips"><span class="flip-btn" id="fx-BR" onclick="toggleFlip(event,'BR','x')">↔</span><span class="flip-btn" id="fy-BR" onclick="toggleFlip(event,'BR','y')">↕</span></span></button>
+      </div>
+      <div id="np-actions">
+        <button class="btn" onclick="clearNpSlot()">Clear slot</button>
+        <button class="btn" onclick="clearAllNp()">Clear all</button>
+        <button class="btn primary" onclick="copyNpOutput()">Copy</button>
+      </div>
+      <div id="np-output-section">
+        <label>Generated code</label>
+        <div id="np-output">(click a slot, then click a tile)</div>
+      </div>
     </div>
   </div>
 </div>
@@ -263,6 +327,36 @@ function redraw() {
     }
   }
 
+  // 9-patch overlays
+  if (mode === 'ninepatch') {
+    const ts = tileSize * zoom;
+    for (const [slot, pos] of Object.entries(npAssigned)) {
+      const f = npFlip[slot] || {};
+      const x = pos.c * ts, y = pos.r * ts;
+      ctx.fillStyle = NP_COLORS[slot] || 'rgba(120,180,240,0.5)';
+      ctx.fillRect(x, y, ts, ts);
+      // flip indicator arrows
+      if (f.x || f.y) {
+        ctx.font = `bold ${Math.max(8, Math.floor(ts*0.28))}px monospace`;
+        ctx.fillStyle = '#6a8';
+        ctx.fillText((f.x ? '↔' : '') + (f.y ? '↕' : ''), x + 2, y + ts - 3);
+      }
+      // slot label
+      const fs = Math.max(8, Math.floor(ts * 0.32));
+      ctx.font = `bold ${fs}px monospace`;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillText(slot, x + 2, y + fs + 1);
+      ctx.fillStyle = 'white';
+      ctx.fillText(slot, x + 2, y + fs);
+    }
+    // white outline on active slot
+    if (npAssigned[npSlot]) {
+      const p = npAssigned[npSlot];
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+      ctx.strokeRect(p.c*ts+1, p.r*ts+1, ts-2, ts-2);
+    }
+  }
+
   ctx.strokeStyle = 'rgba(255,255,255,0.18)';
   ctx.lineWidth = 1;
   for (let c = 0; c <= cols; c++) {
@@ -291,6 +385,17 @@ function tileAt(clientX, clientY) {
 function paint(clientX, clientY) {
   const t = tileAt(clientX, clientY);
   if (!t) return;
+  if (mode === 'ninepatch') {
+    if (!erasing) {
+      npAssigned[npSlot] = { c: t.c, r: t.r };
+      document.getElementById('np-'+npSlot).textContent = `${t.c},${t.r}`;
+      document.querySelector(`.np-slot[data-slot="${npSlot}"]`).classList.add('assigned');
+      updateNpOutput();
+      advanceNpSlot();
+    }
+    redraw();
+    return;
+  }
   for (const s of Object.values(selections)) s.delete(t.key);
   if (!erasing) selections[currentLabel].add(t.key);
   redraw();
@@ -433,6 +538,103 @@ function saveJSON() {
   a.href = URL.createObjectURL(blob);
   a.download = `${sheet}-labels.json`;
   a.click();
+}
+
+// ── 9-patch mode ─────────────────────────────────────────────────────────────
+let mode = 'variants';
+const NP_SLOTS   = ['TL','TC','TR','ML','MC','MR','BL','BC','BR'];
+const NP_COLORS  = {
+  TL:'rgba(255,80,80,0.55)',  TC:'rgba(255,160,40,0.55)',  TR:'rgba(255,220,40,0.55)',
+  ML:'rgba(80,200,80,0.55)',  MC:'rgba(80,200,200,0.55)',  MR:'rgba(80,120,255,0.55)',
+  BL:'rgba(200,80,200,0.55)', BC:'rgba(160,80,255,0.55)',  BR:'rgba(255,80,160,0.55)',
+};
+let npSlot = 'TL';
+const npAssigned = {};  // slot -> {c, r}
+const npFlip     = {};  // slot -> {x: bool, y: bool}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('section-variants').style.display  = m==='variants'  ? 'flex' : 'none';
+  document.getElementById('section-ninepatch').style.display = m==='ninepatch' ? 'flex' : 'none';
+  document.getElementById('mode-btn-variants').classList.toggle('active',  m==='variants');
+  document.getElementById('mode-btn-ninepatch').classList.toggle('active', m==='ninepatch');
+  redraw();
+}
+
+function selectNpSlot(slot) {
+  npSlot = slot;
+  document.querySelectorAll('.np-slot').forEach(b =>
+    b.classList.toggle('active', b.dataset.slot === slot));
+}
+
+function toggleFlip(evt, slot, axis) {
+  evt.stopPropagation();  // don't fire selectNpSlot
+  if (!npAssigned[slot]) return;
+  npFlip[slot] = npFlip[slot] || { x:false, y:false };
+  npFlip[slot][axis] = !npFlip[slot][axis];
+  document.getElementById(`f${axis}-${slot}`).classList.toggle('on', npFlip[slot][axis]);
+  redraw(); updateNpOutput();
+}
+
+function clearNpSlot() {
+  delete npAssigned[npSlot];
+  delete npFlip[npSlot];
+  document.getElementById('np-'+npSlot).textContent = '—';
+  document.querySelector(`.np-slot[data-slot="${npSlot}"]`).classList.remove('assigned');
+  document.getElementById(`fx-${npSlot}`).classList.remove('on');
+  document.getElementById(`fy-${npSlot}`).classList.remove('on');
+  redraw(); updateNpOutput();
+}
+
+function clearAllNp() {
+  NP_SLOTS.forEach(s => {
+    delete npAssigned[s]; delete npFlip[s];
+    document.getElementById('np-'+s).textContent = '—';
+    document.querySelector(`.np-slot[data-slot="${s}"]`).classList.remove('assigned');
+    document.getElementById(`fx-${s}`).classList.remove('on');
+    document.getElementById(`fy-${s}`).classList.remove('on');
+  });
+  redraw(); updateNpOutput();
+}
+
+// Advance to next unassigned slot after a pick
+function advanceNpSlot() {
+  const idx = NP_SLOTS.indexOf(npSlot);
+  for (let i = 1; i <= NP_SLOTS.length; i++) {
+    const next = NP_SLOTS[(idx + i) % NP_SLOTS.length];
+    if (!npAssigned[next]) { selectNpSlot(next); return; }
+  }
+}
+
+function updateNpOutput() {
+  const name  = (document.getElementById('np-name')?.value || '').trim() || 'sand_path';
+  const sheet = (document.getElementById('sheet-name')?.value || '').trim() || 'terrain';
+  const fn    = tileSize === 16 ? 'T16' : 'T';
+  const rows  = [['TL','TC','TR'],['ML','MC','MR'],['BL','BC','BR']];
+  const lines = [`  // ${name}`, `  ${name}: {`];
+  for (const row of rows) {
+    const parts = row.map(s => {
+      const p = npAssigned[s];
+      if (!p) return `${s}: null /* pick ${s} */`;
+      const f = npFlip[s] || {};
+      const base = `${fn}('${sheet}', ${p.c}, ${p.r})`;
+      const flags = [f.x && 'flipX:true', f.y && 'flipY:true'].filter(Boolean);
+      const val = flags.length ? `{...${base}, ${flags.join(', ')}}` : base;
+      return `${s}: ${val}`;
+    });
+    lines.push('    ' + parts.join(', ') + ',');
+  }
+  lines.push('  },');
+  const el = document.getElementById('np-output');
+  if (el) el.textContent = lines.join('\n');
+}
+
+function copyNpOutput() {
+  const el = document.getElementById('np-output');
+  if (el) navigator.clipboard.writeText(el.textContent).then(() => {
+    setStatus('Copied 9-patch entry!');
+    setTimeout(() => setStatus('Ready'), 1500);
+  });
 }
 
 function loadJSON(input) {

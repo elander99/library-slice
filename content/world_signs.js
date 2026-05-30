@@ -9,8 +9,8 @@ const WORLD_SIGNS = [
     japanese: "図書館・こどもサロン\n料理室・おもちゃ画廊",
     tokens: [
       { text: "図書館",   furigana: "としょかん",   romaji: "toshokan",     meaning: "library" },
-      { text: "サロン",   furigana: "サロン",       romaji: "saron",        meaning: "salon / lounge" },
-      { text: "料理室",   furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room / kitchen" },
+      { text: "サロン",   furigana: "サロン",       romaji: "saron",        meaning: "salon" },
+      { text: "料理室",   furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room" },
       { text: "画廊",     furigana: "がろう",       romaji: "garou",        meaning: "gallery" },
     ]
   },
@@ -20,9 +20,9 @@ const WORLD_SIGNS = [
     color: "#5c3317",
     japanese: "本日の受付は\n終了しました",
     tokens: [
-      { text: "本日",   furigana: "ほんじつ",     romaji: "honjitsu",  meaning: "today / this day" },
-      { text: "受付",   furigana: "うけつけ",     romaji: "uketsuke",  meaning: "reception / front desk / check-in" },
-      { text: "終了",   furigana: "しゅうりょう", romaji: "shuuryou",  meaning: "end / finished / closed / completion" },
+      { text: "本日",   furigana: "ほんじつ",     romaji: "honjitsu",  meaning: "today" },
+      { text: "受付",   furigana: "うけつけ",     romaji: "uketsuke",  meaning: "reception" },
+      { text: "終了",   furigana: "しゅうりょう", romaji: "shuuryou",  meaning: "closed" },
     ]
   },
 
@@ -33,8 +33,8 @@ const WORLD_SIGNS = [
     color: "#8b3a1e",
     japanese: "くつを\nぬぎましょう",
     tokens: [
-      { text: "くつ",         furigana: "くつ",         romaji: "kutsu",      meaning: "shoes / footwear" },
-      { text: "ぬぎましょう", furigana: "ぬぎましょう", romaji: "nugimashou", meaning: "let's take off / please remove" },
+      { text: "くつ",         furigana: "くつ",         romaji: "kutsu",      meaning: "shoes" },
+      { text: "ぬぎましょう", furigana: "ぬぎましょう", romaji: "nugimashou", meaning: "please remove" },
     ]
   },
   {
@@ -43,10 +43,10 @@ const WORLD_SIGNS = [
     color: "#2a4a6c",
     japanese: "小さいお子様は\n大人と一緒に",
     tokens: [
-      { text: "小さい", furigana: "ちいさい",   romaji: "chiisai",  meaning: "small / little / young" },
-      { text: "お子様", furigana: "おこさま",   romaji: "okosama",  meaning: "child / children (polite)" },
-      { text: "大人",   furigana: "おとな",     romaji: "otona",    meaning: "adult / grown-up" },
-      { text: "一緒に", furigana: "いっしょに", romaji: "issho ni", meaning: "together / with" },
+      { text: "小さい", furigana: "ちいさい",   romaji: "chiisai",  meaning: "small" },
+      { text: "お子様", furigana: "おこさま",   romaji: "okosama",  meaning: "child" },
+      { text: "大人",   furigana: "おとな",     romaji: "otona",    meaning: "adult" },
+      { text: "一緒に", furigana: "いっしょに", romaji: "issho ni", meaning: "together" },
     ]
   },
   {
@@ -55,11 +55,14 @@ const WORLD_SIGNS = [
     color: "#2d6a4f",
     japanese: "3才から6才まで\nのこどもたちが\n対象です",
     tokens: [
-      { text: "才",     furigana: "さい",       romaji: "sai",     meaning: "years old / age" },
-      { text: "から",   furigana: "から",       romaji: "kara",    meaning: "from / since" },
-      { text: "まで",   furigana: "まで",       romaji: "made",    meaning: "until / up to" },
-      { text: "こども", furigana: "こども",     romaji: "kodomo",  meaning: "child / children" },
-      { text: "対象",   furigana: "たいしょう", romaji: "taishou", meaning: "target / intended for / subject" },
+      { text: "3",      furigana: "さん",       romaji: "san",     meaning: "three / 3" },
+      { text: "才",     furigana: "さい",       romaji: "sai",     meaning: "years old" },
+      { text: "から",   furigana: "から",       romaji: "kara",    meaning: "from" },
+      { text: "6",      furigana: "ろく",       romaji: "roku",    meaning: "six / 6" },
+      { text: "才",     furigana: "さい",       romaji: "sai",     meaning: "years old" },
+      { text: "まで",   furigana: "まで",       romaji: "made",    meaning: "until" },
+      { text: "こども", furigana: "こども",     romaji: "kodomo",  meaning: "child" },
+      { text: "対象",   furigana: "たいしょう", romaji: "taishou", meaning: "intended for" },
     ]
   },
 
@@ -70,9 +73,9 @@ const WORLD_SIGNS = [
     color: "#5c1a5c",
     japanese: "順番に仲よく\n使いましょう",
     tokens: [
-      { text: "順番に",       furigana: "じゅんばんに",   romaji: "junban ni",    meaning: "in turns / taking turns / in order" },
-      { text: "仲よく",       furigana: "なかよく",       romaji: "nakayoku",     meaning: "friendly / harmoniously / together" },
-      { text: "使いましょう", furigana: "つかいましょう", romaji: "tsukaimashou", meaning: "let's use / please use" },
+      { text: "順番に",       furigana: "じゅんばんに",   romaji: "junban ni",    meaning: "in turns" },
+      { text: "仲よく",       furigana: "なかよく",       romaji: "nakayoku",     meaning: "friendly" },
+      { text: "使いましょう", furigana: "つかいましょう", romaji: "tsukaimashou", meaning: "please use" },
     ]
   },
   {
@@ -81,11 +84,11 @@ const WORLD_SIGNS = [
     color: "#8b3a1e",
     japanese: "飲食はご遠慮\nください\n水分補給は可",
     tokens: [
-      { text: "飲食",     furigana: "いんしょく",       romaji: "inshoku",       meaning: "eating and drinking / food and drink" },
-      { text: "ご遠慮",   furigana: "ごえんりょ",       romaji: "goenryo",       meaning: "refrain / please hold back" },
+      { text: "飲食",     furigana: "いんしょく",       romaji: "inshoku",       meaning: "eating and drinking" },
+      { text: "ご遠慮",   furigana: "ごえんりょ",       romaji: "goenryo",       meaning: "please refrain" },
       { text: "ください", furigana: "ください",         romaji: "kudasai",       meaning: "please" },
-      { text: "水分補給", furigana: "すいぶんほきゅう", romaji: "suibun hokyuu", meaning: "hydration / drinking water" },
-      { text: "可",       furigana: "か",               romaji: "ka",            meaning: "allowed / permitted / OK" },
+      { text: "水分補給", furigana: "すいぶんほきゅう", romaji: "suibun hokyuu", meaning: "hydration" },
+      { text: "可",       furigana: "か",               romaji: "ka",            meaning: "allowed" },
     ]
   },
 
@@ -97,10 +100,10 @@ const WORLD_SIGNS = [
     japanese: "ジップラインに\n乗っている人が\n通ります\n気をつけて！",
     tokens: [
       { text: "ジップライン", furigana: "ジップライン", romaji: "jippurain",     meaning: "zipline" },
-      { text: "乗っている",   furigana: "のっている",   romaji: "notte iru",     meaning: "riding / on board / currently on" },
-      { text: "人",           furigana: "ひと",         romaji: "hito",          meaning: "person / people" },
-      { text: "通ります",     furigana: "とおります",   romaji: "toorimasu",     meaning: "will pass / passes through" },
-      { text: "気をつけて",   furigana: "きをつけて",   romaji: "ki wo tsukete", meaning: "be careful / watch out" },
+      { text: "乗っている",   furigana: "のっている",   romaji: "notte iru",     meaning: "riding" },
+      { text: "人",           furigana: "ひと",         romaji: "hito",          meaning: "person" },
+      { text: "通ります",     furigana: "とおります",   romaji: "toorimasu",     meaning: "will pass" },
+      { text: "気をつけて",   furigana: "きをつけて",   romaji: "ki wo tsukete", meaning: "watch out" },
     ]
   },
   {
@@ -109,13 +112,13 @@ const WORLD_SIGNS = [
     color: "#b8860b",
     japanese: "7才以上の方は\n小さな子に\n道を譲って",
     tokens: [
-      { text: "7才",    furigana: "ななさい", romaji: "nana sai", meaning: "7 years old / age 7" },
-      { text: "以上",   furigana: "いじょう", romaji: "ijou",     meaning: "and over / or more / above" },
-      { text: "方",     furigana: "かた",     romaji: "kata",     meaning: "person / people (polite)" },
-      { text: "小さな", furigana: "ちいさな", romaji: "chiisana", meaning: "small / little" },
-      { text: "子",     furigana: "こ",       romaji: "ko",       meaning: "child / kid" },
-      { text: "道",     furigana: "みち",     romaji: "michi",    meaning: "path / way / road" },
-      { text: "譲って", furigana: "ゆずって", romaji: "yuzutte",  meaning: "give way / yield / let pass" },
+      { text: "7才",    furigana: "ななさい", romaji: "nana sai", meaning: "7 years old" },
+      { text: "以上",   furigana: "いじょう", romaji: "ijou",     meaning: "and over" },
+      { text: "方",     furigana: "かた",     romaji: "kata",     meaning: "person" },
+      { text: "小さな", furigana: "ちいさな", romaji: "chiisana", meaning: "small" },
+      { text: "子",     furigana: "こ",       romaji: "ko",       meaning: "child" },
+      { text: "道",     furigana: "みち",     romaji: "michi",    meaning: "path" },
+      { text: "譲って", furigana: "ゆずって", romaji: "yuzutte",  meaning: "give way" },
     ]
   },
 
@@ -126,10 +129,10 @@ const WORLD_SIGNS = [
     color: "#8b3a1e",
     japanese: "おかえりなさい\nくつをおぬぎ\nください",
     tokens: [
-      { text: "おかえりなさい", furigana: "おかえりなさい", romaji: "okaerinasai", meaning: "welcome back / you're home" },
-      { text: "くつ",           furigana: "くつ",           romaji: "kutsu",       meaning: "shoes / footwear" },
+      { text: "おかえりなさい", furigana: "おかえりなさい", romaji: "okaerinasai", meaning: "welcome back" },
+      { text: "くつ",           furigana: "くつ",           romaji: "kutsu",       meaning: "shoes" },
       { text: "を",             furigana: "を",             romaji: "wo",          meaning: "object marker / particle" },
-      { text: "おぬぎ",         furigana: "おぬぎ",         romaji: "onugi",       meaning: "take off / remove (polite)" },
+      { text: "おぬぎ",         furigana: "おぬぎ",         romaji: "onugi",       meaning: "please remove" },
       { text: "ください",       furigana: "ください",       romaji: "kudasai",     meaning: "please" },
     ]
   },
@@ -139,9 +142,9 @@ const WORLD_SIGNS = [
     color: "#3a2810",
     japanese: "こたつで\nあたたまろう",
     tokens: [
-      { text: "こたつ",       furigana: "こたつ",       romaji: "kotatsu",      meaning: "kotatsu / heated table / low table" },
-      { text: "で",           furigana: "で",           romaji: "de",           meaning: "at / in / by means of / particle" },
-      { text: "あたたまろう", furigana: "あたたまろう", romaji: "atatamaro u",  meaning: "let's warm up / let's get cozy" },
+      { text: "こたつ",       furigana: "こたつ",       romaji: "kotatsu",      meaning: "kotatsu" },
+      { text: "で",           furigana: "で",           romaji: "de",           meaning: "at" },
+      { text: "あたたまろう", furigana: "あたたまろう", romaji: "atatamaro u",  meaning: "let's warm up" },
     ]
   },
   {
@@ -150,11 +153,11 @@ const WORLD_SIGNS = [
     color: "#1a3a5c",
     japanese: "今日の夕飯は\nカレーライスです",
     tokens: [
-      { text: "今日",         furigana: "きょう",         romaji: "kyou",          meaning: "today / this day" },
-      { text: "の",           furigana: "の",             romaji: "no",            meaning: "possessive / of / particle" },
-      { text: "夕飯",         furigana: "ゆうはん",       romaji: "yuuhan",        meaning: "dinner / evening meal / supper" },
-      { text: "は",           furigana: "は",             romaji: "wa",            meaning: "topic marker / particle" },
-      { text: "カレーライス", furigana: "カレーライス",   romaji: "karee raisu",   meaning: "curry rice / Japanese curry" },
+      { text: "今日",         furigana: "きょう",         romaji: "kyou",          meaning: "today" },
+      { text: "の",           furigana: "の",             romaji: "no",            meaning: "possessive particle" },
+      { text: "夕飯",         furigana: "ゆうはん",       romaji: "yuuhan",        meaning: "dinner" },
+      { text: "は",           furigana: "は",             romaji: "wa",            meaning: "topic particle" },
+      { text: "カレーライス", furigana: "カレーライス",   romaji: "karee raisu",   meaning: "curry rice" },
       { text: "です",         furigana: "です",           romaji: "desu",          meaning: "is / are / it is / copula" },
     ]
   },

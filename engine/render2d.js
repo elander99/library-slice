@@ -25,12 +25,14 @@ class Renderer2D {
 
   _resize() {
     const dpr = this._dpr;
-    this.W = window.innerWidth;
+    const panel_w = window._left_panel_w || 0;
+    this.W = window.innerWidth - panel_w;
     this.H = window.innerHeight;
     this.canvas.width  = this.W * dpr;
     this.canvas.height = this.H * dpr;
     this.canvas.style.width  = this.W + 'px';
     this.canvas.style.height = this.H + 'px';
+    this.canvas.style.left   = panel_w ? panel_w + 'px' : '';
     // Viewport fills from HUD to bottom; workspace panel overlays transparently
     this.VP_Y = this.HUD_H;
     this.VP_H = this.H - this.HUD_H;
@@ -96,7 +98,15 @@ class Renderer2D {
     const fdx = Math.round(dx * dpr) / dpr;
     const fdy = Math.round(dy * dpr) / dpr;
     if (img && img.complete && img.naturalWidth > 0) {
-      this.ctx.drawImage(img, def.sx, def.sy, sw, sh, fdx, fdy, dw, dh);
+      if (def.flipX || def.flipY) {
+        this.ctx.save();
+        this.ctx.translate(fdx + (def.flipX ? dw : 0), fdy + (def.flipY ? dh : 0));
+        this.ctx.scale(def.flipX ? -1 : 1, def.flipY ? -1 : 1);
+        this.ctx.drawImage(img, def.sx, def.sy, sw, sh, 0, 0, dw, dh);
+        this.ctx.restore();
+      } else {
+        this.ctx.drawImage(img, def.sx, def.sy, sw, sh, fdx, fdy, dw, dh);
+      }
     } else {
       this.ctx.fillStyle = def.color || '#888';
       this.ctx.fillRect(fdx, fdy, dw, dh);
@@ -113,6 +123,30 @@ class Renderer2D {
   }
 
   // ── Autotile / 9-patch helpers ────────────────────────────────────────────
+
+  // Returns true if (col,row) is a sand-path tile
+  _tile_is_sand(room, col, row) {
+    if (col < 0 || row < 0 || col >= room.cols || row >= room.rows) return false;
+    return room.tiles[row][col] === 'F_SAND';
+  }
+
+  // Pick the correct tile from the sand_path 9-patch based on which
+  // cardinal neighbors are also sand — corners first, then edges, then center.
+  _pick_sand_patch(patch, room, col, row) {
+    const N = this._tile_is_sand(room, col,     row - 1);
+    const S = this._tile_is_sand(room, col,     row + 1);
+    const E = this._tile_is_sand(room, col + 1, row);
+    const W = this._tile_is_sand(room, col - 1, row);
+    if (!N && !W) return patch.TL;
+    if (!N && !E) return patch.TR;
+    if (!S && !W) return patch.BL;
+    if (!S && !E) return patch.BR;
+    if (!N)       return patch.TC;
+    if (!S)       return patch.BC;
+    if (!W)       return patch.ML;
+    if (!E)       return patch.MR;
+    return patch.MC;
+  }
 
   // Returns true if (col,row) is a floor (walkable, non-solid) cell
   _tile_is_floor(room, col, row) {
@@ -162,12 +196,15 @@ class Renderer2D {
 
   // Draw a tree sprite at world pixel (wx,wy) — trees are taller than one tile.
   // wx,wy = bottom-center of tree trunk. Sprite drawn upward from that point.
-  // Uses _blit so dw/dh (2× source) are applied consistently with other tiles.
+  // ay: display pixels from sprite top to ground contact (bottom of last opaque row).
+  //   Defaults to dh (sprite bottom), but tree sprites define ay to skip their
+  //   transparent footer so the visible content aligns with the tile anchor.
   _draw_tree(spr, wx, wy, cam) {
     const dw = spr.dw ?? spr.sw;
     const dh = spr.dh ?? spr.sh;
+    const ay = spr.ay ?? dh;
     const dx = wx - cam.cx - dw / 2;
-    const dy = wy - cam.cy - dh;
+    const dy = wy - cam.cy - ay;
     this._blit(spr, dx, dy);
   }
 
@@ -244,6 +281,7 @@ class Renderer2D {
     this._tree_room  = room; // needed by _flush_trees for southernmost-tile check
     const TREE_CODE = { TREE:'leafy_lg', TREE2:'pine', TREE3:'shrub' };
     const wall_patch = room.wall_patch ? NINE_PATCH[room.wall_patch] : null;
+    const sand_patch = NINE_PATCH.sand_path;
 
     for (let row = 0; row < room.rows; row++) {
       for (let col = 0; col < room.cols; col++) {
@@ -255,11 +293,17 @@ class Renderer2D {
             // 9-patch autotile: select the right border tile based on neighbors
             if ((code === 'WALL' || code === 'WALL2') && wall_patch) {
               this._draw_patch_tile(this._pick_patch(wall_patch, room, col, row), dx, dy);
+            } else if (code === 'F_SAND') {
+              this._draw_patch_tile(this._pick_sand_patch(sand_patch, room, col, row), dx, dy);
             } else {
               const tree_spr = TREE_SPRITES[TREE_CODE[code]];
               if (tree_spr) {
-                // Defer tree draw so it renders on top; store col/row for base pass
-                this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS, col, row });
+                // Only draw the sprite for the southernmost tile in a column of tree tiles.
+                // Tiles above it are collision-only; the one sprite covers the full column.
+                const code_below = (row + 1 < room.rows) ? room.tiles[row + 1]?.[col] : null;
+                if (!code_below || !TREE_CODE[code_below]) {
+                  this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS, col, row });
+                }
               } else {
                 this._draw_tile(code, dx, dy);
               }
@@ -342,18 +386,6 @@ class Renderer2D {
         ctx.beginPath(); ctx.arc(dx, dy-34, 7, 0, Math.PI*2); ctx.fill();
       }
 
-      // Name tag above the sprite
-      const npc = NPC_DEFS[npc_def.npc_id];
-      if (npc) {
-        const npc_name = LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp;
-        ctx.fillStyle = 'rgba(20,16,10,0.75)';
-        ctx.fillRect(dx-32, dy-dh-13, 64, 15);
-        ctx.fillStyle = '#b8860b';
-        ctx.font = `12px ${this.FONT_MONO}`;
-        ctx.textAlign = 'center';
-        ctx.fillText(npc_name, dx, dy-dh);
-      }
-
       // Speech bubble
       if (npc_def.npc_id === 'librarian' && s.librarian.alert) {
         this._draw_bubble(s.librarian.alert, dx, dy - 38, ctx);
@@ -367,9 +399,10 @@ class Renderer2D {
     const dl = DIALOGUE[alert.key];
     if (!dl) return;
     const text = LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese;
+    const dpr = this._dpr;
     const bw = 200, bh = 44;
-    const px = Math.min(Math.max(bx - bw/2, 4), this.VP_W - bw - 4);
-    const py = by - bh - 10;
+    const px = Math.round(Math.min(Math.max(bx - bw/2, 4), this.VP_W - bw - 4) * dpr) / dpr;
+    const py = Math.round((by - bh - 10) * dpr) / dpr;
     // Store X button rect in full screen coords for click detection
     const XS = 14;
     this._bubble_close_btn = { x: px + bw - XS - 4, y: py + 4 + this.VP_Y, w: XS, h: XS };
@@ -423,7 +456,6 @@ class Renderer2D {
     const hx = this._hover_x ?? -9999;
     const hy = (this._hover_y ?? -9999) - this.VP_Y;
     let any_hov = false;
-    let tooltip = null;
     this._sign_world_rects = {};
 
     const FONT_SZ = 12, LINE_H = 17, PAD_X = 8, PAD_Y = 5;
@@ -448,7 +480,7 @@ class Renderer2D {
 
       const sdx = wx_l - cx, sdy = wy_top - cy;
       const is_hov = hx >= sdx && hx <= sdx + sw && hy >= sdy && hy <= sdy + sh;
-      if (is_hov) { any_hov = true; tooltip = { sdx, sdy, sw, sign }; }
+      if (is_hov) { any_hov = true; }
 
       // Sign background
       ctx.fillStyle = sign.color || 'rgba(100,40,20,0.88)';
@@ -464,28 +496,58 @@ class Renderer2D {
         ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.fill();
       }
 
-      // Sign text
+      // Sign text — per-token colouring to match the workspace panel
       ctx.font = `${FONT_SZ}px ${this.FONT_JP}`;
-      ctx.fillStyle = '#f5f0e8';
-      ctx.textAlign = 'center';
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], sdx + sw / 2, sdy + PAD_Y + FONT_SZ + i * LINE_H);
-      }
-    }
+      ctx.textAlign = 'left';
 
-    if (tooltip) {
-      const { sdx, sdy, sw, sign } = tooltip;
-      const label = sign.label_en || sign.label || sign.id;
-      ctx.font = `12px ${this.FONT_MONO}`;
-      const tw = ctx.measureText(label).width + 16;
-      const th = 22;
-      const tx = Math.max(2, Math.min(sdx + sw / 2 - tw / 2, this.VP_W - tw - 2));
-      const ty = sdy - th - 4;
-      ctx.fillStyle = 'rgba(20,16,10,0.92)';
-      ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.roundRect(tx, ty, tw, th, 3); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#b8860b'; ctx.textAlign = 'left';
-      ctx.fillText(label, tx + 8, ty + 15);
+      // Build a char→token-index map over the full text
+      const tokens = sign.tokens || [];
+      const prog = (typeof WORD_PROGRESS !== 'undefined') ? WORD_PROGRESS.getSign(sign.id) : {};
+      const char_tok = new Int32Array(text.length).fill(-1);
+      let sp = 0;
+      for (let ti = 0; ti < tokens.length; ti++) {
+        const tt = tokens[ti].text;
+        const fi = text.indexOf(tt, sp);
+        if (fi !== -1) { char_tok.fill(ti, fi, fi + tt.length); sp = fi + tt.length; }
+      }
+
+      // Helper: colour for a given token index
+      const tok_col = ti => {
+        if (ti < 0) return '#f5f0e8';
+        const tok = tokens[ti];
+        const hp = tok.parts && tok.parts.length > 0;
+        const ro = hp ? tok.parts.every((_,pi) => (prog[`${ti}p${pi}`]||{}).romaji)
+                      : !!(prog[ti]||{}).romaji;
+        const me = hp ? tok.parts.every((_,pi) => (prog[`${ti}p${pi}`]||{}).meaning)
+                      : !!(prog[ti]||{}).meaning;
+        if (ro && me) return '#52c98e'; // fully done — jade
+        if (ro)       return '#c8981a'; // reading done — gold
+        return '#f5f0e8';              // untouched — default
+      };
+
+      // Draw each line as coloured segments
+      let char_off = 0;
+      for (let li = 0; li < lines.length; li++) {
+        const ln = lines[li];
+        const lw = ctx.measureText(ln).width;
+        let x = sdx + (sw - lw) / 2; // centre the line
+        const y = sdy + PAD_Y + FONT_SZ + li * LINE_H;
+
+        // Collect runs of consecutive same-token characters
+        let i = 0;
+        while (i < ln.length) {
+          const cur_ti = char_tok[char_off + i];
+          let j = i + 1;
+          while (j < ln.length && char_tok[char_off + j] === cur_ti) j++;
+          const seg = ln.slice(i, j);
+          ctx.fillStyle = tok_col(cur_ti);
+          ctx.fillText(seg, x, y);
+          x += ctx.measureText(seg).width;
+          i = j;
+        }
+        char_off += ln.length + 1; // +1 for '\n'
+      }
+      ctx.textAlign = 'center'; // restore default
     }
 
     this.canvas.style.cursor = any_hov ? 'pointer' : '';
@@ -507,7 +569,7 @@ class Renderer2D {
     ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.strokeRect(BAR_X,BAR_Y,BAR_W,BAR_H);
     ctx.fillStyle='#f5f0e8'; ctx.font=`12px ${this.FONT_MONO}`;
     ctx.textAlign='left';
-    ctx.fillText('充実感', BAR_X, BAR_Y-2);
+    ctx.fillText(LANG.current === 'ko' ? '충실감' : '充実感', BAR_X, BAR_Y-2);
     ctx.fillText(`${Math.round(s.juujitsukan)}`, BAR_X+BAR_W+6, BAR_Y+12);
 
     const room = ROOM_MAP_DATA[s.room];
