@@ -166,7 +166,7 @@ canvas { display: block; image-rendering: pixelated; }
           Load JSON
           <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadJSON(this)">
         </label>
-        <button class="btn primary" onclick="pickOutputFile()" title="Pick engine/tiles-labeler.js">Set output file</button>
+        <button class="btn primary" style="display:none" onclick="pickOutputFile()" title="Pick engine/tiles-labeler.js">Set output file</button>
       </div>
       <div id="output-section">
         <label>Generated code</label>
@@ -504,26 +504,21 @@ function generateJS() {
 }
 
 let saveTimer = null;
-async function ensureFileHandle() {
-  if (fileHandle) return true;
-  try {
-    fileHandle = await window.showSaveFilePicker({
-      suggestedName: 'tiles-labeler.js',
-      types: [{ description:'JavaScript', accept:{'application/javascript':['.js']} }],
-    });
-    return true;
-  } catch(_) { return false; }
-}
 
 function scheduleSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    if (!await ensureFileHandle()) return;
+    const sheet = document.getElementById('sheet-name').value.trim() || 'terrain';
+    const sel = {};
+    Object.entries(selections).forEach(([k,v]) => { if (v.size) sel[k]=[...v].map(s=>s); });
     try {
-      const w = await fileHandle.createWritable();
-      await w.write(generateJS());
-      await w.close();
-      setStatus('Saved — refresh the game');
+      const res = await fetch('/save-labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheet, tileSize, selections: sel }),
+      });
+      if (res.ok) setStatus('Saved to engine/tiles-labeler.js — refresh the game');
+      else setStatus('Save failed: HTTP ' + res.status);
     } catch(e) { setStatus('Save failed: ' + e.message); }
   }, 400);
 }

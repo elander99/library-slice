@@ -12,6 +12,7 @@ class Input2D {
 
     window.addEventListener('keydown', e => this._on_keydown(e));
     window.addEventListener('keyup',   e => { this._keys[e.key] = false; });
+    window.addEventListener('blur',    () => { this._keys = {}; });
     window.addEventListener('focusin', e => {
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) this._keys = {};
@@ -29,7 +30,8 @@ class Input2D {
       const rect = canvas.getBoundingClientRect();
       this._on_click_pos(
         (t.clientX-rect.left)*(renderer.W/rect.width),
-        (t.clientY-rect.top) *(renderer.H/rect.height)
+        (t.clientY-rect.top) *(renderer.H/rect.height),
+        t.clientX, t.clientY
       );
     }, {passive:false});
   }
@@ -98,10 +100,10 @@ class Input2D {
 
   _on_click(e) {
     const p = this._pos(e);
-    this._on_click_pos(p.x, p.y);
+    this._on_click_pos(p.x, p.y, e.clientX, e.clientY);
   }
 
-  _on_click_pos(x, y) {
+  _on_click_pos(x, y, sx, sy) {
     const R = this.renderer;
     const S = this.sim;
 
@@ -141,13 +143,14 @@ class Input2D {
       return;
     }
 
-    // Check NPC clicks
-    for (const npc_def of (room.npcs||[])) {
-      const nx = npc_def.col*TS + TS/2;
-      const ny = npc_def.row*TS + TS;
-      if (Math.abs(wx-nx)<TS && Math.abs(wy-ny)<TS*1.5) {
-        DialoguePanel.open(npc_def.npc_id);
-        return;
+    // Check NPC chat bubble clicks
+    if (R._npc_chat_btns) {
+      for (const [npc_id, btn] of Object.entries(R._npc_chat_btns)) {
+        if (R._pt_in(btn, x, y)) {
+          if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_id, sx, sy);
+          DialoguePanel.open(npc_id);
+          return;
+        }
       }
     }
 
@@ -167,9 +170,22 @@ class Input2D {
       if (wx>=ox && wx<=ox+TS && wy>=oy && wy<=oy+TS) {
         const player_near = Math.abs(S.state.px - (ox+TS/2)) < TS*2.5 &&
                             Math.abs(S.state.py - (oy+TS)) < TS*2.5;
-        if (player_near) this._open_obj_menu(obj.id, x, y);
+        if (player_near) {
+          if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, sx, sy);
+          this._open_obj_menu(obj.id, x, y);
+        }
         else S.set_walk_target(ox+TS/2, oy+TS); // walk toward it
         return;
+      }
+    }
+
+    // Check tile descriptions
+    if (typeof TILE_DEFS !== 'undefined' && typeof TILES !== 'undefined') {
+      const tc = Math.floor(wx / TS), tr = Math.floor(wy / TS);
+      const tile_code = room.tiles[tr]?.[tc];
+      if (tile_code && TILE_DEFS[tile_code]) {
+        if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(tile_code, sx, sy);
+        if (TILES[tile_code]?.solid) return; // solid tile — don't try to walk into it
       }
     }
 
@@ -183,10 +199,13 @@ class Input2D {
     const room = ROOM_MAP_DATA[s.room];
     if (!room) return;
 
+    const _popup_cx = this.renderer.W / 2, _popup_cy = this.renderer.VP_Y + 80;
+
     // NPC interaction
     for (const npc_def of (room.npcs||[])) {
       const nx=npc_def.col*TS+TS/2, ny=npc_def.row*TS+TS;
       if (Math.abs(s.px-nx)<TS*1.5 && Math.abs(s.py-ny)<TS*2) {
+        if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_def.npc_id, _popup_cx, _popup_cy);
         DialoguePanel.open(npc_def.npc_id);
         return;
       }
@@ -205,6 +224,7 @@ class Input2D {
     for (const obj of (room.objects||[])) {
       const ox=obj.col*TS+TS/2, oy=obj.row*TS+TS;
       if (Math.abs(s.px-ox)<TS*2 && Math.abs(s.py-oy)<TS*2) {
+        if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, _popup_cx, _popup_cy);
         this._open_obj_menu(obj.id,
           this.renderer.W/2,
           this.renderer.VP_Y + this.renderer.VP_H/2
@@ -248,6 +268,13 @@ class Input2D {
       return;
     }
 
+    // NPC chat bubble indicators
+    if (R._npc_chat_btns) {
+      for (const btn of Object.values(R._npc_chat_btns)) {
+        if (R._pt_in(btn, x, y)) { this.canvas.style.cursor = 'pointer'; return; }
+      }
+    }
+
     // Only check world-space interactables if click is in viewport
     if (y >= R.VP_Y && y <= R.VP_Y + R.VP_H) {
       const cam = R._camera(S.state);
@@ -256,13 +283,6 @@ class Input2D {
       const room = ROOM_MAP_DATA[S.state.room];
 
       if (room) {
-        // NPCs
-        for (const npc_def of (room.npcs || [])) {
-          const nx = npc_def.col * TS + TS / 2;
-          const ny = npc_def.row * TS + TS;
-          if (Math.abs(wx - nx) < TS && Math.abs(wy - ny) < TS * 1.5) { cursor = 'pointer'; break; }
-        }
-
         // Signs
         if (cursor === 'default') {
           const sign_rects = R._sign_world_rects || {};
@@ -278,6 +298,13 @@ class Input2D {
             const ox = obj.col * TS, oy = obj.row * TS;
             if (wx >= ox && wx <= ox + TS && wy >= oy && wy <= oy + TS) { cursor = 'pointer'; break; }
           }
+        }
+
+        // Tiles with descriptions
+        if (cursor === 'default' && typeof TILE_DEFS !== 'undefined') {
+          const tc = Math.floor(wx / TS), tr = Math.floor(wy / TS);
+          const tile_code = room.tiles[tr]?.[tc];
+          if (tile_code && TILE_DEFS[tile_code]) cursor = 'pointer';
         }
       }
     }

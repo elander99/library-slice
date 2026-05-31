@@ -42,6 +42,19 @@ class Sim2D {
 
       transition: null,  // { alpha, from_room, to_room, to_px, to_py }
     };
+    // If saved position lands on a solid tile, reset to the room's default spawn.
+    if (!this.can_move_to(this.state.px, this.state.py)) {
+      this.state.px = 10 * TS;
+      this.state.py = 7  * TS;
+    }
+  }
+
+  reset_position() {
+    this.state.px = 10 * TS;
+    this.state.py = 7  * TS;
+    this._walk_target = null;
+    this._save();
+    this._notify();
   }
 
   _load_save() {

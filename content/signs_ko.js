@@ -14,7 +14,7 @@ const SIGNS_KO = [
     color: "#2d5a3d",
     tokens: [
       { text: "콘센트", furigana: "콘센트", romaji: "konsenteu", meaning: "outlet" },
-      { text: "는",     furigana: "는",     romaji: "neun",      meaning: "topic marker (after vowel)" },
+      { text: "는",     furigana: "는",     romaji: "neun",      meaning: "topic marker (after vowel)/topic" },
       { text: "도서관", furigana: "도서관", romaji: "doseogwan", meaning: "library", parts: [
         { text: "도서", furigana: "도서", romaji: "doseo",  meaning: "books" },
         { text: "관",   furigana: "관",   romaji: "gwan",   meaning: "building" },
@@ -40,13 +40,14 @@ const SIGNS_KO = [
       { text: "조용히",   furigana: "조용히",   romaji: "joyonghi",      meaning: "quietly" },
       { text: "해",       furigana: "해",       romaji: "hae",           meaning: "please do" },
       { text: "주세요",   furigana: "주세요",   romaji: "juseyo",        meaning: "please" },
-      { text: "휴대전화", furigana: "휴대전화", romaji: "hyudaejeonhwa", meaning: "mobile phone / cell phone / smartphone", parts: [
+      { text: "휴대전화", furigana: "휴대전화", romaji: "hyudaejeonhwa", meaning: "mobile phone", parts: [
         { text: "휴대", furigana: "휴대", romaji: "hyudae",  meaning: "portable" },
         { text: "전화", furigana: "전화", romaji: "jeonhwa", meaning: "phone" },
       ]},
       { text: "통화",     furigana: "통화",     romaji: "tonghwa",       meaning: "phone call" },
-      { text: "는",       furigana: "는",       romaji: "neun",          meaning: "topic marker (after vowel)" },
-      { text: "삼가",     furigana: "삼가",     romaji: "samga",         meaning: "please refrain" },
+      { text: "는",       furigana: "는",       romaji: "neun",          meaning: "topic marker (after vowel)/topic" },
+      { text: "삼가",     furigana: "삼가",     romaji: "samga",         meaning: "refrain" },
+      { text: "주세요",   furigana: "주세요",   romaji: "juseyo",        meaning: "please" },
     ]
   },
   {
@@ -64,7 +65,7 @@ const SIGNS_KO = [
         { text: "물",   furigana: "물",   romaji: "mul",    meaning: "substance" },
       ]},
       { text: "섭취",     furigana: "섭취",     romaji: "seopchwi",  meaning: "consumption" },
-      { text: "는",       furigana: "는",       romaji: "neun",      meaning: "topic marker (after vowel)" },
+      { text: "는",       furigana: "는",       romaji: "neun",      meaning: "topic marker (after vowel)/topic" },
       { text: "금지",     furigana: "금지",     romaji: "geunji",    meaning: "prohibited" },
       { text: "되어",     furigana: "되어",     romaji: "dweo",      meaning: "become" },
       { text: "있습니다", furigana: "있습니다", romaji: "itsseumnida", meaning: "there is" },

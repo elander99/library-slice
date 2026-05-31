@@ -368,6 +368,7 @@ class Renderer2D {
     if (!room.npcs) return;
     const ctx  = this.ctx;
     const { cx, cy } = cam;
+    this._npc_chat_btns = {};
     for (const npc_def of room.npcs) {
       const wx = npc_def.col*TS + TS/2;
       const wy = npc_def.row*TS + TS;
@@ -386,13 +387,77 @@ class Renderer2D {
         ctx.beginPath(); ctx.arc(dx, dy-34, 7, 0, Math.PI*2); ctx.fill();
       }
 
-      // Speech bubble
-      if (npc_def.npc_id === 'librarian' && s.librarian.alert) {
-        this._draw_bubble(s.librarian.alert, dx, dy - 38, ctx);
-      } else if (npc_def.npc_id === 'librarian') {
-        this._bubble_close_btn = null;
+      // Chat bubble indicator (clickable to open dialogue)
+      this._draw_chat_indicator(npc_def.npc_id, dx, dy - dh, ctx);
+
+      // Speech bubble (HTML overlay handles rendering + dragging)
+      if (npc_def.npc_id === 'librarian') {
+        if (s.librarian.alert) {
+          if (typeof SpeechBubble !== 'undefined')
+            SpeechBubble.update(s.librarian.alert, dx, dy - 38 + this.VP_Y);
+          else
+            this._draw_bubble(s.librarian.alert, dx, dy - 38, ctx);
+        } else {
+          this._bubble_close_btn = null;
+          if (typeof SpeechBubble !== 'undefined') SpeechBubble.hide();
+        }
       }
     }
+  }
+
+  _draw_chat_indicator(npc_id, cx, headY, ctx) {
+    const npc  = NPC_DEFS[npc_id];
+    const name = (LANG.current === 'ko' && npc?.name_ko) ? npc.name_ko : (npc?.name_jp || npc_id);
+    const bh = 30, tail = 7, r = 7;
+
+    ctx.save();
+    ctx.font = `bold 13px ${this.FONT_JP}`;
+    const tw = ctx.measureText(name).width;
+    const bw = Math.max(90, tw + 28);
+    const bx = cx - bw / 2;
+    const by = headY - bh - tail - 4;
+
+    // Hover check (hover coords are screen-space; bubble y is viewport-local → add VP_Y)
+    const hx = this._hover_x, hy = this._hover_y;
+    const hovered = hx != null && hy != null &&
+      hx >= bx && hx <= bx + bw &&
+      hy >= by + this.VP_Y && hy <= by + this.VP_Y + bh + tail + 4;
+
+    const bg  = hovered ? 'rgba(255,250,232,1.0)' : 'rgba(250,248,240,0.93)';
+    const str = hovered ? 'rgba(150,75,10,0.9)'   : 'rgba(80,45,15,0.4)';
+    const lw  = hovered ? 1.8 : 1;
+
+    if (hovered) { ctx.shadowColor = 'rgba(160,80,10,0.28)'; ctx.shadowBlur = 10; }
+
+    // Bubble body
+    ctx.fillStyle = bg; ctx.strokeStyle = str; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, r); ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Tail fill (covers bubble bottom border line)
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, by + bh - 1);
+    ctx.lineTo(cx, by + bh + tail);
+    ctx.lineTo(cx + 5, by + bh - 1);
+    ctx.closePath(); ctx.fill();
+    // Tail stroke
+    ctx.strokeStyle = str; ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, by + bh);
+    ctx.lineTo(cx, by + bh + tail);
+    ctx.lineTo(cx + 5, by + bh);
+    ctx.stroke();
+
+    // NPC name
+    ctx.fillStyle = hovered ? '#3a1500' : 'rgba(45,20,5,0.88)';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(name, cx, by + bh / 2 + 1);
+
+    ctx.restore();
+
+    // Store clickable area in screen coords (viewport-local y → screen y)
+    this._npc_chat_btns[npc_id] = { x: bx, y: by + this.VP_Y, w: bw, h: bh + tail + 4 };
   }
 
   _draw_bubble(alert, bx, by, ctx) {
@@ -482,18 +547,26 @@ class Renderer2D {
       const is_hov = hx >= sdx && hx <= sdx + sw && hy >= sdy && hy <= sdy + sh;
       if (is_hov) { any_hov = true; }
 
+      const yo = is_hov ? -3 : 0; // lift on hover
+
+      // Drop-shadow when lifted
+      if (is_hov) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.beginPath(); ctx.roundRect(sdx + 2, sdy + yo + 5, sw, sh, 3); ctx.fill();
+      }
+
       // Sign background
       ctx.fillStyle = sign.color || 'rgba(100,40,20,0.88)';
-      ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.fill();
 
       if (is_hov) {
         ctx.save();
-        ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2;
-        ctx.shadowColor = '#b8860b'; ctx.shadowBlur = 10;
-        ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.stroke();
+        ctx.strokeStyle = '#c89a1a'; ctx.lineWidth = 2;
+        ctx.shadowColor = '#b8860b'; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.stroke();
         ctx.restore();
-        ctx.fillStyle = 'rgba(184,134,11,0.12)';
-        ctx.beginPath(); ctx.roundRect(sdx, sdy, sw, sh, 3); ctx.fill();
+        ctx.fillStyle = 'rgba(184,134,11,0.20)';
+        ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.fill();
       }
 
       // Sign text — per-token colouring to match the workspace panel
@@ -531,7 +604,7 @@ class Renderer2D {
         const ln = lines[li];
         const lw = ctx.measureText(ln).width;
         let x = sdx + (sw - lw) / 2; // centre the line
-        const y = sdy + PAD_Y + FONT_SZ + li * LINE_H;
+        const y = sdy + yo + PAD_Y + FONT_SZ + li * LINE_H;
 
         // Collect runs of consecutive same-token characters
         let i = 0;

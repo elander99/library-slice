@@ -157,10 +157,15 @@ const LOBBY_MAP = make_map(_COLS, _ROWS, _W,
     ...rect( 2, 22, 57, 22, _FS),
   ]
 );
-const LOBBY_NPCS  = [{ npc_id:'receptionist', col:40, row:10 }];
-const LOBBY_SIGNS = [
+const LOBBY_NPCS    = [{ npc_id:'receptionist', col:40, row:10 }];
+const LOBBY_SIGNS   = [
   { sign_id:'lobby_directory', col:5,  row:1 },
   { sign_id:'lobby_reception', col:30, row:1 },
+];
+const LOBBY_OBJECTS = [
+  { id:'reception_desk',  col:30, row:11 },
+  { id:'waiting_bench',   col:1,  row:8  },
+  { id:'directory_board', col:5,  row:2  },
 ];
 
 // ── Salon (60×27) ────────────────────────────────────────────────────────────
@@ -193,10 +198,15 @@ const SALON_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(42, 17, 48, 19, _C),
   ]
 );
-const SALON_NPCS  = [{ npc_id:'salon_staff', col:50, row:20 }];
-const SALON_SIGNS = [
+const SALON_NPCS    = [{ npc_id:'salon_staff', col:50, row:20 }];
+const SALON_SIGNS   = [
   { sign_id:'salon_share', col:5,  row:1 },
   { sign_id:'salon_food',  col:30, row:1 },
+];
+const SALON_OBJECTS = [
+  { id:'craft_table', col:13, row:10 },
+  { id:'craft_table', col:26, row:10 },
+  { id:'craft_table', col:39, row:18 },
 ];
 
 // ── Outdoor (60×27) ──────────────────────────────────────────────────────────
@@ -247,10 +257,16 @@ const OUTDOOR_MAP = make_map(_COLS, _ROWS, _T,
     ...rect(35, 11, 57, 16, _FSD),
   ]
 );
-const OUTDOOR_NPCS  = [{ npc_id:'outdoor_guide', col:30, row:18 }];
-const OUTDOOR_SIGNS = [
+const OUTDOOR_NPCS    = [{ npc_id:'outdoor_guide', col:30, row:18 }];
+const OUTDOOR_SIGNS   = [
   { sign_id:'outdoor_zipline', col:5,  row:1 },
   { sign_id:'outdoor_yield',   col:40, row:1 },
+];
+const OUTDOOR_OBJECTS = [
+  { id:'swing',    col:38, row:4  },
+  { id:'zipline',  col:40, row:4  },
+  { id:'bench',    col:5,  row:13 },
+  { id:'bench',    col:29, row:14 },
 ];
 
 // ── House (60×27) ─────────────────────────────────────────────────────────────
@@ -280,11 +296,16 @@ const HOUSE_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(41, 14, 53, 14, _S2),
   ]
 );
-const HOUSE_NPCS  = [{ npc_id:'house_resident', col:36, row:20 }];
-const HOUSE_SIGNS = [
+const HOUSE_NPCS    = [{ npc_id:'house_resident', col:36, row:20 }];
+const HOUSE_SIGNS   = [
   { sign_id:'house_entrance', col:4,  row:1 },
   { sign_id:'house_kotatsu',  col:25, row:1 },
   { sign_id:'house_kitchen',  col:48, row:1 },
+];
+const HOUSE_OBJECTS = [
+  { id:'genkan',          col:4,  row:13 },
+  { id:'kotatsu',         col:25, row:12 },
+  { id:'kitchen_counter', col:47, row:10 },
 ];
 
 // ── Room registry ────────────────────────────────────────────────────────────
@@ -292,7 +313,7 @@ const ROOM_MAP_DATA = {
   lobby: {
     id: 'lobby', floor: 'F_GRAY', cols: _COLS, rows: _ROWS,
     wall_patch: 'stone_border',
-    tiles: LOBBY_MAP, npcs: LOBBY_NPCS, objects: [], signs: LOBBY_SIGNS,
+    tiles: LOBBY_MAP, npcs: LOBBY_NPCS, objects: LOBBY_OBJECTS, signs: LOBBY_SIGNS,
     exits: [{ dir:'right', room:'play_area', my_col:59, my_rows:_EX, enter_col:1 }],
     name_jp: 'ロビー', name_ko: '로비', name_en: 'Lobby',
   },
@@ -319,7 +340,7 @@ const ROOM_MAP_DATA = {
   salon: {
     id: 'salon', floor: 'F_BLUE', cols: _COLS, rows: _ROWS,
     wall_patch: 'stone_border',
-    tiles: SALON_MAP, npcs: SALON_NPCS, objects: [], signs: SALON_SIGNS,
+    tiles: SALON_MAP, npcs: SALON_NPCS, objects: SALON_OBJECTS, signs: SALON_SIGNS,
     exits: [
       { dir:'left',  room:'library', my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'outdoor', my_col:59, my_rows:_EX, enter_col:1  },
@@ -328,7 +349,7 @@ const ROOM_MAP_DATA = {
   },
   outdoor: {
     id: 'outdoor', floor: 'F_GRASS', cols: _COLS, rows: _ROWS,
-    tiles: OUTDOOR_MAP, npcs: OUTDOOR_NPCS, objects: [], signs: OUTDOOR_SIGNS,
+    tiles: OUTDOOR_MAP, npcs: OUTDOOR_NPCS, objects: OUTDOOR_OBJECTS, signs: OUTDOOR_SIGNS,
     exits: [
       { dir:'left',  room:'salon', my_col:0,  my_rows:_EX, enter_col:58 },
       { dir:'right', room:'house', my_col:59, my_rows:_EX, enter_col:1  },
@@ -338,7 +359,7 @@ const ROOM_MAP_DATA = {
   house: {
     id: 'house', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
     wall_patch: 'stone_border',
-    tiles: HOUSE_MAP, npcs: HOUSE_NPCS, objects: [], signs: HOUSE_SIGNS,
+    tiles: HOUSE_MAP, npcs: HOUSE_NPCS, objects: HOUSE_OBJECTS, signs: HOUSE_SIGNS,
     exits: [
       { dir:'left', room:'outdoor', my_col:0, my_rows:_EX, enter_col:58 },
     ],

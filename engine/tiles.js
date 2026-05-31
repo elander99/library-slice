@@ -42,7 +42,11 @@ const TILES = {
   F_GRAY:    T('interior', 3, 0, false, '#A6ABB0'),  // light gray tile (lobby)
   F_BLUE:    T('interior', 2, 0, false, '#87B9CD'),  // blue-tinted mat
   F_TATAMI:  T('interior', 6, 3, false, '#B7B899'),  // warm green-gray tatami
-  F_TAN:     T('interior', 0, 6, false, '#8E7850'),  // tan/light wood
+  F_TAN:     T('interior', 0, 6, false, '#8E7850'),  // shoji panels (kept for compat)
+  F_TAN_B:   T('interior', 1, 6, false, '#8E7850'),
+  F_TAN_C:   T('interior', 2, 6, false, '#8E7850'),
+  // Library wood-plank floor — interior (4,3) alternating dark/light hardwood planks
+  F_LIB:     T('interior', 4, 3, false, '#8B4A20'),
   // Grass floor — 8 variants confirmed by pixel analysis (cols 2-4, rows 0-2 of terrain.png)
   F_GRASS:   T('terrain',  2, 0, false, '#536C2A'),
   F_GRASS_B: T('terrain',  3, 0, false, '#536C2A'),
@@ -194,6 +198,9 @@ const NINE_PATCH = {
 };
 
 // Grass variant pool — pixel-verified from terrain.png (cols 2-4, rows 0-2)
+// Tan wood variant pool — pixel-verified: interior cols 0-2 row 6, all 1024/1024 solid, distinct patterns
 const FLOOR_VARIANTS = {
   F_GRASS: ['F_GRASS','F_GRASS_B','F_GRASS_C','F_GRASS_D','F_GRASS_E','F_GRASS_F','F_GRASS_G','F_GRASS_H'],
+  F_TAN:   ['F_TAN', 'F_TAN_B', 'F_TAN_C'],
+  F_LIB:   ['F_LIB'],  // single tile — no variants needed, it already has grain variation
 };

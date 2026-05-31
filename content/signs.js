@@ -17,9 +17,9 @@ const SIGNS = [
     color: "#2d5a3d",
     tokens: [
       { text: "コンセント",   furigana: "コンセント",   romaji: "konsento",    meaning: "outlet" },
-      { text: "の",           furigana: "の",           romaji: "no",          meaning: "possessive particle" },
+      { text: "の",           furigana: "の",           romaji: "no",          meaning: "possessive particle/possessive" },
       { text: "ご使用",       furigana: "ごしよう",     romaji: "goshiyou",    meaning: "use" },
-      { text: "は",           furigana: "は",           romaji: "wa",          meaning: "topic particle" },
+      { text: "は",           furigana: "は",           romaji: "wa",          meaning: "topic particle/topic" },
       { text: "図書館",       furigana: "としょかん",   romaji: "toshokan",    meaning: "library" },
       { text: "業務",         furigana: "ぎょうむ",     romaji: "gyoumu",      meaning: "work" },
       { text: "に",           furigana: "に",           romaji: "ni",          meaning: "particle" },
@@ -28,7 +28,7 @@ const SIGNS = [
       { text: "場合",     furigana: "ばあい",     romaji: "baai",    meaning: "when" },
       { text: "のみ",     furigana: "のみ",       romaji: "nomi",    meaning: "only" },
       { text: "許可",     furigana: "きょか",     romaji: "kyoka",   meaning: "permission" },
-      { text: "されています", furigana: "されています", romaji: "sareteimasu", meaning: "is permitted / is being done / passive ongoing" }
+      { text: "されています", furigana: "されています", romaji: "sareteimasu", meaning: "is permitted" }
     ]
   },
   {
@@ -47,9 +47,9 @@ const SIGNS = [
       { text: "して",           furigana: "して",             romaji: "shite",           meaning: "doing" },
       { text: "ください",       furigana: "ください",         romaji: "kudasai",         meaning: "please" },
       { text: "携帯電話",       furigana: "けいたいでんわ",   romaji: "keitaidenwa",     meaning: "mobile phone" },
-      { text: "の",             furigana: "の",               romaji: "no",              meaning: "possessive particle" },
+      { text: "の",             furigana: "の",               romaji: "no",              meaning: "possessive particle/possessive" },
       { text: "ご使用",         furigana: "ごしよう",         romaji: "goshiyou",        meaning: "use" },
-      { text: "は",             furigana: "は",               romaji: "wa",              meaning: "topic particle" },
+      { text: "は",             furigana: "は",               romaji: "wa",              meaning: "topic particle/topic" },
       { text: "ご遠慮",   furigana: "ごえんりょ",   romaji: "goenryo",  meaning: "please refrain" },
       { text: "ください", furigana: "ください",   romaji: "kudasai",  meaning: "please" }
     ]
@@ -66,7 +66,7 @@ const SIGNS = [
       { text: "館内",   furigana: "かんない",   romaji: "kannai",     meaning: "indoors" },
       { text: "での",   furigana: "での",       romaji: "deno",       meaning: "inside" },
       { text: "飲食",   furigana: "いんしょく", romaji: "inshoku",    meaning: "eating and drinking" },
-      { text: "は",     furigana: "は",         romaji: "wa",         meaning: "topic particle" },
+      { text: "は",     furigana: "は",         romaji: "wa",         meaning: "topic particle/topic" },
       { text: "固く",   furigana: "かたく",     romaji: "kataku",     meaning: "strictly" },
       { text: "お断り", furigana: "おことわり", romaji: "okotowari",  meaning: "prohibited" },
       { text: "します", furigana: "します",     romaji: "shimasu",    meaning: "we do" }

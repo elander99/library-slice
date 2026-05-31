@@ -4,9 +4,10 @@
 // Usage: node server.js        (default port 8080)
 //        node server.js 3000   (custom port)
 
-const http = require('http');
-const fs   = require('fs');
-const path = require('path');
+const http           = require('http');
+const fs             = require('fs');
+const path           = require('path');
+const { spawn }      = require('child_process');
 
 const PORT    = parseInt(process.argv[2]) || 8080;
 const ROOT    = __dirname;
@@ -52,6 +53,23 @@ function generateJS(data) {
 }
 
 const OLLAMA = { host: '127.0.0.1', port: 11434 };
+
+function ensureOllama() {
+  const check = http.get({ host: OLLAMA.host, port: OLLAMA.port, path: '/api/version' }, res => {
+    res.resume();
+    console.log('[ollama] already running');
+  });
+  check.setTimeout(1500, () => { check.destroy(); startOllama(); });
+  check.on('error', startOllama);
+  check.end();
+}
+
+function startOllama() {
+  console.log('[ollama] not running — spawning ollama serve...');
+  const proc = spawn('ollama', ['serve'], { detached: true, stdio: 'ignore' });
+  proc.on('error', e => console.error('[ollama] failed to spawn:', e.message));
+  proc.unref();
+}
 
 function proxyOllama(req, res, path) {
   let body = '';
@@ -111,6 +129,8 @@ const server = http.createServer((req, res) => {
     res.end(data);
   });
 });
+
+ensureOllama();
 
 server.listen(PORT, () => {
   console.log(`Dwarf dev server running at http://localhost:${PORT}`);
