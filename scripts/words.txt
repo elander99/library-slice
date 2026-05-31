@@ -1,0 +1,8 @@
+// Words from NPC dialogue missing from _KO_FALLBACK
+// Run: node scripts/gen_fallback.js scripts/words.txt
+사실
+제
+축하해
+수
+줄
+오늘이

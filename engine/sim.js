@@ -36,26 +36,51 @@ class Sim {
       current_room: "library",
       player: { x: 300, target_x: 300, facing: 1, walk_phase: 0 },
       transition: null,  // { to_room, enter_x, alpha, switched }
+
+      game_time: (() => {
+        const d = new Date();
+        return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(), hour: 8, minute: 0 };
+      })(),
     };
 
-    // Restore saved world position
+    // Restore saved world position and game time
     try {
       const saved = JSON.parse(localStorage.getItem("library-slice-world-v1") || "{}");
       if (saved.room && ROOM_DEFS[saved.room]) {
-        this.state.current_room   = saved.room;
-        this.state.player.x       = saved.x || 300;
+        this.state.current_room    = saved.room;
+        this.state.player.x        = saved.x || 300;
         this.state.player.target_x = saved.x || 300;
       }
+      if (saved.game_time) this.state.game_time = saved.game_time;
     } catch {}
   }
 
   _save_world() {
     try {
       localStorage.setItem("library-slice-world-v1", JSON.stringify({
-        room: this.state.current_room,
-        x:    Math.round(this.state.player.x),
+        room:      this.state.current_room,
+        x:         Math.round(this.state.player.x),
+        game_time: this.state.game_time,
       }));
     } catch {}
+  }
+
+  // Advance game_time by one minute; roll hour/day/month/year as needed.
+  _advance_game_time() {
+    const gt = this.state.game_time;
+    gt.minute++;
+    if (gt.minute < 60) return;
+    gt.minute = 0;
+    gt.hour++;
+    if (gt.hour < 24) return;
+    gt.hour = 0;
+    gt.day++;
+    if (gt.day <= new Date(gt.year, gt.month, 0).getDate()) return;
+    gt.day = 1;
+    gt.month++;
+    if (gt.month <= 12) return;
+    gt.month = 1;
+    gt.year++;
   }
 
   // --- Lifecycle ---
@@ -184,6 +209,9 @@ class Sim {
 
     // Phone lookup cooldown
     if (s.phone.lookup_cooldown > 0) s.phone.lookup_cooldown--;
+
+    // Game clock: 1 real second = 1 game minute
+    this._advance_game_time();
 
     // Librarian alert countdown
     if (s.librarian.alert) {

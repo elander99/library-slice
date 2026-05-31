@@ -10,6 +10,7 @@ const NPC_DEFS = {
     room: "library",
     hotspot: "librarian",
     color: "#1a3a5c",
+    birthday: { month: 11, day: 3, jp: "11月3日", ko: "11월 3일" },
     greeting: {
       jp: "いらっしゃいませ。何かお手伝いできますか？",
       en: "Welcome. Can I help you with something?"
@@ -49,6 +50,11 @@ const NPC_DEFS = {
         jp: "コンセントは図書館業務に関連する場合のみご使用いただけます。",
         en: "Outlets may only be used for library-related work."
       },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "私の誕生日は11月3日です。文化の日と同じ日なんですよ。",
+        en: "My birthday is November 3rd — the same day as Culture Day."
+      },
       apologize: {
         keywords: ["すみません","ごめん","申し訳","失礼"],
         jp: "いいえ、お気になさらずに。何かお手伝いできることがあればお知らせください。",
@@ -69,6 +75,7 @@ const NPC_DEFS = {
     room: "lobby",
     hotspot: "npc_receptionist",
     color: "#5c3317",
+    birthday: { month: 1, day: 1, jp: "1月1日", ko: "1월 1일" },
     greeting: {
       jp: "こんにちは！富山県こどもみらい館へようこそ。何かお手伝いできますか？",
       en: "Hello! Welcome to Toyama Children's Future Hall. How can I help you?"
@@ -103,6 +110,11 @@ const NPC_DEFS = {
         jp: "利用登録はこちらの受付で行っております。身分証明書をお持ちいただければ、すぐにお手続きできます。",
         en: "You can register here at the reception desk. Please bring your ID and we can process it right away."
       },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "私の誕生日は1月1日なんです。毎年お正月と一緒で賑やかですよ。",
+        en: "My birthday is January 1st — every year it's lively, together with New Year's!"
+      },
       confused: {
         keywords: [],
         jp: "申し訳ございません。ご用件をもう少し詳しくお聞かせいただけますか？",
@@ -118,6 +130,7 @@ const NPC_DEFS = {
     room: "play_area",
     hotspot: "npc_play_staff",
     color: "#2d6a4f",
+    birthday: { month: 5, day: 5, jp: "5月5日", ko: "5월 5일" },
     greeting: {
       jp: "こんにちは！今日は遊びに来てくれたの？楽しんでいってね！",
       en: "Hello! Did you come to play today? Have fun!"
@@ -152,6 +165,11 @@ const NPC_DEFS = {
         jp: "走らないようにしてください。他のお子様とぶつからないよう気をつけて、順番を守って遊んでください。",
         en: "Please don't run. Watch out for other children, and take turns when playing."
       },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "5月5日、こどもの日が誕生日なんだ！子どもたちと一緒にお祝いできるから嬉しいよ。",
+        en: "May 5th — Children's Day! I love getting to celebrate alongside all the kids."
+      },
       confused: {
         keywords: [],
         jp: "ごめんね、もう一回言ってもらえる？",
@@ -167,6 +185,7 @@ const NPC_DEFS = {
     room: "salon",
     hotspot: "npc_salon_staff",
     color: "#5c1a5c",
+    birthday: { month: 3, day: 3, jp: "3月3日", ko: "3월 3일" },
     greeting: {
       jp: "こどもサロンへようこそ！ゆっくりしていってね。何かあったら声をかけてね。",
       en: "Welcome to the Children's Salon! Take your time. Just call if you need anything."
@@ -201,6 +220,11 @@ const NPC_DEFS = {
         jp: "今日は工作台が使えますよ。材料はあちらにあります。わからないことがあれば気軽に聞いてね。",
         en: "The craft table is available today. Materials are over there. Feel free to ask if you're unsure about anything."
       },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "3月3日、ひな祭りの日が誕生日です。お雛様と一緒にお祝いできるのが好きなんです。",
+        en: "March 3rd — Hinamatsuri! I love celebrating alongside the hina dolls."
+      },
       confused: {
         keywords: [],
         jp: "すみません、もう少しゆっくり話してもらえますか？",
@@ -216,6 +240,7 @@ const NPC_DEFS = {
     room: "outdoor",
     hotspot: "npc_outdoor_guide",
     color: "#2d6a1f",
+    birthday: { month: 7, day: 7, jp: "7月7日", ko: "7월 7일" },
     greeting: {
       jp: "こんにちは！ジップラインをご利用の方は、順番をお守りください。",
       en: "Hello! If you're using the zipline, please wait your turn."
@@ -245,6 +270,11 @@ const NPC_DEFS = {
         jp: "建物の中は左の入口から入れます。図書館やサロンは2階にありますよ。",
         en: "You can enter the building through the entrance on the left. The library and salon are on the 2nd floor."
       },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "7月7日、七夕の日が誕生日なんです。星に願いを込めて生まれてきたのかな。",
+        en: "July 7th — Tanabata! Maybe I was born reaching for the stars."
+      },
       confused: {
         keywords: [],
         jp: "すみません、もう少しゆっくり話してもらえますか？",
@@ -260,6 +290,7 @@ const NPC_DEFS = {
     room: "house",
     hotspot: "npc_house_resident",
     color: "#5c3a1e",
+    birthday: { month: 5, day: 31, jp: "5月31日", ko: "5월 31일" },
     greeting: {
       jp: "おかえりなさい！ゆっくりしていってね。",
       en: "Welcome back! Make yourself at home."
@@ -267,6 +298,16 @@ const NPC_DEFS = {
     greeting_ko: {
       jp: "어서 오세요! 편히 쉬다 가세요.",
       en: "Welcome! Please relax and stay a while."
+    },
+    greeting_birthday: {
+      jp: "おかえり！実は今日、私の誕生日なんです。5月31日！一緒にお祝いしてくれる？",
+      en: "Welcome back! Today is actually my birthday — May 31st! Will you celebrate with me?",
+      follow_up: "wish_birthday",
+    },
+    greeting_birthday_ko: {
+      jp: "어서 오세요! 사실 오늘이 제 생일이에요. 5월 31일! 같이 축하해 줄 수 있어요?",
+      en: "Welcome! Today is actually my birthday — May 31st! Will you celebrate with me?",
+      follow_up: "wish_birthday",
     },
     intents: {
       greeting: {
@@ -293,6 +334,16 @@ const NPC_DEFS = {
         keywords: ["くつ","靴","玄関","脱ぐ","ぬぐ","どこに"],
         jp: "玄関でくつをぬいでから上がってね。それが家のルールです。",
         en: "Please take off your shoes at the entrance. That's the house rule."
+      },
+      ask_birthday: {
+        keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
+        jp: "私の誕生日は5月31日です。今日がそうなんですよ！",
+        en: "My birthday is May 31st. That's today, actually!"
+      },
+      wish_birthday: {
+        keywords: ["おめでとう","おたんじょうび","バースデー","축하","생일","ハッピー","네","응","좋아요","もちろん","うん","はい"],
+        jp: "ありがとう！すごく嬉しい。一緒にカレーライスを食べてお祝いしましょう！",
+        en: "Thank you! That makes me so happy. Let's celebrate with curry rice together!"
       },
       confused: {
         keywords: [],

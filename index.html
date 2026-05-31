@@ -249,6 +249,7 @@
     #ws-input:focus { border-color:rgba(196,154,26,0.82); background:rgba(196,154,26,0.05); box-shadow:0 0 0 2px rgba(196,154,26,0.1); }
     #ws-input::placeholder { color:rgba(196,154,26,0.48); letter-spacing:0.05em; }
     #ws-input.correct { border-color:rgba(82,201,142,0.45); background:rgba(82,201,142,0.04); caret-color:var(--jade); }
+    #ws-input.drag-over { border-color:rgba(82,201,142,0.55); background:rgba(82,201,142,0.05); }
     @keyframes ws-wrong-flash {
       0%,100% { border-color:rgba(192,57,43,0.5); background:rgba(192,57,43,0.04); }
       40%     { border-color:rgba(192,57,43,0.9); background:rgba(192,57,43,0.18); }
@@ -445,19 +446,38 @@
       outline:none; transition:border-color 0.15s;
     }
     #vocab-search:focus { border-color:rgba(196,154,26,0.6); }
+    #vocab-search.drag-over { border-color:rgba(196,154,26,0.55); background:rgba(196,154,26,0.05); }
     #vocab-search::placeholder { color:#444; }
     .vocab-sign-header { font-family:'Noto Serif JP',serif; font-size:13px; color:#8a6838; margin:16px 0 6px; letter-spacing:0.05em; }
     .vocab-section:first-child .vocab-sign-header { margin-top:0; }
+    #vocab-panel.drop-active { outline:2px dashed rgba(196,154,26,0.55); outline-offset:-3px; }
+    #vocab-drop-hint {
+      margin:32px 16px; padding:28px 16px;
+      border:1px dashed rgba(196,154,26,0.22); border-radius:10px;
+      color:#444; font-family:'DM Mono',monospace; font-size:12px;
+      text-align:center; line-height:1.7; pointer-events:none;
+    }
+    #vocab-panel.drop-active #vocab-drop-hint { border-color:rgba(196,154,26,0.55); color:#8a6838; }
+    #vocab-clear-btn {
+      background:none; border:none; color:#444; font-family:'DM Mono',monospace;
+      font-size:11px; padding:4px 8px; cursor:pointer; border-radius:4px;
+      transition:color 0.15s;
+    }
+    #vocab-clear-btn:hover { color:#c0392b; }
     .vocab-row {
-      display:grid; grid-template-columns:60px 1fr 1fr; gap:8px; align-items:baseline;
+      display:grid; grid-template-columns:60px 1fr 1fr 20px; gap:8px; align-items:baseline;
       padding:7px 8px; border-radius:7px; margin-bottom:1px; transition:background 0.1s;
     }
     .vocab-row:hover { background:rgba(196,154,26,0.06); }
-    .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--cream); }
+    .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--cream); cursor:grab; }
     .vocab-reading { font-family:'DM Mono',monospace; font-size:12px; color:var(--gold); }
-    .vocab-reading.locked { color:#302818; }
     .vocab-meaning { font-family:'DM Mono',monospace; font-size:12px; color:var(--jade); }
-    .vocab-meaning.locked { color:#1a3228; }
+    .vocab-remove-btn {
+      background:none; border:none; color:#333; font-size:14px; padding:0;
+      cursor:pointer; opacity:0; transition:opacity 0.1s, color 0.1s; line-height:1;
+    }
+    .vocab-row:hover .vocab-remove-btn { opacity:1; }
+    .vocab-remove-btn:hover { color:#c0392b; }
     #vocab-empty { font-size:12px; color:#444; text-align:center; margin-top:40px; }
 
     /* ── Lang button ─────────────────────────────────────────────────────────── */
@@ -665,11 +685,14 @@
 </div>
 <div id="vocab-panel">
   <div id="vocab-header">
-    <h2 id="vocab-title">語彙ログ — Vocabulary Log</h2>
-    <button id="vocab-close">✕ close</button>
+    <h2 id="vocab-title">単語帳 — Word List</h2>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="vocab-clear-btn" style="display:none">clear all</button>
+      <button id="vocab-close">✕ close</button>
+    </div>
   </div>
   <div id="vocab-search-wrap">
-    <input id="vocab-search" type="text" placeholder="search…" autocomplete="off" spellcheck="false">
+    <input id="vocab-search" type="text" placeholder="filter…" autocomplete="off" spellcheck="false">
   </div>
   <div id="vocab-inner">
     <div id="vocab-content"></div>
@@ -739,8 +762,10 @@
 
   const NPC_VOCAB = (() => {
     const KEY = 'library-slice-npc-vocab-v1';
+    const _norm = s => s ? s.split(/\s*[/,]\s*/)[0].trim() : s;
     let _entries = [];
     try { _entries = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
+    _entries.forEach(e => { if (e.meaning) e.meaning = _norm(e.meaning); });
     function _flush() { try { localStorage.setItem(KEY, JSON.stringify(_entries)); } catch {} }
     return {
       getAll() { return _entries; },
@@ -748,7 +773,7 @@
         let e = _entries.find(x => x.text === token.text);
         if (!e) { e = {text:token.text, reading:'', meaning:'', romaji:false, meaning_unlocked:false}; _entries.push(e); }
         if (token.romaji && !e.reading) e.reading = token.romaji;
-        if (token.meaning && !e.meaning) e.meaning = token.meaning.split('/')[0].trim();
+        if (token.meaning && !e.meaning) e.meaning = _norm(token.meaning);
         if (key === 'romaji') e.romaji = true;
         if (key === 'meaning' && e.meaning) e.meaning_unlocked = true;
         _flush();
@@ -993,6 +1018,19 @@
     const inp       = document.getElementById("ws-input");
     inp.addEventListener("mousedown", e => e.stopPropagation());
     inp.addEventListener("click",     e => e.stopPropagation());
+    inp.addEventListener("dragover", e => {
+      if (!e.dataTransfer.types.includes('obj-label')) return;
+      if (inp.parentElement?.dataset?.field !== 'meaning') return;
+      e.preventDefault(); inp.classList.add('drag-over');
+    });
+    inp.addEventListener("dragleave", () => inp.classList.remove('drag-over'));
+    inp.addEventListener("drop", e => {
+      const word = e.dataTransfer.getData('obj-label');
+      if (!word || inp.parentElement?.dataset?.field !== 'meaning') return;
+      e.preventDefault(); inp.classList.remove('drag-over');
+      inp.value = word;
+      inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    });
     const fb        = document.getElementById("ws-feedback");
     const hint_read = document.getElementById("ws-hint-read");
     const hint_mean = document.getElementById("ws-hint-mean");
@@ -1030,7 +1068,7 @@
 
     async function _llama_judge_meaning(token, player_input, on_status) {
       const ctl = new AbortController();
-      const tid = setTimeout(() => ctl.abort(), 20000);
+      const tid = setTimeout(() => ctl.abort(), 60000);
       let elapsed = 0;
       const pulse = setInterval(() => { elapsed++; on_status?.(`asking LLM… ${elapsed}s`); }, 1000);
       try {
@@ -1040,7 +1078,7 @@
           signal: ctl.signal,
           body: JSON.stringify({ model:OLLAMA_MODEL, messages:[{role:"user", content:
             `${lang} word: ${token.text}\nAccepted meanings: ${token.meaning}\nStudent answer: ${player_input}\nIs the student's answer close enough in meaning to be marked correct? Reply yes or no only.`
-          }], stream:false, options:{temperature:0, num_predict:5} }) });
+          }], stream:false, keep_alive:-1, options:{temperature:0, num_predict:5} }) });
         clearTimeout(tid); clearInterval(pulse);
         if (!res.ok) { on_status?.(`LLM error: HTTP ${res.status}`); return false; }
         const reply = (await res.json()).message?.content?.trim() || '';
@@ -1065,7 +1103,7 @@
       }
       if (!res.meaning) {
         const norm=s=>s.replace(/[?!.,]+$/,"");
-        const depolite=s=>s.replace(/^(please|to)\s+/,'');
+        const depolite=s=>s.replace(/^(please|to|is)\s+/,'');
         const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split(/\s*[/,]\s*/).map(p=>depolite(norm(p.trim()))).filter(Boolean);
         const v=depolite(norm(val)), v_ns=depolite(norm(val_ns));
         if (parts.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return "meaning";
@@ -1077,6 +1115,48 @@
                      : p.endsWith('ibly') ? p.slice(0,-4)+'ible'
                      : p.slice(0,-2);
           return base.length >= 4 && base !== 'friend' && (v===base || v_ns===base);
+        })) return "meaning";
+        // Accept base verb of -ing gerunds; split on " and " within a part first.
+        if (parts.some(p=>p.split(' and ').some(piece=>{
+          if (piece.endsWith('ing')) {
+            const base=piece.slice(0,-3);
+            if (base.length>=3&&(v===base||v_ns===base)) return true;
+            const baseE=base+'e';
+            return base.length>=2&&(v===baseE||v_ns===baseE);
+          }
+          // Compound gerund: "bringing in" → accept "bring in"
+          const words=piece.split(' ');
+          if (words.length>=2&&words[0].endsWith('ing')) {
+            const gerund=words[0], rest=words.slice(1).join(' ');
+            const base=gerund.slice(0,-3);
+            if (base.length>=3&&(v===base+' '+rest||v_ns===(base+rest))) return true;
+            const baseE=base+'e';
+            if (base.length>=2&&(v===baseE+' '+rest||v_ns===(baseE+rest))) return true;
+          }
+          return false;
+        }))) return "meaning";
+        // Accept base verb of -ment nominalizations: replenishment→replenish, movement→move.
+        if (parts.some(p=>{
+          if (!p.endsWith('ment')) return false;
+          const base=p.slice(0,-4);
+          return base.length>=4&&(v===base||v_ns===base);
+        })) return "meaning";
+        // Accept base verb of -ed past participles (depolite already strips "is "):
+        //   allowed→allow  prohibited→prohibit  closed→close  related→relate  permitted→permit
+        if (parts.some(p=>{
+          if (p.endsWith('ed')) {
+            const base=p.slice(0,-2);
+            if (base.length>=3&&(v===base||v_ns===base)) return true;
+            if (base.length>=2&&base[base.length-1]===base[base.length-2]) {
+              const base2=base.slice(0,-1);
+              if (base2.length>=3&&(v===base2||v_ns===base2)) return true;
+            }
+          }
+          if (p.endsWith('d')) {
+            const base=p.slice(0,-1);
+            if (base.endsWith('e')&&base.length>=4&&(v===base||v_ns===base)) return true;
+          }
+          return false;
         })) return "meaning";
       }
       return null;
@@ -1295,6 +1375,27 @@
     }
 
     const _KO_FALLBACK = {
+      // ── copula ────────────────────────────────────────────────────────────
+      '이에요':    {reading:'ieyo',            meaning:'is'},
+      '예요':      {reading:'yeyo',            meaning:'is'},
+      // ── birthday ──────────────────────────────────────────────────────────
+      '생일':      {reading:'saengil',         meaning:'birthday'},
+      // ── months (N월) ──────────────────────────────────────────────────────
+      '1월':  {reading:'irwol',      meaning:'January'},
+      '2월':  {reading:'iwol',       meaning:'February'},
+      '3월':  {reading:'samwol',     meaning:'March'},
+      '4월':  {reading:'sawol',      meaning:'April'},
+      '5월':  {reading:'owol',       meaning:'May'},
+      '6월':  {reading:'yuwol',      meaning:'June'},
+      '7월':  {reading:'chirwol',    meaning:'July'},
+      '8월':  {reading:'parwol',     meaning:'August'},
+      '9월':  {reading:'guwol',      meaning:'September'},
+      '10월': {reading:'siwol',      meaning:'October'},
+      '11월': {reading:'sibirwol',   meaning:'November'},
+      '12월': {reading:'sibiwol',    meaning:'December'},
+      '월':   {reading:'wol',        meaning:'month'},
+      // ── days (N일) ────────────────────────────────────────────────────────
+      '일':   {reading:'il',         meaning:'day'},
       // ── greetings & conversation ──────────────────────────────────────────
       '안녕하세요':{reading:'annyeonghaseyo',   meaning:'hello (formal)'},
       '안녕':      {reading:'annyeong',         meaning:'hi / bye (informal)'},
@@ -1378,7 +1479,7 @@
       '지키세요':  {reading:'jikiséyo',         meaning:'please follow / please keep'},
       '지키고':    {reading:'jikigo',           meaning:'following / keeping (and…)'},
       '조용히':    {reading:'joyonghi',         meaning:'quietly / silently / please be quiet'},
-      '삼가':      {reading:'samga',            meaning:'refrain / please refrain / hold back'},
+      '삼가':      {reading:'samga',            meaning:'refrain / hold back'},
       '삼가세요':  {reading:'samgaseyo',        meaning:'please refrain / please hold back'},
       '금지':      {reading:'geunji',           meaning:'prohibited / banned / forbidden / not allowed'},
       '주의':      {reading:'juui',             meaning:'caution / attention / careful / warning'},
@@ -1567,13 +1668,125 @@
       '벌써':      {reading:'beolsseo',        meaning:'already'},
       '다시':      {reading:'dasi',            meaning:'again'},
       '같이':      {reading:'gachi',           meaning:'together / like / same as'},
+      // ── pronouns & demonstratives ────────────────────────────────────────
+      '나':        {reading:'na',             meaning:'I / me (informal)'},
+      '저':        {reading:'jeo',            meaning:'I / me (formal)'},
+      '우리':      {reading:'uri',            meaning:'we / our'},
+      '너':        {reading:'neo',            meaning:'you (informal)'},
+      '이것':      {reading:'igeot',          meaning:'this'},
+      '그것':      {reading:'geugeot',        meaning:'that'},
+      '저것':      {reading:'jeogeot',        meaning:'that (over there)'},
+      '저기':      {reading:'jeogi',          meaning:'over there'},
+      '이쪽':      {reading:'ijjok',          meaning:'this way / this side'},
+      '그쪽':      {reading:'geujjok',        meaning:'that way / that side'},
+      // ── directions & position ────────────────────────────────────────────
+      '앞':        {reading:'ap',             meaning:'front / ahead'},
+      '뒤':        {reading:'dwi',            meaning:'back / behind'},
+      '위':        {reading:'wi',             meaning:'above / up / on top'},
+      '아래':      {reading:'arae',           meaning:'below / down / under'},
+      '왼쪽':      {reading:'oenjjok',        meaning:'left'},
+      '오른쪽':    {reading:'oreunjjok',      meaning:'right'},
+      '밖':        {reading:'bak',            meaning:'outside'},
+      '옆':        {reading:'yeop',           meaning:'beside / next to'},
+      // ── people ───────────────────────────────────────────────────────────
+      '사람':      {reading:'saram',          meaning:'person'},
+      '친구':      {reading:'chingu',         meaning:'friend'},
+      '가족':      {reading:'gajok',          meaning:'family'},
+      '엄마':      {reading:'eomma',          meaning:'mom / mother'},
+      '아빠':      {reading:'appa',           meaning:'dad / father'},
+      '선생님':    {reading:'seonsaengnim',   meaning:'teacher'},
+      '학생':      {reading:'haksaeng',       meaning:'student'},
+      // ── places ───────────────────────────────────────────────────────────
+      '학교':      {reading:'hakgyo',         meaning:'school'},
+      '집':        {reading:'jip',            meaning:'house / home'},
+      '방':        {reading:'bang',           meaning:'room'},
+      '화장실':    {reading:'hwajangsil',     meaning:'restroom / bathroom'},
+      '공원':      {reading:'gongwon',        meaning:'park'},
+      // ── time ─────────────────────────────────────────────────────────────
+      '아침':      {reading:'achim',          meaning:'morning'},
+      '점심':      {reading:'jeomsim',        meaning:'lunch / noon'},
+      '저녁':      {reading:'jeonyeok',       meaning:'evening / dinner'},
+      '밤':        {reading:'bam',            meaning:'night'},
+      '매일':      {reading:'maeil',          meaning:'every day'},
+      '항상':      {reading:'hangsang',       meaning:'always'},
+      '가끔':      {reading:'gakkeum',        meaning:'sometimes'},
+      '나중에':    {reading:'najunge',        meaning:'later'},
+      // ── adjectives / states ──────────────────────────────────────────────
+      '커요':      {reading:'keoyo',          meaning:'big / large'},
+      '작아요':    {reading:'jagayo',         meaning:'small'},
+      '나빠요':    {reading:'nappayo',        meaning:'bad'},
+      '예뻐요':    {reading:'yeppeoyo',       meaning:'pretty / beautiful'},
+      '귀여워요':  {reading:'gwiyeowoyo',     meaning:'cute'},
+      '따뜻해요':  {reading:'ttatteuthaeyo',  meaning:'warm'},
+      '차가워요':  {reading:'chagawoyo',      meaning:'cold'},
+      '배고파요':  {reading:'baegopayo',      meaning:'hungry'},
+      '피곤해요':  {reading:'pigonhaeyo',     meaning:'tired'},
+      '바빠요':    {reading:'bappayo',        meaning:'busy'},
+      // ── emotions ─────────────────────────────────────────────────────────
+      '기분':      {reading:'gibun',          meaning:'feeling / mood'},
+      '행복해요':  {reading:'haengbokhaeyo',  meaning:'happy'},
+      '슬퍼요':    {reading:'seulpeoyo',      meaning:'sad'},
+      '무서워요':  {reading:'museowoyo',      meaning:'scared'},
+      '신나요':    {reading:'sinnayo',        meaning:'excited'},
+      // ── connectors ───────────────────────────────────────────────────────
+      '그리고':    {reading:'geurigo',        meaning:'and / and then'},
+      '하지만':    {reading:'hajiman',        meaning:'but / however'},
+      '그래서':    {reading:'geuraeseo',      meaning:'so / therefore'},
+      '아니면':    {reading:'animyeon',       meaning:'or / otherwise'},
+      '그럼':      {reading:'geureom',        meaning:'then / well then'},
+      '그런데':    {reading:'geureonde',      meaning:'but / by the way'},
+      // ── adverbs ──────────────────────────────────────────────────────────
+      '너무':      {reading:'neomu',          meaning:'too / very'},
+      '아주':      {reading:'aju',            meaning:'very / quite'},
+      '더':        {reading:'deo',            meaning:'more'},
+      '덜':        {reading:'deol',           meaning:'less'},
+      '모두':      {reading:'modu',           meaning:'all / everyone'},
+      '혼자':      {reading:'honja',          meaning:'alone'},
+      '또':        {reading:'tto',            meaning:'also / again'},
+      // ── food & drink ─────────────────────────────────────────────────────
+      '밥':        {reading:'bap',            meaning:'rice / meal'},
+      '차':        {reading:'cha',            meaning:'tea'},
+      '과일':      {reading:'gwail',          meaning:'fruit'},
+      '채소':      {reading:'chaeso',         meaning:'vegetable'},
+      '간식':      {reading:'gansik',         meaning:'snack'},
+      // ── native Korean numbers 1–10 ───────────────────────────────────────
+      '하나':      {reading:'hana',           meaning:'one'},
+      '둘':        {reading:'dul',            meaning:'two'},
+      '셋':        {reading:'set',            meaning:'three'},
+      '넷':        {reading:'net',            meaning:'four'},
+      '다섯':      {reading:'daseot',         meaning:'five'},
+      '여섯':      {reading:'yeoseot',        meaning:'six'},
+      '일곱':      {reading:'ilgop',          meaning:'seven'},
+      '여덟':      {reading:'yeodeol',        meaning:'eight'},
+      '아홉':      {reading:'ahop',           meaning:'nine'},
+      '열':        {reading:'yeol',           meaning:'ten'},
+      // ── everyday verbs (polite form) ─────────────────────────────────────
+      '앉아요':    {reading:'anjayo',         meaning:'sit'},
+      '서요':      {reading:'seoyo',          meaning:'stand'},
+      '자요':      {reading:'jayo',           meaning:'sleep'},
+      '일어나요':  {reading:'ireonayo',       meaning:'wake up / get up'},
+      '만들어요':  {reading:'mandeuleoyo',    meaning:'make / create'},
+      '줘요':      {reading:'jwoyo',          meaning:'give'},
+      '받아요':    {reading:'badayo',         meaning:'receive / get'},
+      '열어요':    {reading:'yeoreoyo',       meaning:'open'},
+      '닫아요':    {reading:'datayo',         meaning:'close'},
+      '나가요':    {reading:'nagayo',         meaning:'go out / exit'},
+      '들어가요':  {reading:'deureogayo',     meaning:'go in / enter'},
+      '기다려요':  {reading:'gidaryeoyo',     meaning:'wait'},
+      '시작해요':  {reading:'sijakhaeyo',     meaning:'start / begin'},
+      '끝나요':    {reading:'kkeutnayo',      meaning:'end / finish'},
+      '도와요':    {reading:'dowayo',         meaning:'help'},
+      '축하해요':  {reading:'chukhahaeyo',    meaning:'congratulate'},
+      '힘내요':    {reading:'himnaeyo',       meaning:'cheer up / hang in there'},
+      '웃어요':    {reading:'useoyo',         meaning:'laugh / smile'},
+      '울어요':    {reading:'ureoyo',         meaning:'cry'},
     };
     // Compound verb endings listed longest-first so the greedy match works correctly
     const _KO_PARTICLES = [
       '하시려면','하려면','하시겠어요','하겠습니다','하겠어요','했습니다','했어요',
       '하십시오','하시면','하세요','합니까','합니다','해요','해서','하면','하다','하고',
-      '시려면','겠습니다','겠어요','습니다','었어요','았어요','으면','려면',
-      '에서','에게','으로','까지','부터','이라','라고','이나','으나','이고','이면',
+      '시려면','겠습니다','겠어요','습니다','었어요','았어요','이에요','으면','려면',
+      '에서','에게','으로','까지','부터','이라','라고','이나','으나','이고','이면','예요',
       '를','을','가','이','는','은','에','로','와','과','도','만','의',
     ];
     const _KO_NO_SPLIT = new Set([
@@ -1649,7 +1862,7 @@
       try {
         const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),15000);
         const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
-          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:'10m',messages:[{role:'user',content:
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
             `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
         clearTimeout(tid); if(pulse)clearInterval(pulse);
@@ -1996,119 +2209,163 @@
   });
 
   const VocabPanel = (() => {
-    const panel=document.getElementById("vocab-panel"), content=document.getElementById("vocab-content");
-    const btn=document.getElementById("vocab-btn"), close=document.getElementById("vocab-close");
-    const searchInput=document.getElementById("vocab-search"), titleEl=document.getElementById("vocab-title");
-    function _filter(q) {
-      const query=q.trim().toLowerCase();
-      let anyVisible=false;
-      content.querySelectorAll('.vocab-section').forEach(sec=>{
-        let secVisible=false;
-        sec.querySelectorAll('.vocab-row').forEach(row=>{
-          const show=!query||row.dataset.q.includes(query);
-          row.style.display=show?'':'none';
-          if(show) secVisible=true;
-        });
-        sec.style.display=secVisible?'':'none';
-        if(secVisible) anyVisible=true;
-      });
-      const empty=document.getElementById('vocab-empty');
-      if(empty) empty.style.display='';
-      const noMatch=document.getElementById('vocab-no-match');
-      if(noMatch) noMatch.style.display=(!anyVisible&&query)?'':'none';
+    const STORE_KEY = 'vocab-list-v1';
+    const panel    = document.getElementById("vocab-panel");
+    const content  = document.getElementById("vocab-content");
+    const btn      = document.getElementById("vocab-btn");
+    const closeBtn = document.getElementById("vocab-close");
+    const clearBtn = document.getElementById("vocab-clear-btn");
+    const searchInput = document.getElementById("vocab-search");
+    const titleEl  = document.getElementById("vocab-title");
+    const dlg_inp  = document.getElementById("ws-dlg-input");
+    const dlg_open = () => document.getElementById("ws-dialogue").classList.contains("open");
+
+    let _words = []; // [{ text, reading, meaning }]
+
+    function _load() {
+      try { _words = JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch { _words = []; }
     }
-    function _populate() {
-      content.innerHTML=""; const all=WORD_PROGRESS.getAll(); let total=0;
-      const ko=LANG.current==='ko';
-      titleEl.textContent=ko?'Vocabulary Log':'語彙ログ — Vocabulary Log';
-      const dlg_inp = document.getElementById("ws-dlg-input");
-      const dlg_open = () => document.getElementById("ws-dialogue").classList.contains("open");
-      function _vocab_jp(text) {
-        const jp=document.createElement("span"); jp.className="vocab-jp"; jp.textContent=text;
-        jp.draggable=true;
-        jp.addEventListener("dragstart", e => {
-          e.dataTransfer.setData("dlg-word", text);
-          e.dataTransfer.effectAllowed="copy";
+    function _save() {
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(_words)); } catch {}
+    }
+
+    function _lookup(text) {
+      const ko = LANG.current === 'ko';
+      const signs = ko ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
+      for (const sign of signs) {
+        for (const tok of (sign.tokens || [])) {
+          const check = (t) => t.text === text ? { text, reading: t.romaji || t.furigana || '', meaning: t.meaning ? t.meaning.split('/')[0].trim() : '' } : null;
+          const found = check(tok) || (tok.parts || []).reduce((a, p) => a || check(p), null);
+          if (found) return found;
+        }
+      }
+      if (ko && _KO_FALLBACK[text]) {
+        const def = _KO_FALLBACK[text];
+        return { text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim() : '' };
+      }
+      const npe = NPC_VOCAB.getAll().find(e => e.text === text);
+      if (npe) return { text, reading: npe.reading || '', meaning: npe.meaning ? npe.meaning.split('/')[0].trim() : '' };
+      return { text, reading: '', meaning: '' };
+    }
+
+    function _add(text) {
+      if (_words.some(w => w.text === text)) return;
+      _words.push(_lookup(text));
+      _save(); _render();
+    }
+    function _remove(text) {
+      _words = _words.filter(w => w.text !== text);
+      _save(); _render();
+    }
+
+    function _render() {
+      const ko = LANG.current === 'ko';
+      titleEl.textContent = ko ? '단어장 — Word List' : '単語帳 — Word List';
+      clearBtn.style.display = _words.length ? '' : 'none';
+      content.innerHTML = '';
+
+      if (!_words.length) {
+        const hint = document.createElement('div');
+        hint.id = 'vocab-drop-hint';
+        hint.textContent = 'Drag word chips here\nto add them to your list.';
+        hint.style.whiteSpace = 'pre-line';
+        content.appendChild(hint);
+        return;
+      }
+
+      const q = searchInput.value.trim().toLowerCase();
+      const visible = q ? _words.filter(w => (w.text + ' ' + w.reading + ' ' + w.meaning).toLowerCase().includes(q)) : _words;
+
+      visible.forEach(w => {
+        const row = document.createElement('div');
+        row.className = 'vocab-row';
+
+        const jp = document.createElement('span');
+        jp.className = 'vocab-jp'; jp.textContent = w.text;
+        jp.draggable = true;
+        jp.addEventListener('dragstart', e => {
+          e.dataTransfer.setData('dlg-word', w.text);
+          e.dataTransfer.effectAllowed = 'copy';
         });
-        jp.addEventListener("click", () => {
+        jp.addEventListener('click', () => {
           if (!dlg_open()) return;
-          const start=dlg_inp.selectionStart??dlg_inp.value.length;
-          const end=dlg_inp.selectionEnd??dlg_inp.value.length;
-          dlg_inp.value=dlg_inp.value.slice(0,start)+text+dlg_inp.value.slice(end);
-          dlg_inp.selectionStart=dlg_inp.selectionEnd=start+text.length;
+          const s = dlg_inp.selectionStart ?? dlg_inp.value.length;
+          const en = dlg_inp.selectionEnd ?? dlg_inp.value.length;
+          dlg_inp.value = dlg_inp.value.slice(0, s) + w.text + dlg_inp.value.slice(en);
+          dlg_inp.selectionStart = dlg_inp.selectionEnd = s + w.text.length;
           close_panel(); dlg_inp.focus();
         });
-        return jp;
-      }
-      const _signs = ko ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
-      _signs.forEach(sign=>{
-        const sd=all[sign.id]; if (!sd) return;
-        const entries=Object.entries(sd).filter(([,r])=>r.romaji||r.meaning);
-        if (!entries.length) return;
-        const sec=document.createElement("div"); sec.className="vocab-section";
-        const hdr=document.createElement("div"); hdr.className="vocab-sign-header"; hdr.textContent=sign.label_en||sign.label; sec.appendChild(hdr);
-        entries.sort(([a],[b])=>parseInt(a)-parseInt(b)).forEach(([idx,res])=>{
-          const token=sign.tokens[parseInt(idx)]; if (!token) return;
-          const row=document.createElement("div"); row.className="vocab-row";
-          const readTxt=res.romaji?_fmt_read(token.furigana,token.romaji):"not yet unlocked";
-          const meanTxt=res.meaning?token.meaning.split("/")[0].trim():"not yet unlocked";
-          row.dataset.q=[token.text,readTxt,meanTxt].join(' ').toLowerCase();
-          const reading=document.createElement("span"); reading.className="vocab-reading"+(res.romaji?"":" locked");
-          reading.textContent=readTxt;
-          const meaning=document.createElement("span"); meaning.className="vocab-meaning"+(res.meaning?"":" locked");
-          meaning.textContent=meanTxt;
-          row.appendChild(_vocab_jp(token.text)); row.appendChild(reading); row.appendChild(meaning); sec.appendChild(row); total++;
-        });
-        content.appendChild(sec);
+
+        const reading = document.createElement('span');
+        reading.className = 'vocab-reading' + (w.reading ? '' : ' locked');
+        reading.textContent = w.reading || '—';
+
+        const meaning = document.createElement('span');
+        meaning.className = 'vocab-meaning' + (w.meaning ? '' : ' locked');
+        meaning.textContent = w.meaning || '—';
+
+        const rm = document.createElement('button');
+        rm.className = 'vocab-remove-btn'; rm.textContent = '×'; rm.title = 'Remove';
+        rm.addEventListener('click', e => { e.stopPropagation(); _remove(w.text); });
+
+        row.append(jp, reading, meaning, rm);
+        content.appendChild(row);
       });
-      const npc_entries = NPC_VOCAB.getAll().filter(e => e.romaji || e.meaning_unlocked);
-      if (npc_entries.length) {
-        const sec=document.createElement("div"); sec.className="vocab-section";
-        const hdr=document.createElement("div"); hdr.className="vocab-sign-header"; hdr.textContent=ko?'Dialogue':'会話 — Dialogue'; sec.appendChild(hdr);
-        npc_entries.forEach(e => {
-          const row=document.createElement("div"); row.className="vocab-row";
-          const readTxt=e.romaji&&e.reading?e.reading:"not yet unlocked";
-          const meanTxt=e.meaning_unlocked&&e.meaning?e.meaning:"not yet unlocked";
-          row.dataset.q=[e.text,readTxt,meanTxt].join(' ').toLowerCase();
-          const reading=document.createElement("span"); reading.className="vocab-reading"+(e.romaji?"":" locked");
-          reading.textContent=readTxt;
-          const meaning=document.createElement("span"); meaning.className="vocab-meaning"+(e.meaning_unlocked?"":" locked");
-          meaning.textContent=meanTxt;
-          row.appendChild(_vocab_jp(e.text)); row.appendChild(reading); row.appendChild(meaning); sec.appendChild(row); total++;
-        });
-        content.appendChild(sec);
+
+      if (q && !visible.length) {
+        const nm = document.createElement('p');
+        nm.style.cssText = 'font-size:12px;color:#444;text-align:center;margin-top:40px;';
+        nm.textContent = 'No matches.';
+        content.appendChild(nm);
       }
-      if (!total){ const e=document.createElement("p"); e.id="vocab-empty"; e.textContent="No words unlocked yet."; content.appendChild(e); }
-      else { const nm=document.createElement("p"); nm.id="vocab-no-match"; nm.textContent="No matches."; nm.style.cssText="font-size:12px;color:#444;text-align:center;margin-top:40px;display:none"; content.appendChild(nm); }
     }
-    const ANCHOR_KEY='vocab-anchor-v1';
-    const snap_el=document.createElement('div'); snap_el.id='vocab-snap-preview'; snap_el.dataset.zone=''; document.body.appendChild(snap_el);
-    const header_el=document.getElementById('vocab-header');
-    let _drag=null, _anchor=localStorage.getItem(ANCHOR_KEY)||'left';
-    function _apply_anchor(a){ _anchor=a; panel.dataset.anchor=a; try{localStorage.setItem(ANCHOR_KEY,a);}catch{} }
-    function _snap_zone(x,y){ const sw=window.innerWidth,sh=window.innerHeight; if(x<sw*0.3)return'left'; if(x>sw*0.7)return'right'; if(y<sh*0.3)return'top'; return null; }
+
+    // Drop words onto the panel
+    panel.addEventListener('dragover', e => {
+      if (e.dataTransfer.types.includes('dlg-word')) { e.preventDefault(); panel.classList.add('drop-active'); }
+    });
+    panel.addEventListener('dragleave', e => {
+      if (!panel.contains(e.relatedTarget)) panel.classList.remove('drop-active');
+    });
+    panel.addEventListener('drop', e => {
+      const word = e.dataTransfer.getData('dlg-word');
+      if (!word) return;
+      e.preventDefault(); panel.classList.remove('drop-active');
+      _add(word);
+    });
+
+    // Panel repositioning (drag header to snap left/right/top)
+    const ANCHOR_KEY = 'vocab-anchor-v1';
+    const snap_el = document.createElement('div'); snap_el.id = 'vocab-snap-preview'; snap_el.dataset.zone = ''; document.body.appendChild(snap_el);
+    let _drag = null, _anchor = localStorage.getItem(ANCHOR_KEY) || 'left';
+    function _apply_anchor(a) { _anchor = a; panel.dataset.anchor = a; try { localStorage.setItem(ANCHOR_KEY, a); } catch {} }
+    function _snap_zone(x, y) { const sw = window.innerWidth, sh = window.innerHeight; if (x < sw*0.3) return 'left'; if (x > sw*0.7) return 'right'; if (y < sh*0.3) return 'top'; return null; }
     _apply_anchor(_anchor);
-    header_el.addEventListener('mousedown',e=>{
-      if(e.button!==0||e.target.closest('button'))return;
-      e.preventDefault(); _drag={moved:false,x0:e.clientX,y0:e.clientY};
+    document.getElementById('vocab-header').addEventListener('mousedown', e => {
+      if (e.button !== 0 || e.target.closest('button')) return;
+      e.preventDefault(); _drag = { moved: false, x0: e.clientX, y0: e.clientY };
     });
-    window.addEventListener('mousemove',e=>{
-      if(!_drag)return;
-      if(!_drag.moved&&Math.hypot(e.clientX-_drag.x0,e.clientY-_drag.y0)<8)return;
-      _drag.moved=true; panel.classList.add('dragging');
-      snap_el.dataset.zone=_snap_zone(e.clientX,e.clientY)||'';
+    window.addEventListener('mousemove', e => {
+      if (!_drag) return;
+      if (!_drag.moved && Math.hypot(e.clientX-_drag.x0, e.clientY-_drag.y0) < 8) return;
+      _drag.moved = true; panel.classList.add('dragging');
+      snap_el.dataset.zone = _snap_zone(e.clientX, e.clientY) || '';
     });
-    window.addEventListener('mouseup',e=>{
-      if(!_drag)return;
-      const moved=_drag.moved; _drag=null; panel.classList.remove('dragging'); snap_el.dataset.zone='';
-      if(moved){ const z=_snap_zone(e.clientX,e.clientY); if(z)_apply_anchor(z); }
+    window.addEventListener('mouseup', e => {
+      if (!_drag) return;
+      const moved = _drag.moved; _drag = null; panel.classList.remove('dragging'); snap_el.dataset.zone = '';
+      if (moved) { const z = _snap_zone(e.clientX, e.clientY); if (z) _apply_anchor(z); }
     });
-    function open(){ searchInput.value=''; _populate(); panel.classList.add("open"); searchInput.focus(); }
-    function close_panel(){ panel.classList.remove("open"); }
-    searchInput.addEventListener("input",()=>_filter(searchInput.value));
-    btn.addEventListener("click",open); close.addEventListener("click",close_panel);
-    panel.addEventListener("click",e=>{ if(e.target===panel) close_panel(); });
-    return {open,close:close_panel,refresh:_populate};
+
+    searchInput.addEventListener('input', _render);
+    clearBtn.addEventListener('click', () => { _words = []; _save(); _render(); });
+    btn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close_panel);
+    panel.addEventListener('click', e => { if (e.target === panel) close_panel(); });
+
+    function open() { _load(); searchInput.value = ''; _render(); panel.classList.add('open'); }
+    function close_panel() { panel.classList.remove('open'); }
+    return { open, close: close_panel, add: _add };
   })();
 
   const SettingsPanel = (() => {
@@ -2209,7 +2466,7 @@
       const lang_name = LANG.current==='ko'?'Korean':'Japanese';
       try {
         const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({model:OLLAMA_MODEL,messages:[{role:'user',content:
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
             `${lang_name} word: "${word}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
         if (!res.ok) throw new Error();
@@ -2291,6 +2548,12 @@
       body_el.scrollTop = body_el.scrollHeight;
     }
     let cur_npc_id=null; const _histories={};
+    const _pending={};  // npc_id → {intent_id} when NPC asked a yes/no question
+    function _is_affirmative(text) {
+      const t=text.toLowerCase().trim().replace(/[!.?~\s]+$/,'');
+      return ['네','내','응','좋아','좋아요','그래','그래요','물론','당연','물론이죠','당연하죠',
+              'yes','yeah','ok','okay','sure','はい','うん','もちろん','ええ','오케이'].includes(t);
+    }
     const OLLAMA_URL="/ollama/api/chat", OLLAMA_MODEL="llama3.1:8b";
     const DLG_KEY='library-slice-dlg-v1';
     const _dlg_store=(()=>{ try{return JSON.parse(localStorage.getItem(DLG_KEY)||'{}');}catch{return{};} })();
@@ -2321,7 +2584,7 @@
       try {
         const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),45000);
         const res=await fetch(OLLAMA_URL,{method:"POST",headers:{"Content-Type":"application/json"},signal:ctl.signal,
-          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:"10m",format:"json",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:LANG.current==='ko'?128:512}})});
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,format:"json",messages:[{role:"system",content:_system_prompt(npc_id)},...history,{role:"user",content:text}],stream:false,options:{temperature:0.3,num_predict:LANG.current==='ko'?128:512}})});
         clearTimeout(tid);
         if (!res.ok) throw new Error('http '+res.status);
         const json=await res.json();
@@ -2353,6 +2616,24 @@
       inp.value=""; inp.disabled=true; send_btn.disabled=true;
       _append_player_turn(text);
       WorkspacePanel.speak(text);
+
+      // Pending follow-up: fire scripted intent immediately, skip Ollama
+      const pend=_pending[cur_npc_id];
+      if (pend) {
+        delete _pending[cur_npc_id];
+        if (_is_affirmative(text)) {
+          const intent=NPC_DEFS[cur_npc_id]?.intents[pend.intent_id];
+          if (intent) {
+            const jp=intent.jp, en=intent.en;
+            _histories[_hk(cur_npc_id)]=[...(_histories[_hk(cur_npc_id)]||[]),{role:"user",content:text},{role:"assistant",content:JSON.stringify({jp,en})}];
+            _save_dlg(cur_npc_id);
+            _append_npc_turn(jp, en, null);
+            send_btn.disabled=false; inp.disabled=false; inp.focus();
+            return;
+          }
+        }
+      }
+
       thinking.classList.add("visible");
       body_el.scrollTop = body_el.scrollHeight;
       const response=await _generate(cur_npc_id,text);
@@ -2364,15 +2645,21 @@
     function open(npc_id) {
       const npc=NPC_DEFS[npc_id]; if (!npc) return;
       cur_npc_id=npc_id;
-      const greeting = LANG.current==='ko' && npc.greeting_ko ? npc.greeting_ko : npc.greeting;
+      const _gt = sim.state.game_time;
+      const _isBirthday = npc.birthday && _gt && npc.birthday.month === _gt.month && npc.birthday.day === _gt.day;
+      const greeting = _isBirthday && npc.greeting_birthday
+        ? (LANG.current==='ko' && npc.greeting_birthday_ko ? npc.greeting_birthday_ko : npc.greeting_birthday)
+        : (LANG.current==='ko' && npc.greeting_ko ? npc.greeting_ko : npc.greeting);
       document.getElementById("ws-panel").classList.remove("open");
       // Reset to default centered position
       dlg_el.style.transform=''; dlg_el.style.left=''; dlg_el.style.top='';
       dlg_el.classList.add("open");
       avatar.style.background=npc.color; name_el.textContent='';
       body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
+      if (greeting.follow_up) _pending[npc_id]={intent_id:greeting.follow_up};
       const saved=_dlg_store[_hk(npc_id)];
       if (saved && saved.length > 0) {
+        delete _pending[npc_id];  // pending only for fresh conversations
         _histories[_hk(npc_id)]=saved;
         for (const msg of saved) {
           if (msg.role==='assistant') {
@@ -2393,6 +2680,7 @@
     }
 
     function close() {
+      if (cur_npc_id) delete _pending[cur_npc_id];
       cur_npc_id=null; dlg_el.classList.remove("open");
       _koKbdReset();
     }

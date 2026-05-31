@@ -60,8 +60,13 @@ class Input2D {
         this._interact_cooldown = 20;
       }
     }
-    // Close action menu on Escape
+    // Toggle calendar
+    if (e.key==='c'||e.key==='C') {
+      this.renderer.show_calendar = !this.renderer.show_calendar;
+    }
+    // Close calendar / action menu on Escape
     if (e.key==='Escape') {
+      this.renderer.show_calendar = false;
       this.renderer.action_menu = null;
     }
   }
@@ -111,6 +116,10 @@ class Input2D {
       if (R._end_btn && R._pt_in(R._end_btn,x,y)) { S.restart(); R.log_entries=[]; R.notifications=[]; R.action_menu=null; }
       return;
     }
+
+    // Calendar toggle: click clock area in HUD, or anywhere when calendar is open
+    if (R.show_calendar) { R.show_calendar = false; return; }
+    if (R._clock_rect && R._pt_in(R._clock_rect, x, y)) { R.show_calendar = true; return; }
 
     // Action menu click
     if (R.action_menu) {
@@ -164,6 +173,22 @@ class Input2D {
       }
     }
 
+    // Check ambient NPC clicks (visitors etc.)
+    const ambient_rects = R._ambient_npc_rects || {};
+    for (const [npc_id, rect] of Object.entries(ambient_rects)) {
+      const nx = rect.col*TS, ny = (rect.row-1)*TS;
+      if (wx >= nx && wx <= nx+TS && wy >= ny && wy <= ny+TS*2) {
+        const player_near = Math.abs(S.state.px - rect.wx) < TS*2.5 &&
+                            Math.abs(S.state.py - rect.wy) < TS*2.5;
+        if (player_near) {
+          if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_id, sx, sy);
+        } else {
+          S.set_walk_target(rect.wx, rect.wy);
+        }
+        return;
+      }
+    }
+
     // Check object clicks
     for (const obj of (room.objects||[])) {
       const ox=obj.col*TS, oy=obj.row*TS;
@@ -206,7 +231,7 @@ class Input2D {
       const nx=npc_def.col*TS+TS/2, ny=npc_def.row*TS+TS;
       if (Math.abs(s.px-nx)<TS*1.5 && Math.abs(s.py-ny)<TS*2) {
         if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_def.npc_id, _popup_cx, _popup_cy);
-        DialoguePanel.open(npc_def.npc_id);
+        if (!npc_def.ambient) DialoguePanel.open(npc_def.npc_id);
         return;
       }
     }

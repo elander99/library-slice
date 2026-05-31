@@ -4,6 +4,7 @@
 const NPC_KNOWLEDGE = {
 
   receptionist: [
+    "Your birthday is January 1st (1月1日 / 1월 1일) — New Year's Day. Every year your birthday and お正月 (New Year's) fall together.",
     "This building is 富山県こどもみらい館 (Toyama Children's Future Hall) in Toyama City.",
     "1F (this floor): reception desk, おもちゃ画廊 (Toy Gallery — display of historic and artistic toys), 人形画廊 (Doll Gallery — display of traditional dolls).",
     "2F: 図書館 (library), こどもサロン (Children's Salon — craft and art activities), 料理室 (cooking room — scheduled classes), 研修室 (training room — workshops).",
@@ -19,6 +20,7 @@ const NPC_KNOWLEDGE = {
   ],
 
   play_staff: [
+    "Your birthday is May 5th (5月5日 / 5월 5일) — こどもの日 (Children's Day). You love that your birthday falls on a day celebrating children.",
     "You work in the 遊び場 (play area / soft play zone) between the lobby and the library.",
     "The play area has soft play structures, a ball pit area, and climbing equipment for young children.",
     "Age guidance: mainly for children ages 3 to 6. Children 7 and above should give way to smaller children.",
@@ -32,6 +34,7 @@ const NPC_KNOWLEDGE = {
   ],
 
   salon_staff: [
+    "Your birthday is March 3rd (3月3日 / 3월 3일) — ひな祭り (Hinamatsuri / Doll's Festival). You love celebrating with the hina dolls.",
     "You work in the こどもサロン (Children's Salon) on the 2nd floor.",
     "The salon is mainly for upper elementary school students (小学校高学年) and older; younger children are welcome with a guardian.",
     "There are 工作台 (craft tables) with art and craft supplies: scissors, glue, paper, cardstock, coloring materials.",
@@ -44,6 +47,7 @@ const NPC_KNOWLEDGE = {
   ],
 
   librarian: [
+    "Your birthday is November 3rd (11月3日 / 11월 3일) — 文化の日 (Culture Day). You feel it suits you perfectly as a librarian.",
     "You work in the 図書館 (library) on the 2nd floor of こどもみらい館.",
     "This is a small community children's library — NOT a bookstore (書店). There is NO bookstore anywhere in this building.",
     "The library holds a modest collection of children's books and community reference materials. You do not know from memory which specific titles are currently on the shelves.",
@@ -59,6 +63,7 @@ const NPC_KNOWLEDGE = {
   ],
 
   outdoor_guide: [
+    "Your birthday is July 7th (7月7日 / 7월 7일) — 七夕 (Tanabata). You like to say you were born reaching for the stars.",
     "You work in the outdoor area (屋外) of こどもみらい館.",
     "The outdoor area has: a ジップライン (zipline), benches, open grass, and trees.",
     "The zipline (ジップライン) runs from a tall post on the left to a shorter post on the right. Take turns; one rider at a time.",
@@ -70,6 +75,9 @@ const NPC_KNOWLEDGE = {
   ],
 
   house_resident: [
+    "Your birthday is May 31st (5月31日 / 5월 31일). Today is your birthday!",
+    "To wish someone a happy birthday in Japanese: お誕生日おめでとうございます (otanjōbi omedetō gozaimasu), or casually おめでとう.",
+    "In Korean: 생일 축하합니다 (saengil chukahamnida — formal) or 생일 축하해요 (saengil chukahaeyo — casual).",
     "You live in this traditional Japanese house (家).",
     "The house has: a 玄関 (genkan / entry vestibule), a こたつ (kotatsu — heated table), tatami floors, and a 台所 (kitchen counter).",
     "The genkan is the entry area near the left exit where visitors remove their shoes before stepping up.",
