@@ -91,8 +91,8 @@ class Renderer2D {
     if (!def) return;
     const sw  = def.tw ?? def.sw ?? 32;
     const sh  = def.th ?? def.sh ?? 32;
-    const dw  = def.dw ?? TS;
-    const dh  = def.dh ?? TS;
+    const dw  = def.dw ?? (def.tw ?? TS);
+    const dh  = def.dh ?? (def.th ?? TS);
     const img = this._imgs[def.img];
     const dpr = this._dpr;
     const fdx = Math.round(dx * dpr) / dpr;
