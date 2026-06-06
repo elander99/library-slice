@@ -136,6 +136,28 @@ class Input {
       }
     }
 
+    // Ambient NPC prop clicks → lore popup
+    for (const [npc_id, rect] of Object.entries(R._prop_rects || {})) {
+      if (R._rect_contains(rect, x, y)) {
+        const entry = SCENE_LORE[npc_id];
+        if (entry) R.lore_popup = { ...entry, ttl: 260 };
+        return;
+      }
+    }
+
+    // Ambient NPC body clicks → conversation panel
+    const room_def = ROOM_MAP_DATA[S.state.current_room];
+    for (const [npc_id, rect] of Object.entries(R._ambient_npc_rects || {})) {
+      if (rect.sx == null) continue;
+      if (R._rect_contains({ x: rect.sx, y: rect.sy, w: rect.sw, h: rect.sh }, x, y)) {
+        const npc_def = room_def?.npcs?.find(n => n.npc_id === npc_id);
+        if (npc_def?.convo && typeof ConvoPanel !== 'undefined') {
+          ConvoPanel.open(npc_def.convo);
+          return;
+        }
+      }
+    }
+
     // Click-to-walk: nothing else caught this click
     if (!R.sign_panel && y > R.SCENE_Y && y < R.H - R.LOG_H) {
       S.perform("set_player_target", { x });
@@ -153,6 +175,12 @@ class Input {
     }
     for (const [id, rect] of Object.entries(hs)) {
       if (!id.startsWith("sign_") && R._rect_contains(rect, x, y)) return true;
+    }
+    for (const [, rect] of Object.entries(R._prop_rects || {})) {
+      if (R._rect_contains(rect, x, y)) return true;
+    }
+    for (const [, rect] of Object.entries(R._ambient_npc_rects || {})) {
+      if (rect.sx != null && R._rect_contains({ x: rect.sx, y: rect.sy, w: rect.sw, h: rect.sh }, x, y)) return true;
     }
     if (R.action_menu && R.action_menu._item_rects) {
       for (const rect of R.action_menu._item_rects) {

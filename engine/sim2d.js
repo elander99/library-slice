@@ -16,6 +16,7 @@ class Sim2D {
     const px_ok = saved.px > 0 && saved.px < room_def.cols * TS;
     const py_ok = saved.py > 0 && saved.py < room_def.rows * TS;
     this.state = {
+      npc_states: {},  // keyed by npc_id — dynamic position/goal state for roaming NPCs
       room:        room_id,
       px:          (px_ok && py_ok) ? saved.px : 10 * TS,
       py:          (px_ok && py_ok) ? saved.py : 7  * TS,
@@ -33,6 +34,7 @@ class Sim2D {
       textbook: { in_hand:false, progress:0 },
       phone:    { on_call:false, lookup_cooldown:0 },
       snack:    { eaten:false },
+      bed:      { sleeping:false },
       librarian:{ mood:'neutral', alert:null },
 
       goals: {
@@ -41,11 +43,119 @@ class Sim2D {
       },
 
       transition: null,  // { alpha, from_room, to_room, to_px, to_py }
+
+      game_time: (() => {
+        const d = new Date();
+        return { year: d.getFullYear(), month: d.getMonth()+1, day: d.getDate(), hour: 9, minute: 0 };
+      })(),
+      closing_warned: {},  // keys: `${room_id}_${year}-${month}-${day}` → 'soon'|'now'
+      room_alert: null,    // { npc_id, key, timer } — shown as NPC speech bubble
+      convo_bubble: null,  // { convo_id, turn_idx, npc_id, text_ko, text_en } — ambient conversation
     };
+    if (saved.game_time) this.state.game_time = saved.game_time;
+    if (saved.closing_warned) this.state.closing_warned = saved.closing_warned;
     // If saved position lands on a solid tile, reset to the room's default spawn.
     if (!this.can_move_to(this.state.px, this.state.py)) {
       this.state.px = 10 * TS;
       this.state.py = 7  * TS;
+    }
+    this._init_npc_states(room_id);
+  }
+
+  _init_npc_states(room_id) {
+    const s = this.state;
+    s.npc_states = {};
+    const room = ROOM_MAP_DATA[room_id];
+    if (!room?.npcs) return;
+    for (const n of room.npcs) {
+      if (!n.goals?.length) continue;
+      const gi = n.start_goal || 0;
+      const g0 = n.goals[gi];
+      s.npc_states[n.npc_id] = {
+        px: g0.col * TS + TS / 2,
+        py: g0.row * TS + TS,
+        goal_idx: gi,
+        pause_timer: (g0.pause_ms || 0) / 1000,
+        activity: g0.activity || null,
+        zipline_t: 0,
+        facing_left: false,
+      };
+    }
+  }
+
+  // Called every frame from the render loop — smooth NPC movement.
+  tick_npcs(dt) {
+    const s = this.state;
+    if (!s.session_active || s.transition) return;
+    const room = ROOM_MAP_DATA[s.room];
+    if (!room?.npcs) return;
+
+    const SPEED  = 45; // px/s walking speed
+    const RIDE_S = 6;  // seconds for zipline ride
+
+    for (const n of room.npcs) {
+      if (!n.goals?.length) continue;
+      const st = s.npc_states?.[n.npc_id];
+      if (!st) continue;
+
+      // ── Zipline ride phase ─────────────────────────────────────────────────
+      if (st.activity === 'zipline_ride') {
+        st.zipline_t += dt / RIDE_S;
+        if (st.zipline_t >= 1) {
+          st.zipline_t = 0;
+          st.activity  = null;
+          const zip = room.objects?.find(o => o.id === 'zipline');
+          if (zip) { st.px = zip.end_col * TS + TS / 2; st.py = zip.end_row * TS + TS; }
+          st.goal_idx   = (st.goal_idx + 1) % n.goals.length;
+          const gnext   = n.goals[st.goal_idx];
+          st.activity   = gnext.activity || null;
+          st.pause_timer = (gnext.pause_ms || 0) / 1000;
+        }
+        continue;
+      }
+
+      // ── Pause at waypoint ──────────────────────────────────────────────────
+      if (st.pause_timer > 0) {
+        st.pause_timer -= dt;
+        if (st.pause_timer <= 0) {
+          st.pause_timer = 0;
+          st.goal_idx    = (st.goal_idx + 1) % n.goals.length;
+          const gnext    = n.goals[st.goal_idx];
+          st.activity = gnext.activity || null;
+          if (gnext.activity === 'zipline_ride') st.zipline_t = 0;
+        }
+        continue;
+      }
+
+      // ── Walk toward current goal ───────────────────────────────────────────
+      const goal = n.goals[st.goal_idx];
+      const tx   = goal.col * TS + TS / 2;
+      const ty   = goal.row * TS + TS;
+      const ddx  = tx - st.px;
+      const ddy  = ty - st.py;
+      const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+
+      if (dist < 2) {
+        st.px = tx; st.py = ty;
+        if (goal.activity === 'zipline_ride') {
+          st.activity   = 'zipline_ride';
+          st.zipline_t  = 0;
+        } else {
+          st.pause_timer = (goal.pause_ms || 0) / 1000;
+          if (st.pause_timer <= 0) {
+            st.goal_idx  = (st.goal_idx + 1) % n.goals.length;
+            const gnext  = n.goals[st.goal_idx];
+            st.activity  = gnext.activity || null;
+            if (gnext.activity === 'zipline_ride') st.zipline_t = 0;
+          }
+        }
+      } else {
+        const step = Math.min(SPEED * dt, dist);
+        st.px += (ddx / dist) * step;
+        st.py += (ddy / dist) * step;
+        if (ddx < -1) st.facing_left = true;
+        else if (ddx > 1) st.facing_left = false;
+      }
     }
   }
 
@@ -64,8 +174,56 @@ class Sim2D {
     try {
       localStorage.setItem('lib2d-v1', JSON.stringify({
         room: this.state.room, px: Math.round(this.state.px), py: Math.round(this.state.py),
+        game_time: this.state.game_time,
+        closing_warned: this.state.closing_warned,
       }));
     } catch {}
+  }
+
+  // ── Time helpers ─────────────────────────────────────────────────────────
+
+  _room_is_open(room) {
+    if (!room || (!room.opens && !room.closes && !room.days)) return true;
+    const gt = this.state.game_time;
+    if (room.days) {
+      const dow = new Date(gt.year, gt.month-1, gt.day).getDay();
+      if (!room.days.includes(dow)) return false;
+    }
+    const t = gt.hour + gt.minute / 60;
+    if (room.opens && t < room.opens) return false;
+    if (room.closes && t >= room.closes) return false;
+    return true;
+  }
+
+  _check_room_hours() {
+    const s = this.state;
+    const gt = s.game_time;
+    const room = ROOM_MAP_DATA[s.room];
+    if (!room || !room.closes) return;
+
+    const day_key = `${s.room}_${gt.year}-${gt.month}-${gt.day}`;
+
+    // If room is closed today (wrong day of week), kick immediately
+    if (room.days) {
+      const dow = new Date(gt.year, gt.month-1, gt.day).getDay();
+      if (!room.days.includes(dow) && s.closing_warned[day_key] !== 'now') {
+        s.closing_warned[day_key] = 'now';
+        if (room.host_npc) s.room_alert = { npc_id: room.host_npc, key: 'room_closed', timer: 4 };
+        setTimeout(() => this.navigate_to_room(room.kick_to), 3000);
+        return;
+      }
+    }
+
+    const mins_until_close = (room.closes - gt.hour) * 60 - gt.minute;
+
+    if (mins_until_close <= 0 && s.closing_warned[day_key] !== 'now') {
+      s.closing_warned[day_key] = 'now';
+      if (room.host_npc) s.room_alert = { npc_id: room.host_npc, key: 'closing_now', timer: 4 };
+      setTimeout(() => this.navigate_to_room(room.kick_to), 3000);
+    } else if (mins_until_close > 0 && mins_until_close <= 15 && !s.closing_warned[day_key]) {
+      s.closing_warned[day_key] = 'soon';
+      if (room.host_npc) s.room_alert = { npc_id: room.host_npc, key: 'closing_soon', timer: 12 };
+    }
   }
 
   start() {
@@ -126,9 +284,15 @@ class Sim2D {
       for (const exit of room.exits) {
         const col = Math.floor(nx / TS);
         const row = Math.floor(ny / TS);
-        const matches_row = exit.my_rows.includes(row);
-        if (exit.dir === 'left'  && col <= 0         && matches_row) { this._begin_transition(exit); return; }
-        if (exit.dir === 'right' && col >= room.cols-1 && matches_row) { this._begin_transition(exit); return; }
+        if (exit.dir === 'left' || exit.dir === 'right') {
+          const matches_row = exit.my_rows && exit.my_rows.includes(row);
+          if (exit.dir === 'left'  && col <= 0          && matches_row) { this._begin_transition(exit); return; }
+          if (exit.dir === 'right' && col >= room.cols-1 && matches_row) { this._begin_transition(exit); return; }
+        } else {
+          const matches_col = exit.my_cols && exit.my_cols.includes(col);
+          if (exit.dir === 'up'   && row <= 0          && matches_col) { this._begin_transition(exit); return; }
+          if (exit.dir === 'down' && row >= room.rows-1 && matches_col) { this._begin_transition(exit); return; }
+        }
       }
     }
 
@@ -155,11 +319,29 @@ class Sim2D {
     const s = this.state;
     const dest = ROOM_MAP_DATA[exit.room];
     if (!dest) return;
-    const enter_y = 7 * TS;
-    const raw_px  = exit.enter_col * TS + TS/2;
-    // Clamp so the player can never land outside the destination room.
-    const to_px   = Math.max(TS, Math.min(raw_px, (dest.cols - 1) * TS));
-    s.transition = { alpha:0, to_room: exit.room, to_px, to_py: enter_y };
+    if (!this._room_is_open(dest)) {
+      this._notify();
+      return;
+    }
+    let to_px, to_py;
+    if (exit.dir === 'up' || exit.dir === 'down') {
+      to_px = Math.max(TS, Math.min(s.px, (dest.cols - 1) * TS));
+      const raw_py = exit.enter_row * TS + TS / 2;
+      to_py = Math.max(TS, Math.min(raw_py, (dest.rows - 1) * TS));
+    } else {
+      const raw_px = exit.enter_col * TS + TS / 2;
+      to_px = Math.max(TS, Math.min(raw_px, (dest.cols - 1) * TS));
+      to_py = Math.max(TS, Math.min(s.py, (dest.rows - 1) * TS));
+    }
+    s.transition = { alpha:0, to_room: exit.room, to_px, to_py };
+    this._notify();
+  }
+
+  navigate_to_room(room_id) {
+    const dest = ROOM_MAP_DATA[room_id];
+    if (!dest || this.state.transition) return;
+    const s = this.state;
+    s.transition = { alpha: 0, to_room: room_id, to_px: Math.round(dest.cols / 2) * TS, to_py: 7 * TS };
     this._notify();
   }
 
@@ -171,12 +353,57 @@ class Sim2D {
       s.room = s.transition.to_room;
       s.px   = s.transition.to_px;
       s.py   = s.transition.to_py;
+      // If spawn landed on a solid tile, nudge toward room center until walkable.
+      if (!this.can_move_to(s.px, s.py)) {
+        const room = ROOM_MAP_DATA[s.room];
+        const mid_x = room ? (room.cols * TS / 2) : (30 * TS);
+        const mid_y = room ? (room.rows * TS / 2) : (13 * TS);
+        const dir_x = s.px < mid_x ? 1 : -1;
+        const dir_y = s.py < mid_y ? 1 : -1;
+        let found = false;
+        for (let d = TS / 4; d <= 6 * TS; d += TS / 4) {
+          if (this.can_move_to(s.px + d * dir_x, s.py)) { s.px += d * dir_x; found = true; break; }
+        }
+        if (!found) {
+          for (let d = TS / 4; d <= 6 * TS; d += TS / 4) {
+            if (this.can_move_to(s.px, s.py + d * dir_y)) { s.py += d * dir_y; break; }
+          }
+        }
+      }
       s.transition = null;
+      this._init_npc_states(s.room);
       this._save();
       this._notify();
       return true; // room changed
     }
     return false;
+  }
+
+  // Instantly teleport to a room+pixel position, nudging out of solid tiles.
+  warp_to(room_id, px, py) {
+    const s = this.state;
+    s.room = room_id;
+    s.px   = px;
+    s.py   = py;
+    s.transition = null;
+    if (!this.can_move_to(s.px, s.py)) {
+      const room = ROOM_MAP_DATA[room_id];
+      const mid  = room ? (room.cols * TS / 2) : (30 * TS);
+      // Try nudging horizontally toward room center.
+      const dir  = s.px < mid ? 1 : -1;
+      let found  = false;
+      for (let d = TS / 4; d <= 6 * TS; d += TS / 4) {
+        if (this.can_move_to(s.px + d * dir, s.py)) { s.px += d * dir; found = true; break; }
+      }
+      // If still stuck (whole row blocked), walk down row-by-row until walkable.
+      if (!found) {
+        for (let dy = TS / 4; dy <= 8 * TS; dy += TS / 4) {
+          if (this.can_move_to(s.px, s.py + dy)) { s.py += dy; break; }
+        }
+      }
+    }
+    this._save();
+    this._notify();
   }
 
   // ── Click-to-move target ─────────────────────────────────────────────────
@@ -224,6 +451,19 @@ class Sim2D {
         break;
       case 'talk_to_librarian': if(!s.librarian.alert) s.librarian.alert={key:'librarian_greeting',timer:5}; break;
       case 'use_phone_lookup':  if(s.phone.lookup_cooldown<=0) s.phone.lookup_cooldown=60; break;
+      case 'go_to_sleep':
+        if(!s.bed.sleeping){ s.bed.sleeping=true; s.current_activity='sleeping'; this._push_reaction('info','go_to_sleep'); }
+        break;
+      case 'wake_up':
+        if(s.bed.sleeping){
+          s.bed.sleeping=false; s.current_activity=null; s.juujitsukan=Math.min(100,s.juujitsukan+25);
+          // Advance to next 7:00 AM
+          const gt=s.game_time;
+          if(gt.hour>=7){ gt.day++; const dim=new Date(gt.year,gt.month,0).getDate(); if(gt.day>dim){gt.day=1;gt.month++;} if(gt.month>12){gt.month=1;gt.year++;} }
+          gt.hour=7; gt.minute=0;
+          this._push_reaction('info','wake_up');
+        }
+        break;
     }
     this._notify();
   }
@@ -255,6 +495,10 @@ class Sim2D {
         break;
       case 'snack':
         if(!s.snack.eaten) a.push({action:'eat_snack',label_key:'eat_snack'});
+        break;
+      case 'bed':
+        if(!s.bed.sleeping) a.push({action:'go_to_sleep',label_key:'go_to_sleep'});
+        else a.push({action:'wake_up',label_key:'wake_up'});
         break;
     }
     return a;
@@ -295,6 +539,19 @@ class Sim2D {
     if (s.phone.on_call) s.juujitsukan=Math.max(0,s.juujitsukan-0.5);
     if (s.phone.lookup_cooldown>0) s.phone.lookup_cooldown--;
     if (s.librarian.alert) { s.librarian.alert.timer--; if(s.librarian.alert.timer<=0) s.librarian.alert=null; }
+    if (s.room_alert)      { s.room_alert.timer--;      if(s.room_alert.timer<=0)      s.room_alert=null; }
+
+    // Advance game clock (1 real second = 1 game minute)
+    const gt = s.game_time;
+    gt.minute++;
+    if (gt.minute >= 60) { gt.minute = 0; gt.hour++; }
+    if (gt.hour >= 24)   { gt.hour = 0; gt.day++;
+      const days_in_month = new Date(gt.year, gt.month, 0).getDate();
+      if (gt.day > days_in_month) { gt.day = 1; gt.month++; }
+      if (gt.month > 12) { gt.month = 1; gt.year++; }
+    }
+
+    this._check_room_hours();
     this._notify();
   }
 

@@ -4,4 +4,14 @@
   TILES['F_WOOD'] = T16('interior', 12, 0, false, '#66381a');
   TILES['F_WOOD_A'] = T16('interior', 11, 0, false, '#66381a');
   FLOOR_VARIANTS['F_WOOD'] = ['F_WOOD', 'F_WOOD_A'];
+
+  TILES['F_GRASS']   = T16('terrain', 4, 0, false, '#536C2A');
+  TILES['F_GRASS_B'] = T16('terrain', 5, 0, false, '#536C2A');
+  TILES['F_GRASS_C'] = T16('terrain', 4, 1, false, '#536C2A');
+  TILES['F_GRASS_D'] = T16('terrain', 5, 1, false, '#536C2A');
+  TILES['F_GRASS_E'] = T16('terrain', 4, 2, false, '#536C2A');
+  TILES['F_GRASS_F'] = T16('terrain', 5, 2, false, '#536C2A');
+  TILES['F_GRASS_G'] = T16('terrain', 4, 3, false, '#536C2A');
+  TILES['F_GRASS_H'] = T16('terrain', 5, 3, false, '#536C2A');
+  FLOOR_VARIANTS['F_GRASS'] = ['F_GRASS','F_GRASS_B','F_GRASS_C','F_GRASS_D','F_GRASS_E','F_GRASS_F','F_GRASS_G','F_GRASS_H'];
 })();

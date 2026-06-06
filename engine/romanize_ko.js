@@ -89,8 +89,38 @@ const romanizeKo = (() => {
   // Aspiration when ㅎ final (index 27) meets various initials: [initial_idx] → romanization
   const H_FINAL_ASPIRATE   = { 0:'k', 3:'t', 7:'p', 9:'ss', 12:'ch' };
 
+  // Sino-Korean (한자어) digit → Hangul, so the phonological rules run correctly.
+  // Digit sequences are replaced before the syllable loop; 십일 → samsibil etc.
+  const _OH = ['','일','이','삼','사','오','육','칠','팔','구'];
+  const _TH = ['','십','이십','삼십','사십','오십','육십','칠십','팔십','구십'];
+  function _digits_to_hangul(n) {
+    if (n === 0) return '공';
+    let r = '';
+    if (n >= 1000) { const t = Math.floor(n / 1000); r += (t > 1 ? _OH[t] : '') + '천'; n %= 1000; }
+    if (n >= 100)  { const h = Math.floor(n / 100);  r += (h > 1 ? _OH[h] : '') + '백'; n %= 100; }
+    if (n >= 10)   { r += _TH[Math.floor(n / 10)];   n %= 10; }
+    if (n > 0)     { r += _OH[n]; }
+    return r;
+  }
+
+  // Native Korean (고유어) counter forms for clock hours 1–24
+  const _NATIVE_HOUR = [
+    null,
+    '한','두','세','네','다섯','여섯','일곱','여덟','아홉','열',
+    '열한','열두','열세','열네','열다섯','열여섯','열일곱','열여덟','열아홉',
+    '스무','스물한','스물두','스물세','스물네'
+  ];
+
   return function romanize(text) {
     if (!text) return '';
+    // N시 (clock hours) use native Korean numbers, not Sino-Korean
+    text = text.replace(/(\d+)시/g, (_, num) => {
+      const n = parseInt(num, 10);
+      const native = (n >= 1 && n <= 24) ? _NATIVE_HOUR[n] : null;
+      return (native ? native : _digits_to_hangul(n)) + '시';
+    });
+    // Replace remaining digit runs with Sino-Korean Hangul before processing
+    text = text.replace(/\d+/g, m => _digits_to_hangul(parseInt(m, 10)));
     const syls = [...text].map(ch => ({ cp: ch.codePointAt(0), d: decomp(ch.codePointAt(0)), cho: null }));
     const out = [];
 

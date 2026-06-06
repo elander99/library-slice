@@ -55,8 +55,12 @@ class Renderer2D {
       library:   'art/tileset_library.png',
       school:    'art/tileset_school.png',
       infra:     'art/tileset_infrastructure.png',
+      infra3:    'art/tileset_infrastructure_3.png',
       toys:      'art/tileset_toys.png',
       buildings: 'art/tileset_buildings.png',
+      signs:     'art/tileset_signs.png',
+      signs2:    'art/tileset_signs_2.png',
+      signs3:    'art/tileset_signs_3.png',
     };
     for (const [k, src] of Object.entries(SHEET_PATHS)) {
       const img = new Image();
@@ -84,16 +88,17 @@ class Renderer2D {
   }
 
   // ── Unified blit ─────────────────────────────────────────────────────────
-  // Single draw call for all sprite types. Source size: tw/th (T16) or sw/sh (T, trees),
-  // defaulting to 32. Dest size: dw/dh from def, defaulting to TS×TS.
+  // Single draw call for all sprite types.
+  // Source size: tw/th (T16) or sw/sh (chars/trees), defaulting to 16 (all tilesets are 16×16 art).
+  // Dest size: dw/dh from def, defaulting to TS (32px — always 2× upscale from 16px art).
   // DPR-snaps destination so tile edges land on physical pixels.
 
   _blit(def, dx, dy) {
     if (!def) return;
-    const sw  = def.tw ?? def.sw ?? 32;
-    const sh  = def.th ?? def.sh ?? 32;
-    const dw  = def.dw ?? (def.tw ?? TS);
-    const dh  = def.dh ?? (def.th ?? TS);
+    const sw  = def.tw ?? def.sw ?? 16;
+    const sh  = def.th ?? def.sh ?? 16;
+    const dw  = def.dw ?? TS;
+    const dh  = def.dh ?? TS;
     const img = this._imgs[def.img];
     const dpr = this._dpr;
     const fdx = Math.round(dx * dpr) / dpr;
@@ -186,6 +191,14 @@ class Renderer2D {
   }
 
   _draw_floor_tile(room, col, row, dx, dy) {
+    if (room.floor === 'F_TATAMI') {
+      if ((col + row) % 2 === 0) {
+        this._draw_tile(this._tile_is_floor(room, col + 1, row) ? 'F_TATAMI' : 'F_TATAMI_C', dx, dy);
+      } else {
+        this._draw_tile(this._tile_is_floor(room, col - 1, row) ? 'F_TATAMI_B' : 'F_TATAMI_C', dx, dy);
+      }
+      return;
+    }
     const variants = FLOOR_VARIANTS[room.floor];
     if (variants) {
       const h = (Math.imul(col ^ (col << 5), 0x9e3779b9) ^ Math.imul(row ^ (row << 7), 0x85ebca6b)) >>> 0;
@@ -209,17 +222,6 @@ class Renderer2D {
     this._blit(spr, dx, dy);
   }
 
-  // ── Draw sprite (character/object) ────────────────────────────────────────
-
-  _draw_sprite(spr, dx, dy, w, h) {
-    const img = this._imgs[spr.img];
-    const dw = w || TS, dh = h || TS;
-    if (img && img.complete && img.naturalWidth > 0) {
-      ctx_save_restore(this.ctx, () =>
-        this.ctx.drawImage(img, spr.sx, spr.sy, spr.sw || 32, spr.sh || 32, dx, dy, dw, dh)
-      );
-    }
-  }
 
   // ── Main draw ─────────────────────────────────────────────────────────────
 
@@ -245,6 +247,7 @@ class Renderer2D {
 
     if (room) {
       this._draw_map(room, cam);
+      if (room.id === 'street') this._draw_road_markings(room, cam);
       this._draw_objects(room, cam, s);
       this._draw_npcs(room, cam, s);
       this._draw_player(cam, s);
@@ -258,8 +261,8 @@ class Renderer2D {
     // Per-room ambient tint (subtle mood colour)
     if (room) this._draw_room_tint(s.room);
 
-    // Time-of-day sky overlay
-    if (s.game_time) this._draw_sky_overlay(s.game_time, s.room);
+    // Time-of-day darkness with localized streetlight illumination
+    if (s.game_time) this._draw_night_lighting(s.game_time, s.room, cam, room);
 
     // Vignette — darken viewport edges for depth and focus
     this._draw_vignette();
@@ -309,7 +312,15 @@ class Renderer2D {
                 // Tiles above it are collision-only; the one sprite covers the full column.
                 const code_below = (row + 1 < room.rows) ? room.tiles[row + 1]?.[col] : null;
                 if (!code_below || !TREE_CODE[code_below]) {
-                  this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS, col, row });
+                  // Cull on sprite bounds, not tile bounds — the tile dy check above is too
+                  // tight for tall trees and causes the canopy to flicker at the viewport edge.
+                  const spr_ay = tree_spr.ay ?? (tree_spr.dh ?? tree_spr.sh);
+                  const spr_dh = tree_spr.dh ?? tree_spr.sh;
+                  const spr_top = dy + TS - spr_ay;
+                  const spr_bot = spr_top + spr_dh;
+                  if (spr_bot > -TS && spr_top < this.VP_H + TS) {
+                    this._tree_draws.push({ spr: tree_spr, wx: col*TS + TS/2, wy: (row+1)*TS, col, row });
+                  }
                 }
               } else {
                 this._draw_tile(code, dx, dy);
@@ -344,6 +355,10 @@ class Renderer2D {
       if (obj.id === 'zipline') {
         this._zipline_obj = obj;
         this._draw_zipline_posts(obj, cx, cy, ctx);
+        continue;
+      }
+      if (obj.id === 'streetlight') {
+        this._draw_streetlight(obj, cx, cy, ctx, s.game_time);
         continue;
       }
       const dx = obj.col*TS - cx, dy = obj.row*TS - cy;
@@ -386,6 +401,7 @@ class Renderer2D {
     if (!obj) return;
     const ctx  = this.ctx;
     const { cx, cy } = cam;
+    const s = this.sim.state;
     const START_H = 64, END_H = 44;
 
     const sdx = obj.col     * TS + TS/2 - cx;
@@ -411,26 +427,98 @@ class Renderer2D {
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(sdx, csy - 1); ctx.lineTo(edx, cey - 1); ctx.stroke();
 
-    // Animated rider: loops along the cable every 5 s
-    const t   = (Date.now() % 5000) / 5000;
+    // Find any NPC currently riding — drawn on the cable at their zipline_t progress
+    const room = ROOM_MAP_DATA[s.room];
+    const rider = room?.npcs?.find(n => s.npc_states?.[n.npc_id]?.activity === 'zipline_ride');
+    if (!rider) return;
+
+    const rst = s.npc_states[rider.npc_id];
+    const t   = Math.min(rst.zipline_t, 1);
     const rx  = sdx + (edx - sdx) * t;
     const ry  = csy + (cey - csy) * t;
+    const spr = CHARS[rider.npc_id] || CHARS.child_a;
+    const dw  = spr.dw ?? TS;
 
-    // Harness grip above cable
+    // Grip handle
     ctx.fillStyle = '#1a1010';
-    ctx.fillRect(rx - 7, ry - 3, 5, 5);
-    ctx.fillRect(rx + 2, ry - 3, 5, 5);
+    ctx.fillRect(rx - 2, ry - 8, 4, 10);
+    // Person sprite — head just below grip
+    this._blit(spr, rx - dw / 2, ry - 8);
+  }
 
-    // Body + legs hanging below cable
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(rx - 4, ry + 2, 8, 11);   // torso
-    ctx.fillStyle = '#1a1a4a';
-    ctx.fillRect(rx - 4, ry + 11, 3, 7);   // left leg
-    ctx.fillRect(rx + 1, ry + 11, 3, 7);   // right leg
+  _draw_road_markings(room, cam) {
+    const ctx = this.ctx;
+    const { cx, cy } = cam;
+    const rw = room.cols * TS;
 
-    // Head
-    ctx.fillStyle = '#e0c090';
-    ctx.beginPath(); ctx.arc(rx, ry - 7, 6, 0, Math.PI * 2); ctx.fill();
+    // Flat asphalt fill over rows 10-16 — replaces the textured tile floor
+    ctx.save();
+    ctx.fillStyle = '#787980';
+    ctx.fillRect(-cx, 10 * TS - cy, rw, 7 * TS);
+    ctx.restore();
+
+    // Double yellow centre line at the lane boundary (rows 13/14)
+    const CL_Y = 13 * TS - cy;
+    ctx.save();
+    ctx.fillStyle = 'rgba(240,200,40,0.9)';
+    ctx.fillRect(-cx, CL_Y,           rw, 3);  // top line
+    ctx.fillRect(-cx, CL_Y + TS - 3,  rw, 3);  // bottom line
+    ctx.restore();
+
+    // White dashed edge lines just inside the kerbs
+    const TOP_Y = 10 * TS - cy;
+    const BOT_Y = 16 * TS - cy;
+    const DASH = TS * 3, GAP = TS * 2;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    for (let col = 0; col < room.cols; col++) {
+      if ((col * TS) % (DASH + GAP) < DASH) {
+        const x = col * TS - cx;
+        ctx.fillRect(x, TOP_Y + 4,        TS, 2);
+        ctx.fillRect(x, BOT_Y + TS - 6,   TS, 2);
+      }
+    }
+    ctx.restore();
+  }
+
+  _draw_streetlight(obj, cx, cy, ctx, gt) {
+    const bx = obj.col * TS - cx + TS / 2;
+    const by = obj.row * TS - cy + TS;
+    const POLE_H = 80;
+    const hour = gt ? gt.hour + gt.minute / 60 : 12;
+    const isNight = hour >= 19 || hour < 6;
+    const isDusk  = !isNight && (hour >= 17.5 || hour < 7);
+
+    // Glow halo — drawn first so pole renders on top
+    if (isNight || isDusk) {
+      const glowAlpha = isNight ? 0.38 : 0.18;
+      const gx = bx + 12, gy = by - POLE_H - 2;
+      const grd = ctx.createRadialGradient(gx, gy, 3, gx, gy, 44);
+      grd.addColorStop(0, `rgba(255,230,110,${glowAlpha})`);
+      grd.addColorStop(1, 'rgba(255,230,110,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(gx, gy, 44, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Base plate
+    ctx.fillStyle = '#1e1e2e';
+    ctx.fillRect(bx - 5, by - 5, 10, 5);
+    // Pole
+    ctx.fillStyle = '#2e2e3e';
+    ctx.fillRect(bx - 3, by - POLE_H, 6, POLE_H - 5);
+    // Horizontal arm
+    ctx.fillRect(bx - 2, by - POLE_H + 2, 20, 4);
+    // Lamp housing cap
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(bx + 12, by - POLE_H - 6, 16, 5);
+    // Lamp glass
+    ctx.fillStyle = isNight ? '#fff5a0' : (isDusk ? '#ffe88a' : '#d0c890');
+    ctx.fillRect(bx + 12, by - POLE_H - 1, 16, 7);
+    // Bottom reflector
+    ctx.fillStyle = '#1a1a2a';
+    ctx.fillRect(bx + 10, by - POLE_H + 5, 20, 3);
   }
 
   _obj_color(id, s) {
@@ -438,17 +526,35 @@ class Renderer2D {
     if (id==='textbook') return '#2a4a6c';
     if (id==='phone')    return s.phone.on_call ? '#c0392b' : '#1a1a1a';
     if (id==='snack')    return s.snack.eaten ? '#555' : '#8b6914';
-    if (id==='outlet')   return '#e0ddd5';
+    if (id==='outlet')      return '#e0ddd5';
+    if (id==='bed')         return s.bed?.sleeping ? '#7a9abf' : '#e8c898';
+    if (id==='curry_pot')   return '#b05a1a';
+    if (id==='rice_cooker') return '#c8c8c0';
+    if (id==='ningyou')     return '#c0392b';
+    if (id==='matryoshka')  return '#e67e22';
+    if (id==='teddy_bear')  return '#8b6914';
+    if (id==='board_game')  return '#1a3a5c';
+    if (id==='toy_train')   return '#2d6a4f';
+    if (id==='yoyo')        return '#8b3a1e';
     return '#888';
   }
 
   _obj_label(id, s) {
-    if (id==='laptop')   return `💻${Math.round(s.laptop.battery)}%`;
-    if (id==='textbook') return `📖${Math.round(s.textbook.progress)}%`;
-    if (id==='phone')    return '📱';
-    if (id==='snack')    return s.snack.eaten ? '' : '🍘';
-    if (id==='outlet')   return '⚡';
-    return id;
+    if (id==='laptop')      return `💻${Math.round(s.laptop.battery)}%`;
+    if (id==='textbook')    return `📖${Math.round(s.textbook.progress)}%`;
+    if (id==='phone')       return '📱';
+    if (id==='snack')       return s.snack.eaten ? '' : '🍘';
+    if (id==='bed')         return s.bed?.sleeping ? '💤' : '🛏️';
+    if (id==='outlet')      return '⚡';
+    if (id==='curry_pot')   return '🍛';
+    if (id==='rice_cooker') return '🍚';
+    if (id==='ningyou')     return '🎎';
+    if (id==='matryoshka')  return '🪆';
+    if (id==='teddy_bear')  return '🧸';
+    if (id==='board_game')  return '🎲';
+    if (id==='toy_train')   return '🚂';
+    if (id==='yoyo')        return '🪀';
+    return (typeof ENTITY_DEFS !== 'undefined' && ENTITY_DEFS[id]?.icon) || '';
   }
 
   // ── NPC sprites ───────────────────────────────────────────────────────────
@@ -460,16 +566,19 @@ class Renderer2D {
     this._npc_chat_btns = {};
     this._ambient_npc_rects = {};
     this._prop_rects = {};
+    let _bubble_shown = false, _sb_shown = false;
     for (const npc_def of room.npcs) {
-      const wx = npc_def.col*TS + TS/2;
-      const wy = npc_def.row*TS + TS;
+      const npc_st = s.npc_states?.[npc_def.npc_id];
+      if (npc_st?.activity === 'zipline_ride') continue; // drawn on the cable
+      const wx = npc_st ? npc_st.px : (npc_def.col*TS + TS/2);
+      const wy = npc_st ? npc_st.py : (npc_def.row*TS + TS);
       const dx = wx - cx, dy = wy - cy;
       const spr = CHARS[npc_def.npc_id] || CHARS.librarian;
       const img = this._imgs[spr.img];
-      const dw = spr.dw || spr.sw, dh = spr.dh || spr.sh;
-      if (img && img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, spr.sx, spr.sy, spr.sw, spr.sh, dx - dw/2, dy - dh, dw, dh);
-      } else {
+      const dw = spr.dw ?? TS, dh = spr.dh ?? (TS * 2);
+      const flip_spr = npc_st?.facing_left ? { ...spr, flipX: !spr.flipX } : spr;
+      this._blit(flip_spr, dx - dw/2, dy - dh);
+      if (!img || !img.complete || !img.naturalWidth) {
         // Fallback: colored figure
         const npc = NPC_DEFS[npc_def.npc_id];
         ctx.fillStyle = npc ? npc.color : '#888';
@@ -478,7 +587,7 @@ class Renderer2D {
         ctx.beginPath(); ctx.arc(dx, dy-34, 7, 0, Math.PI*2); ctx.fill();
       }
 
-      // Ambient visitors: show prop emoji above head, store hit rect, no chat button
+      // Ambient visitors: show prop emoji + name bubble; advance conversation on click
       if (npc_def.ambient) {
         if (npc_def.prop) {
           ctx.save();
@@ -487,40 +596,52 @@ class Renderer2D {
           ctx.textBaseline = 'bottom';
           ctx.fillText(npc_def.prop, dx, dy - dh + 2);
           ctx.restore();
-          // Store screen-space hit rect for click detection (VP_Y accounts for translate)
           this._prop_rects[npc_def.npc_id] = { x: dx - 14, y: this.VP_Y + dy - dh - 16, w: 28, h: 24 };
         }
-        this._ambient_npc_rects[npc_def.npc_id] = { wx, wy, col: npc_def.col, row: npc_def.row };
+        // Draw name chat-indicator bubble (same style as interactive NPCs)
+        this._draw_chat_indicator(npc_def.npc_id, dx, dy - dh, ctx);
+        // Store screen-space body rect — use dynamic position for roaming NPCs
+        const dyn_col = npc_st ? Math.round((npc_st.px - TS/2) / TS) : npc_def.col;
+        const dyn_row = npc_st ? Math.round((npc_st.py - TS) / TS)   : npc_def.row;
+        this._ambient_npc_rects[npc_def.npc_id] = {
+          wx, wy, col: dyn_col, row: dyn_row,
+          sx: dx - dw/2, sy: this.VP_Y + dy - dh, sw: dw, sh: dh
+        };
+        // Show speech bubble when this NPC is the active conversation speaker
+        const cb = s.convo_bubble;
+        if (cb && cb.npc_id === npc_def.npc_id) {
+          const text = (LANG.current === 'ko' ? cb.text_ko : cb.text_en) || cb.text_ko;
+          if (typeof SpeechBubble !== 'undefined') {
+            SpeechBubble.update({ text }, dx, dy - dh + this.VP_Y, { npc_id: cb.npc_id, text_en: cb.text_en });
+            _bubble_shown = true; _sb_shown = true;
+          }
+        }
         continue;
       }
 
       // Chat bubble indicator (clickable to open dialogue)
-      this._draw_chat_indicator(npc_def.npc_id, dx, dy - dh, ctx);
+      const _has_new = typeof DialoguePanel !== 'undefined' && DialoguePanel.hasFresh(npc_def.npc_id);
+      this._draw_chat_indicator(npc_def.npc_id, dx, dy - dh, ctx, _has_new);
 
-      // Speech bubble (HTML overlay handles rendering + dragging)
-      if (npc_def.npc_id === 'librarian') {
-        if (s.librarian.alert) {
-          if (typeof SpeechBubble !== 'undefined')
-            SpeechBubble.update(s.librarian.alert, dx, dy - 38 + this.VP_Y);
-          else
-            this._draw_bubble(s.librarian.alert, dx, dy - 38, ctx);
-        } else {
-          this._bubble_close_btn = null;
-          if (typeof SpeechBubble !== 'undefined') SpeechBubble.hide();
-        }
+      // Speech bubble: rule violations (librarian only) or room closing (host NPC)
+      const _alert = (s.room_alert?.npc_id === npc_def.npc_id) ? s.room_alert
+                   : (npc_def.npc_id === 'librarian' && s.librarian.alert) ? s.librarian.alert
+                   : null;
+      if (_alert) {
+        _bubble_shown = true;
+        this._draw_bubble(_alert, dx, dy - dh, ctx);
       }
+    }
+    if (!_sb_shown && typeof SpeechBubble !== 'undefined') SpeechBubble.hide();
+    if (!_bubble_shown) {
+      this._bubble_close_btn = null;
     }
   }
 
-  _draw_chat_indicator(npc_id, cx, headY, ctx) {
-    const npc  = NPC_DEFS[npc_id];
-    const name = (LANG.current === 'ko' && npc?.name_ko) ? npc.name_ko : (npc?.name_jp || npc_id);
-    const bh = 30, tail = 7, r = 7;
+  _draw_chat_indicator(npc_id, cx, headY, ctx, has_new = false) {
+    const bw = 42, bh = 26, tail = 8, r = 9;
 
     ctx.save();
-    ctx.font = `bold 13px ${this.FONT_JP}`;
-    const tw = ctx.measureText(name).width;
-    const bw = Math.max(90, tw + 28);
     const bx = cx - bw / 2;
     const by = headY - bh - tail - 4;
 
@@ -544,22 +665,25 @@ class Renderer2D {
     // Tail fill (covers bubble bottom border line)
     ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.moveTo(cx - 5, by + bh - 1);
+    ctx.moveTo(cx - 6, by + bh - 1);
     ctx.lineTo(cx, by + bh + tail);
-    ctx.lineTo(cx + 5, by + bh - 1);
+    ctx.lineTo(cx + 6, by + bh - 1);
     ctx.closePath(); ctx.fill();
     // Tail stroke
     ctx.strokeStyle = str; ctx.lineWidth = lw;
     ctx.beginPath();
-    ctx.moveTo(cx - 5, by + bh);
+    ctx.moveTo(cx - 6, by + bh);
     ctx.lineTo(cx, by + bh + tail);
-    ctx.lineTo(cx + 5, by + bh);
+    ctx.lineTo(cx + 6, by + bh);
     ctx.stroke();
 
-    // NPC name
-    ctx.fillStyle = hovered ? '#3a1500' : 'rgba(45,20,5,0.88)';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(name, cx, by + bh / 2 + 1);
+    if (has_new) {
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#c0392b';
+      ctx.fillText('!', cx, by + bh / 2);
+    }
 
     ctx.restore();
 
@@ -572,28 +696,44 @@ class Renderer2D {
     if (!dl) return;
     const text = LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese;
     const dpr = this._dpr;
-    const bw = 200, bh = 44;
+    const bw = 200, bh = 44, tail = 8, r = 8;
     const px = Math.round(Math.min(Math.max(bx - bw/2, 4), this.VP_W - bw - 4) * dpr) / dpr;
-    const py = Math.round((by - bh - 10) * dpr) / dpr;
+    const py = Math.round((by - bh - tail - 4) * dpr) / dpr;
+    const bg = 'rgba(250,248,240,0.97)', str = 'rgba(80,45,15,0.4)';
     // Store X button rect in full screen coords for click detection
     const XS = 14;
     this._bubble_close_btn = { x: px + bw - XS - 4, y: py + 4 + this.VP_Y, w: XS, h: XS };
-    ctx.fillStyle = 'rgba(250,248,240,0.97)';
-    ctx.strokeStyle = '#5c3317';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.roundRect(px, py, bw, bh, 6); ctx.fill(); ctx.stroke();
+    ctx.save();
+    ctx.fillStyle = bg; ctx.strokeStyle = str; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(px, py, bw, bh, r); ctx.fill(); ctx.stroke();
+    // Tail fill
+    const tx = Math.min(Math.max(bx, px + 10), px + bw - 10);
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(tx - 6, py + bh - 1);
+    ctx.lineTo(tx, py + bh + tail);
+    ctx.lineTo(tx + 6, py + bh - 1);
+    ctx.closePath(); ctx.fill();
+    // Tail stroke
+    ctx.strokeStyle = str; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(tx - 6, py + bh);
+    ctx.lineTo(tx, py + bh + tail);
+    ctx.lineTo(tx + 6, py + bh);
+    ctx.stroke();
     // X button
     const xbx = px + bw - XS - 4, xby = py + 4;
     ctx.fillStyle = 'rgba(92,51,23,0.18)';
     ctx.beginPath(); ctx.roundRect(xbx, xby, XS, XS, 3); ctx.fill();
-    ctx.strokeStyle = '#5c3317'; ctx.lineWidth = 1.5;
-    const cx = xbx + XS/2, cy = xby + XS/2, d = 3.5;
-    ctx.beginPath(); ctx.moveTo(cx-d,cy-d); ctx.lineTo(cx+d,cy+d); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx+d,cy-d); ctx.lineTo(cx-d,cy+d); ctx.stroke();
+    ctx.strokeStyle = str; ctx.lineWidth = 1.5;
+    const ccx = xbx + XS/2, ccy = xby + XS/2, d = 3.5;
+    ctx.beginPath(); ctx.moveTo(ccx-d,ccy-d); ctx.lineTo(ccx+d,ccy+d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ccx+d,ccy-d); ctx.lineTo(ccx-d,ccy+d); ctx.stroke();
     ctx.fillStyle = '#1a1209';
     ctx.font = `12px ${this.FONT_JP}`;
     ctx.textAlign = 'center';
     ctx.fillText(text, px+bw/2, py+26, bw-24);
+    ctx.restore();
   }
 
   // ── Player sprite ─────────────────────────────────────────────────────────
@@ -604,10 +744,9 @@ class Renderer2D {
     const dy = s.py - cam.cy;
     const spr = CHARS.player;
     const img = this._imgs[spr.img];
-    const dw = spr.dw || spr.sw, dh = spr.dh || spr.sh;
-    if (img && img.complete && img.naturalWidth > 0) {
-      ctx.drawImage(img, spr.sx, spr.sy, spr.sw, spr.sh, dx - dw/2, dy - dh, dw, dh);
-    } else {
+    const dw = spr.dw ?? TS, dh = spr.dh ?? (TS * 2);
+    this._blit(spr, dx - dw/2, dy - dh);
+    if (!img || !img.complete || !img.naturalWidth) {
       // Fallback
       ctx.fillStyle = '#3a4a6c';
       ctx.fillRect(dx-7, dy-28, 14, 28);
@@ -617,6 +756,12 @@ class Renderer2D {
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.beginPath(); ctx.ellipse(dx, dy, 8, 3, 0, 0, Math.PI*2); ctx.fill();
+    // Sleep indicator
+    if (s.bed?.sleeping) {
+      ctx.font = `16px ${this.FONT_JP}`;
+      ctx.textAlign = 'center';
+      ctx.fillText('💤', dx, dy - dh - 4);
+    }
   }
 
   // ── Sign hotspots (visual indicator on wall) ──────────────────────────────
@@ -630,7 +775,7 @@ class Renderer2D {
     let any_hov = false;
     this._sign_world_rects = {};
 
-    const FONT_SZ = 12, LINE_H = 17, PAD_X = 8, PAD_Y = 5;
+    const FONT_SZ = 15, LINE_H = 22, PAD_X = 12, PAD_Y = 7;
 
     for (const sg of room.signs) {
       const sign = SIGN_BY_ID[sg.sign_id];
@@ -654,26 +799,45 @@ class Renderer2D {
       const is_hov = hx >= sdx && hx <= sdx + sw && hy >= sdy && hy <= sdy + sh;
       if (is_hov) { any_hov = true; }
 
-      const yo = is_hov ? -3 : 0; // lift on hover
+      const yo = 0;
 
-      // Drop-shadow when lifted
-      if (is_hov) {
-        ctx.fillStyle = 'rgba(0,0,0,0.28)';
-        ctx.beginPath(); ctx.roundRect(sdx + 2, sdy + yo + 5, sw, sh, 3); ctx.fill();
+      // Mounting posts (drawn first, behind everything)
+      const POST_W = 6, POST_H = 20;
+      const post_y = sdy + yo + sh;
+      ctx.fillStyle = '#3a2a18';
+      if (sw > 80) {
+        ctx.fillRect(sdx + sw * 0.25 - POST_W / 2, post_y, POST_W, POST_H);
+        ctx.fillRect(sdx + sw * 0.75 - POST_W / 2, post_y, POST_W, POST_H);
+        ctx.fillRect(sdx + sw * 0.25 - POST_W * 1.5, post_y + POST_H - 3, POST_W * 3, 3);
+        ctx.fillRect(sdx + sw * 0.75 - POST_W * 1.5, post_y + POST_H - 3, POST_W * 3, 3);
+      } else {
+        ctx.fillRect(sdx + sw / 2 - POST_W / 2, post_y, POST_W, POST_H);
+        ctx.fillRect(sdx + sw / 2 - POST_W * 1.5, post_y + POST_H - 3, POST_W * 3, 3);
       }
 
-      // Sign background
-      ctx.fillStyle = sign.color || 'rgba(100,40,20,0.88)';
+      // Sign panel: one flat colour with a drop shadow for depth
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.38)';
+      ctx.shadowBlur = 9;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = sign.color || '#5a3a1a';
       ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.fill();
+      ctx.restore();
+
+      // Subtle inner highlight edge
+      ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(sdx + 0.5, sdy + yo + 0.5, sw - 1, sh - 1, 2.5); ctx.stroke();
 
       if (is_hov) {
         ctx.save();
         ctx.strokeStyle = '#c89a1a'; ctx.lineWidth = 2;
-        ctx.shadowColor = '#b8860b'; ctx.shadowBlur = 16;
-        ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.stroke();
+        ctx.shadowColor = '#b8860b'; ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.roundRect(sdx - 4, sdy + yo - 4, sw + 8, sh + 8, 5); ctx.stroke();
         ctx.restore();
-        ctx.fillStyle = 'rgba(184,134,11,0.20)';
-        ctx.beginPath(); ctx.roundRect(sdx, sdy + yo, sw, sh, 3); ctx.fill();
+        ctx.fillStyle = 'rgba(184,134,11,0.12)';
+        ctx.beginPath(); ctx.roundRect(sdx - 4, sdy + yo - 4, sw + 8, sh + 8, 5); ctx.fill();
       }
 
       // Sign text — per-token colouring to match the workspace panel
@@ -730,8 +894,8 @@ class Renderer2D {
       ctx.textAlign = 'center'; // restore default
     }
 
-    this.canvas.style.cursor = any_hov ? 'pointer' : '';
   }
+
 
   // ── HUD ───────────────────────────────────────────────────────────────────
 
@@ -777,18 +941,26 @@ class Renderer2D {
     ctx.strokeStyle='#555'; ctx.lineWidth=1; ctx.strokeRect(BAR_X,BAR_Y,BAR_W,BAR_H);
     ctx.fillStyle='#f5f0e8'; ctx.font=`12px ${this.FONT_MONO}`;
     ctx.textAlign='left';
-    ctx.fillText(LANG.current === 'ko' ? '충실감' : '充実感', BAR_X, BAR_Y-2);
+    const _jlabel = LANG.current === 'ko' ? '충실감' : '充実感';
+    ctx.fillText(_jlabel, BAR_X, BAR_Y-2);
     ctx.fillText(`${Math.round(s.juujitsukan)}`, BAR_X+BAR_W+6, BAR_Y+12);
+    const _jlw = ctx.measureText(_jlabel).width;
+    this._juujitsukan_btn = {x: BAR_X-2, y: BAR_Y-13, w: _jlw+4, h: 13, text: _jlabel, en: 'fulfillment'};
 
     const room = ROOM_MAP_DATA[s.room];
     if (room) {
+      const room_text = LANG.current === 'ko' && room.name_ko ? room.name_ko : room.name_jp;
+      this._hud_room_btn = {x:W/2-75,y:4,w:150,h:26,text:room_text,en:room.name_en};
+      const rhov = this._pt_in(this._hud_room_btn, this._hover_x||0, this._hover_y||0);
       ctx.textAlign = 'center';
-      ctx.fillStyle = '#b8860b';
+      ctx.fillStyle = rhov ? '#d4a010' : '#b8860b';
       ctx.font = `15px ${this.FONT_JP}`;
-      ctx.fillText(LANG.current === 'ko' && room.name_ko ? room.name_ko : room.name_jp, W/2, 21);
+      ctx.fillText(room_text, W/2, 21);
       ctx.fillStyle = '#d4b890';
       ctx.font = `12px ${this.FONT_MONO}`;
       ctx.fillText(room.name_en.toUpperCase(), W/2, 40);
+    } else {
+      this._hud_room_btn = null;
     }
 
     if (s.room==='library') {
@@ -804,25 +976,88 @@ class Renderer2D {
       });
     }
 
-    // Clock + date (top-right; click to toggle calendar)
-    if (s.game_time) {
-      const gt = s.game_time;
-      const hh = String(gt.hour).padStart(2,'0');
-      const mm = String(gt.minute).padStart(2,'0');
-      const DOW_JP = ['日','月','火','水','木','金','土'];
-      const DOW_KO = ['일','월','화','수','목','금','토'];
-      const dow = new Date(gt.year, gt.month-1, gt.day).getDay();
-      const dowStr = LANG.current==='ko' ? DOW_KO[dow] : DOW_JP[dow];
-      ctx.textAlign='right'; ctx.fillStyle='#f5f0e8'; ctx.font=`13px ${this.FONT_MONO}`;
-      ctx.fillText(`${hh}:${mm}`, W-10, 18);
-      ctx.fillStyle='#b8860b'; ctx.font=`11px ${this.FONT_MONO}`;
-      ctx.fillText(`${gt.month}/${gt.day} (${dowStr})`, W-10, 36);
-      // Store rect for click detection
-      this._clock_rect = { x: W-110, y: 2, w: 100, h: H-4 };
+    // Time-of-day widget (top-right; click to toggle calendar)
+    if (s.game_time) this._draw_time_widget(s.game_time, W);
+
+  }
+
+  // ── Time-of-day widget ────────────────────────────────────────────────────
+
+  _draw_time_widget(gt, W) {
+    const ctx = this.ctx;
+    const PW = 100, PH = 46, px = W - PW - 4, py = 3;
+
+    // Panel
+    ctx.fillStyle = 'rgba(22,16,8,0.82)';
+    ctx.beginPath(); ctx.roundRect(px, py, PW, PH, 5); ctx.fill();
+    ctx.strokeStyle = 'rgba(160,120,20,0.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(px, py, PW, PH, 5); ctx.stroke();
+
+    // Time  (12-hour)
+    const h12 = gt.hour % 12 || 12;
+    const mm  = String(gt.minute).padStart(2, '0');
+    const ampm = gt.hour < 12 ? 'AM' : 'PM';
+    ctx.textAlign = 'left'; ctx.fillStyle = '#f5f0e8';
+    ctx.font = `bold 14px ${this.FONT_MONO}`;
+    ctx.fillText(`${h12}:${mm}`, px + 8, py + 15);
+    ctx.fillStyle = '#b8860b'; ctx.font = `9px ${this.FONT_MONO}`;
+    ctx.fillText(ampm, px + 8 + 44, py + 15);
+
+    // Date + day-of-week
+    const DOW_JP      = ['日','月','火','水','木','金','土'];
+    const DOW_KO      = ['일','월','화','수','목','금','토'];
+    const DOW_JP_FULL = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+    const DOW_KO_FULL = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+    const DOW_EN      = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dow = new Date(gt.year, gt.month-1, gt.day).getDay();
+    const dowStr = LANG.current === 'ko' ? DOW_KO[dow] : DOW_JP[dow];
+    ctx.fillStyle = '#c8b080'; ctx.font = `10px ${this.FONT_MONO}`;
+    ctx.fillText(`${dowStr} · ${gt.month}/${gt.day}`, px + 8, py + 28);
+    this._time_dow_btn = {x: px+6, y: py+17, w: PW-12, h: 13,
+      text: LANG.current==='ko' ? DOW_KO_FULL[dow] : DOW_JP_FULL[dow], en: DOW_EN[dow]};
+
+    // Sun / moon track
+    const TX = px + 8, TY = py + 40, TW = PW - 16;
+    const t = gt.hour + gt.minute / 60;
+    const DAY_START = 6, DAY_END = 20;
+    const isDay = t >= DAY_START && t < DAY_END;
+
+    // Dim track
+    ctx.strokeStyle = 'rgba(180,150,80,0.22)'; ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(TX, TY); ctx.lineTo(TX + TW, TY); ctx.stroke();
+
+    // Dawn/dusk tick marks
+    ctx.strokeStyle = 'rgba(180,120,30,0.4)'; ctx.lineWidth = 1;
+    [TX, TX + TW].forEach(x => {
+      ctx.beginPath(); ctx.moveTo(x, TY - 3); ctx.lineTo(x, TY + 3); ctx.stroke();
+    });
+
+    if (isDay) {
+      const prog = (t - DAY_START) / (DAY_END - DAY_START);
+      const sx   = TX + prog * TW;
+      // Elapsed track glow
+      ctx.strokeStyle = 'rgba(240,190,50,0.45)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(TX, TY); ctx.lineTo(sx, TY); ctx.stroke();
+      // Glow halo
+      ctx.fillStyle = 'rgba(245,200,60,0.18)';
+      ctx.beginPath(); ctx.arc(sx, TY, 9, 0, Math.PI * 2); ctx.fill();
+      // Sun disc
+      ctx.fillStyle = '#f5c840';
+      ctx.beginPath(); ctx.arc(sx, TY, 5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      const nightLen = 24 - DAY_END + DAY_START;
+      const nt  = t >= DAY_END ? t - DAY_END : t + (24 - DAY_END);
+      const mx  = TX + (nt / nightLen) * TW;
+      // Moon (crescent via clipping)
+      ctx.fillStyle = '#ccd6e8';
+      ctx.beginPath(); ctx.arc(mx, TY, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(22,16,8,0.95)';
+      ctx.beginPath(); ctx.arc(mx + 2, TY - 1, 3, 0, Math.PI * 2); ctx.fill();
     }
 
-    ctx.textAlign='right'; ctx.fillStyle='#aaa'; ctx.font=`12px ${this.FONT_MONO}`;
-    ctx.fillText('WASD · click · E  C=calendar', W-10, H-6);
+    ctx.lineCap = 'butt';
+    this._clock_rect = { x: px, y: py, w: PW, h: PH };
   }
 
   // ── Action menu ───────────────────────────────────────────────────────────
@@ -858,12 +1093,19 @@ class Renderer2D {
   _draw_notifications(cam, s) {
     const ctx = this.ctx;
     const dx = s.px - cam.cx, dy = s.py - cam.cy - 40;
+    const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
+    this._notif_btn = null;
     this.notifications.slice(-1).forEach(n=>{
       const alpha=Math.min(1,n.ttl/30);
       ctx.globalAlpha=alpha;
       ctx.fillStyle=n.type==='violation'?'#c0392b':n.type==='goal'?'#2d6a4f':'#888';
       ctx.font=`bold 12px ${this.FONT_MONO}`; ctx.textAlign='center';
-      ctx.fillText(n.text, dx, dy-(1-n.ttl/180)*20);
+      const drift=(1-n.ttl/180)*20;
+      ctx.fillText(n.text, dx, dy-drift);
+      if (ko && n.type !== 'violation') {
+        const tw=ctx.measureText(n.text).width;
+        this._notif_btn={x:dx-tw/2-4, y:this.VP_Y+dy-drift-14, w:tw+8, h:18, text:n.text};
+      }
     });
     ctx.globalAlpha=1;
   }
@@ -878,8 +1120,13 @@ class Renderer2D {
     ctx.beginPath(); ctx.roundRect(px,py,pw,ph,10); ctx.fill(); ctx.stroke();
     const high=s.juujitsukan>=60;
     const dl=high?DIALOGUE.session_end_high:DIALOGUE.session_end_low;
-    ctx.fillStyle='#b8860b'; ctx.font=`26px ${this.FONT_JP}`; ctx.textAlign='center';
-    ctx.fillText(LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese, px+pw/2, py+60);
+    const msg=LANG.current==='ko'&&dl.korean?dl.korean:dl.japanese;
+    const mrect={x:px+10,y:py+33,w:pw-20,h:38};
+    this._end_msg_btn={...mrect,text:msg,en:dl.english};
+    const mhov=this._pt_in(mrect,this._hover_x||0,this._hover_y||0);
+    ctx.fillStyle=mhov?'#d4a010':'#b8860b'; ctx.font=`26px ${this.FONT_JP}`; ctx.textAlign='center';
+    ctx.fillText(msg, px+pw/2, py+60);
+    if(mhov){const tw=ctx.measureText(msg).width;ctx.fillRect(px+pw/2-tw/2,py+64,tw,1.5);}
     ctx.fillStyle='#f5f0e8'; ctx.font=`13px ${this.FONT_MONO}`;
     ctx.fillText(dl.english, px+pw/2, py+90);
     ctx.fillStyle=s.juujitsukan>60?'#2d6a4f':s.juujitsukan>30?'#b8860b':'#c0392b';
@@ -910,12 +1157,15 @@ class Renderer2D {
 
   _draw_room_tint(room_id) {
     const TINTS = {
-      library:   'rgba(190,130, 40,0.055)',
-      lobby:     'rgba(180,200,230,0.04)',
-      play_area: 'rgba( 30,110, 10,0.05)',
-      salon:     'rgba(170, 90,170,0.04)',
-      outdoor:   'rgba( 60,150,220,0.06)',
-      house:     'rgba(200,150, 80,0.07)',
+      library:      'rgba(190,130, 40,0.055)',
+      lobby:        'rgba(180,200,230,0.04)',
+      play_area:    'rgba( 30,110, 10,0.05)',
+      salon:        'rgba(170, 90,170,0.04)',
+      outdoor:      'rgba( 60,150,220,0.06)',
+      street:       'rgba( 50,130,200,0.05)',
+      house:        'rgba(200,150, 80,0.07)',
+      gallery:      'rgba(200,170, 90,0.06)',
+      cooking_room: 'rgba(220,100, 40,0.06)',
     };
     const t = TINTS[room_id];
     if (!t) return;
@@ -923,11 +1173,10 @@ class Renderer2D {
     this.ctx.fillRect(0, 0, this.VP_W, this.VP_H);
   }
 
-  // ── Sky overlay (time of day) ─────────────────────────────────────────────
+  // ── Night lighting with streetlight pools ────────────────────────────────
 
-  _draw_sky_overlay(gt, room_id) {
+  _sky_rgba(gt, room_id) {
     const t = gt.hour + gt.minute / 60;
-    // Keyframes: [hour, r, g, b, alpha]
     const KF = [
       [ 0,   5,  8, 40, 0.65],
       [ 5,   5,  8, 40, 0.65],
@@ -941,14 +1190,107 @@ class Renderer2D {
       [24,   5,  8, 40, 0.65],
     ];
     let i = 0;
-    while (i < KF.length-2 && KF[i+1][0] <= t) i++;
+    while (i < KF.length - 2 && KF[i + 1][0] <= t) i++;
     const [t0,r0,g0,b0,a0] = KF[i];
-    const [t1,r1,g1,b1,a1] = KF[i+1];
-    const f = t1 > t0 ? (t-t0)/(t1-t0) : 0;
-    const r = Math.round(r0+f*(r1-r0));
-    const g = Math.round(g0+f*(g1-g0));
-    const b = Math.round(b0+f*(b1-b0));
-    const a = (a0+f*(a1-a0)) * (room_id==='outdoor' ? 1.0 : 0.45);
+    const [t1,r1,g1,b1,a1] = KF[i + 1];
+    const f = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
+    const r = Math.round(r0 + f * (r1 - r0));
+    const g = Math.round(g0 + f * (g1 - g0));
+    const b = Math.round(b0 + f * (b1 - b0));
+    const isOutdoor = room_id === 'outdoor' || room_id === 'street';
+    const a = (a0 + f * (a1 - a0)) * (isOutdoor ? 1.0 : 0.45);
+    return { r, g, b, a };
+  }
+
+  _draw_night_lighting(gt, room_id, cam, room) {
+    const { r, g, b, a } = this._sky_rgba(gt, room_id);
+    if (a < 0.005) return;
+
+    const lights = (room?.objects || []).filter(o => o.id === 'streetlight');
+
+    // Rooms without streetlights: flat sky overlay
+    if (!lights.length) {
+      this.ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+      this.ctx.fillRect(0, 0, this.VP_W, this.VP_H);
+      return;
+    }
+
+    // Build / resize the offscreen darkness canvas
+    const LW = this.VP_W, LH = this.VP_H;
+    if (!this._lc || this._lc.width !== LW || this._lc.height !== LH) {
+      this._lc   = Object.assign(document.createElement('canvas'), { width: LW, height: LH });
+      this._lctx = this._lc.getContext('2d');
+    }
+    const lctx = this._lctx;
+
+    // Reset then fill darkness (clearRect needed so dest-out holes don't accumulate)
+    lctx.clearRect(0, 0, LW, LH);
+    lctx.globalCompositeOperation = 'source-over';
+    lctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+    lctx.fillRect(0, 0, LW, LH);
+
+    // Punch a transparent light pool at each lamp
+    lctx.globalCompositeOperation = 'destination-out';
+    const POLE_H = 80;
+    const LIGHT_R = 220; // radius in CSS px
+
+    for (const obj of lights) {
+      // Lamp-head world position → viewport-space position
+      const lx = (obj.col * TS + TS / 2 + 12) - cam.cx;
+      const ly = (obj.row * TS + TS - POLE_H - 2) - cam.cy;
+
+      lctx.save();
+      // Translate center to a point between lamp head and ground so the cone
+      // is wider at ground level than directly above.
+      lctx.translate(lx, ly + LIGHT_R * 0.28);
+      lctx.scale(1, 1.6); // taller ellipse → teardrop cone shape
+
+      const grad = lctx.createRadialGradient(0, 0, 8, 0, 0, LIGHT_R);
+      grad.addColorStop(0,    'rgba(0,0,0,1.00)');
+      grad.addColorStop(0.25, 'rgba(0,0,0,0.92)');
+      grad.addColorStop(0.55, 'rgba(0,0,0,0.55)');
+      grad.addColorStop(0.80, 'rgba(0,0,0,0.18)');
+      grad.addColorStop(1,    'rgba(0,0,0,0.00)');
+      lctx.fillStyle = grad;
+      lctx.beginPath(); lctx.arc(0, 0, LIGHT_R, 0, Math.PI * 2); lctx.fill();
+      lctx.restore();
+    }
+
+    // Composite the darkness-with-holes onto the main canvas
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(this._lc, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.restore();
+
+    // Warm amber glow inside each lit cone (lamp colour tint)
+    const warmBase = Math.min(a * 0.3, 0.18);
+    if (warmBase < 0.005) return;
+    const WARM_R = LIGHT_R * 0.85;
+
+    for (const obj of lights) {
+      const lx = (obj.col * TS + TS / 2 + 12) - cam.cx;
+      const ly = (obj.row * TS + TS - POLE_H - 2) - cam.cy;
+
+      ctx.save();
+      ctx.translate(lx, ly + WARM_R * 0.28);
+      ctx.scale(1, 1.6);
+
+      const wg = ctx.createRadialGradient(0, 0, 0, 0, 0, WARM_R);
+      wg.addColorStop(0,   `rgba(255,210,80,${(warmBase * 2.2).toFixed(3)})`);
+      wg.addColorStop(0.4, `rgba(255,170,40,${warmBase.toFixed(3)})`);
+      wg.addColorStop(1,   'rgba(255,120,0,0)');
+      ctx.fillStyle = wg;
+      ctx.beginPath(); ctx.arc(0, 0, WARM_R, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ── Sky overlay (time of day) — used by rooms without streetlights ──────────
+
+  _draw_sky_overlay(gt, room_id) {
+    const { r, g, b, a } = this._sky_rgba(gt, room_id);
     if (a < 0.005) return;
     this.ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
     this.ctx.fillRect(0, 0, this.VP_W, this.VP_H);
@@ -976,22 +1318,37 @@ class Renderer2D {
     // Month/year header
     const MONTH_JP=['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
     const MONTH_KO=['','1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-    const label = (LANG.current==='ko' ? MONTH_KO[gt.month] : MONTH_JP[gt.month]) + ' ' + gt.year;
+    const MONTH_EN=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthText = LANG.current==='ko' ? MONTH_KO[gt.month] : MONTH_JP[gt.month];
+    const label = monthText + ' ' + gt.year;
     ctx.textAlign='center'; ctx.fillStyle='#f5f0e8'; ctx.font=`bold 15px ${this.FONT_JP}`;
     ctx.fillText(label, px+panelW/2, py+PAD+13);
+    this._cal_month_btn = {x: px+20, y: py+4, w: panelW-40, h: PAD+18, text: monthText, en: MONTH_EN[gt.month]};
 
-    // Close hint
-    ctx.font=`10px ${this.FONT_MONO}`; ctx.fillStyle='#666';
-    ctx.fillText('C / click to close', px+panelW/2, py+PAD+28);
+    // X close button (top-right)
+    const XS=16, xbx=px+panelW-XS-6, xby=py+6;
+    this._calendar_close_btn = { x: xbx, y: xby+this.VP_Y, w: XS, h: XS };
+    ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.strokeStyle='#8b6914'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.roundRect(xbx,xby,XS,XS,3); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#c0a060'; ctx.lineWidth=1.5;
+    const xm=xbx+XS/2, ym=xby+XS/2, d=3.5;
+    ctx.beginPath(); ctx.moveTo(xm-d,ym-d); ctx.lineTo(xm+d,ym+d); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xm+d,ym-d); ctx.lineTo(xm-d,ym+d); ctx.stroke();
 
     // Day-of-week headers (Sun first, matching Japan)
-    const DOW_JP = ['日','月','火','水','木','金','土'];
-    const DOW_KO = ['일','월','화','수','목','금','토'];
-    const DOW = LANG.current==='ko' ? DOW_KO : DOW_JP;
+    const CAL_DOW_JP      = ['日','月','火','水','木','金','土'];
+    const CAL_DOW_KO      = ['일','월','화','수','목','금','토'];
+    const CAL_DOW_JP_FULL = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+    const CAL_DOW_KO_FULL = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+    const CAL_DOW_EN      = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const DOW = LANG.current==='ko' ? CAL_DOW_KO : CAL_DOW_JP;
+    const DOW_FULL = LANG.current==='ko' ? CAL_DOW_KO_FULL : CAL_DOW_JP_FULL;
     ctx.font=`11px ${this.FONT_JP}`; ctx.textAlign='center';
+    this._cal_dow_btns = [];
     for (let d=0;d<7;d++) {
       ctx.fillStyle = d===0?'#c0392b':d===6?'#2255aa':'#a09070';
       ctx.fillText(DOW[d], px+PAD+d*CW+CW/2, py+HEADER);
+      this._cal_dow_btns[d] = {x: px+PAD+d*CW+2, y: py+HEADER-14, w: CW-4, h: 18, text: DOW_FULL[d], en: CAL_DOW_EN[d]};
     }
 
     // Collect birthday dates for this month
@@ -1008,6 +1365,7 @@ class Renderer2D {
     // Day cells
     const startDow = new Date(gt.year, gt.month-1, 1).getDay();
     const daysInMonth = new Date(gt.year, gt.month, 0).getDate();
+    this._cal_day_btns = [];
     for (let day=1; day<=daysInMonth; day++) {
       const slot  = startDow + day - 1;
       const col   = slot % 7;
@@ -1015,6 +1373,9 @@ class Renderer2D {
       const cx_   = px + PAD + col*CW + CW/2;
       const cy_   = py + HEADER + PAD + row*CH + CH/2;
       const isToday = day===gt.day;
+      const dayText = LANG.current==='ko' ? `${MONTH_KO[gt.month]}${day}일` : `${MONTH_JP[gt.month]}${day}日`;
+      const dayEn   = `${MONTH_EN[gt.month]} ${day}`;
+      this._cal_day_btns[day] = {x: cx_-CW/2+2, y: cy_-CH/2+1, w: CW-4, h: CH-2, text: dayText, en: dayEn};
 
       if (isToday) {
         ctx.fillStyle='rgba(184,134,11,0.30)';
@@ -1042,11 +1403,19 @@ class Renderer2D {
   // ── Reactions ─────────────────────────────────────────────────────────────
 
   _consume_reactions() {
+    const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
     this.sim.reactions.splice(0).forEach(r=>{
       let text='', type=r.type;
       if (r.type==='violation') text=DIALOGUE.violations[r.key]||r.key;
-      else if (r.type==='goal') text=DIALOGUE[r.key]?DIALOGUE[r.key].english:r.key;
-      else if (r.type==='info' && r.key==='laptop_dead') text='Laptop battery died.', type='info';
+      else if (r.type==='goal') {
+        const d=DIALOGUE[r.key]; text=d?(ko&&d.korean?d.korean:d.english):r.key;
+      }
+      else if (r.type==='info') {
+        if (r.key==='laptop_dead')  text=ko?'배터리가 방전되었습니다.':'Laptop battery died.';
+        if (r.key==='go_to_sleep')  text=ko?'💤 잠들었어요...':'💤 Falling asleep...';
+        if (r.key==='wake_up')      text=ko?'☀️ 일어났어요!':'☀️ Feeling refreshed!';
+        // closing/room events are handled as NPC speech bubbles, not log entries
+      }
       if (text){
         this.log_entries.unshift({text,type});
         if(this.log_entries.length>3) this.log_entries.pop();

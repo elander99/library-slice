@@ -1,14 +1,13 @@
-// TDD: tiles must render at their native (source) resolution.
+// TDD: tile rendering size and pixel-snapping contract.
 //
-// "Native resolution" has two properties:
-//   1. No scaling inside drawImage itself — destination dimensions equal source dimensions
-//      so the only scaling factor is the DPR canvas transform.
-//   2. Draw positions snap to physical device pixels, not just CSS pixels, so tile
-//      edges never land between physical pixels on HiDPI displays.
+// All art tiles are 16×16 native pixels; _blit always upscales them to TS=32 for
+// display. The only scaling factor for further zoom is the DPR canvas transform.
+// Draw positions snap to physical device pixels so tile edges never fall between
+// physical pixels on HiDPI displays.
 //
-// The camera already snaps its offset to physical pixels (Math.round(cx*dpr)/dpr),
-// which can produce sub-CSS-pixel positions like 45.5 at DPR=2. Math.floor would
-// discard the .5 and shift the tile by 1 physical pixel — these tests catch that.
+// The camera snaps its offset to physical pixels (Math.round(cx*dpr)/dpr), which
+// can produce sub-CSS-pixel positions like 45.5 at DPR=2. Math.floor would discard
+// the .5 and shift the tile by 1 physical pixel — the snapping tests catch that.
 
 // ── Globals expected by render2d.js ─────────────────────────────────────────
 
@@ -70,31 +69,29 @@ const SRC_W = 3, SRC_H = 4, DST_X = 5, DST_Y = 6, DST_W = 7, DST_H = 8;
 
 // ── _draw_tile ───────────────────────────────────────────────────────────────
 
-describe('_draw_tile: native source size', () => {
-  test('T tile (32×32 source) draws at 32×32 destination', () => {
+describe('_draw_tile: display size is always TS=32', () => {
+  test('any tile draws at destination TS×TS regardless of source size', () => {
     const { renderer, drawCalls } = makeRenderer();
     renderer._draw_tile('F_WOOD', 0, 0);
 
     expect(drawCalls).toHaveLength(1);
     const call = drawCalls[0];
-    expect(call[DST_W]).toBe(call[SRC_W]); // dw === sw
-    expect(call[DST_H]).toBe(call[SRC_H]); // dh === sh
-    expect(call[DST_W]).toBe(32);
+    expect(call[DST_W]).toBe(32);  // always upscaled to TS
+    expect(call[DST_H]).toBe(32);
   });
 
-  test('T16 tile (16×16 source) draws at 16×16 — not upscaled to TS=32', () => {
+  test('T16 tile: source is 16×16, destination is still TS=32', () => {
     const { renderer, drawCalls } = makeRenderer();
     renderer._draw_tile('T16_WALL', 0, 0);
 
     expect(drawCalls).toHaveLength(1);
     const call = drawCalls[0];
-    expect(call[SRC_W]).toBe(16);          // source is 16
-    expect(call[DST_W]).toBe(call[SRC_W]); // destination matches source
-    expect(call[DST_H]).toBe(call[SRC_H]);
-    expect(call[DST_W]).toBe(16);          // NOT 32
+    expect(call[SRC_W]).toBe(16);  // source crops 16px
+    expect(call[DST_W]).toBe(32);  // displayed at TS
+    expect(call[DST_H]).toBe(32);
   });
 
-  test('fallback fillRect uses native source size (not TS) when image absent', () => {
+  test('fallback fillRect uses display size TS=32 when image absent', () => {
     const { renderer, fillCalls } = makeRenderer();
     renderer._imgs = {}; // no images available
 
@@ -102,8 +99,8 @@ describe('_draw_tile: native source size', () => {
 
     expect(fillCalls).toHaveLength(1);
     const [, , fw, fh] = fillCalls[0]; // fillRect(x, y, w, h)
-    expect(fw).toBe(16);
-    expect(fh).toBe(16);
+    expect(fw).toBe(32);
+    expect(fh).toBe(32);
   });
 });
 

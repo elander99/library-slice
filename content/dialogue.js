@@ -44,6 +44,22 @@ const DIALOGUE = {
     english: "Please observe the library rules next time."
   },
 
+  closing_soon: {
+    japanese: "まもなく閉館です。お早めにお願いします。",
+    korean:   "곧 문을 닫습니다. 서둘러 주세요.",
+    english:  "Closing in 15 minutes — please finish up."
+  },
+  closing_now: {
+    japanese: "閉館の時間です。本日はありがとうございました。",
+    korean:   "폐관 시간입니다. 오늘 방문해 주셔서 감사합니다.",
+    english:  "Closing time. Thank you for visiting today."
+  },
+  room_closed: {
+    japanese: "ただいまこちらのエリアは閉館中です。",
+    korean:   "현재 이 공간은 문이 닫혀 있습니다.",
+    english:  "This area is currently closed."
+  },
+
   // Violation notification text (shown in the log)
   violations: {
     outlet_requires_library_task: "The librarian noticed your laptop use.",
@@ -66,6 +82,8 @@ const DIALOGUE = {
     make_call: "Make a call",
     end_call: "End call",
     eat_snack: "Eat snack",
-    talk_to_librarian: "Say hello"
+    talk_to_librarian: "Say hello",
+    go_to_sleep: "Sleep",
+    wake_up: "Wake up"
   }
 };

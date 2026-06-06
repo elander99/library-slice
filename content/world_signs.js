@@ -9,10 +9,10 @@ const WORLD_SIGNS = [
     japanese: "図書館・こどもサロン\n料理室・おもちゃ画廊",
     translation: "Library · Children's Salon / Cooking Room · Toy Gallery",
     tokens: [
-      { text: "図書館",   furigana: "としょかん",   romaji: "toshokan",     meaning: "library" },
-      { text: "サロン",   furigana: "サロン",       romaji: "saron",        meaning: "salon" },
-      { text: "料理室",   furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room" },
-      { text: "画廊",     furigana: "がろう",       romaji: "garou",        meaning: "gallery" },
+      { text: "図書館",   furigana: "としょかん",   romaji: "toshokan",     meaning: "library",      points_to: "library" },
+      { text: "サロン",   furigana: "サロン",       romaji: "saron",        meaning: "salon",        points_to: "salon" },
+      { text: "料理室",   furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room", points_to: "cooking_room" },
+      { text: "画廊",     furigana: "がろう",       romaji: "garou",        meaning: "gallery",      points_to: "gallery" },
     ]
   },
   {
@@ -131,6 +131,89 @@ const WORLD_SIGNS = [
     ]
   },
 
+  // --- TOY GALLERY ---
+  {
+    id: "gallery_dolls",
+    label: "人形コーナー",
+    color: "#8b3a1e",
+    japanese: "人形コーナー\nへようこそ！",
+    translation: "Welcome to the Doll Section!",
+    tokens: [
+      { text: "人形",   furigana: "にんぎょう", romaji: "ningyou",  meaning: "doll" },
+      { text: "コーナー", furigana: "コーナー", romaji: "koonaa",   meaning: "section" },
+      { text: "ようこそ", furigana: "ようこそ", romaji: "youkoso",  meaning: "welcome" },
+    ]
+  },
+  {
+    id: "gallery_care",
+    label: "展示品",
+    color: "#1a3a5c",
+    japanese: "展示品には\n手を触れないで\nください",
+    translation: "Please do not touch the exhibits.",
+    tokens: [
+      { text: "展示品",     furigana: "てんじひん",   romaji: "tenjishin",  meaning: "exhibits" },
+      { text: "手",         furigana: "て",           romaji: "te",         meaning: "hand" },
+      { text: "触れないで", furigana: "ふれないで",   romaji: "furenaide",  meaning: "do not touch" },
+      { text: "ください",   furigana: "ください",     romaji: "kudasai",    meaning: "please" },
+    ]
+  },
+  {
+    id: "gallery_trains",
+    label: "汽車コーナー",
+    color: "#2d6a4f",
+    japanese: "汽車コーナー\n土日10時〜17時\n開館",
+    translation: "Train Section — Open Sat/Sun 10am to 5pm.",
+    tokens: [
+      { text: "汽車",   furigana: "きしゃ",     romaji: "kisha",     meaning: "train" },
+      { text: "コーナー", furigana: "コーナー", romaji: "koonaa",    meaning: "section" },
+      { text: "土日",   furigana: "どにち",     romaji: "donichi",   meaning: "Saturdays and Sundays" },
+      { text: "10",     furigana: "じゅう",     romaji: "juu",       meaning: "ten" },
+      { text: "時",     furigana: "じ",         romaji: "ji",        meaning: "o'clock" },
+      { text: "17",     furigana: "じゅうしち", romaji: "juushichi", meaning: "seventeen" },
+      { text: "時",     furigana: "じ",         romaji: "ji",        meaning: "o'clock" },
+      { text: "開館",   furigana: "かいかん",   romaji: "kaikan",    meaning: "open" },
+    ]
+  },
+
+  // --- COOKING ROOM ---
+  {
+    id: "cooking_welcome",
+    label: "料理室",
+    color: "#5c3317",
+    japanese: "料理室へ\nようこそ！",
+    translation: "Welcome to the Cooking Room!",
+    tokens: [
+      { text: "料理室", furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room" },
+      { text: "ようこそ", furigana: "ようこそ",   romaji: "youkoso",       meaning: "welcome" },
+    ]
+  },
+  {
+    id: "cooking_safety",
+    label: "注意",
+    color: "#c0392b",
+    japanese: "ナイフや火を\n使うときは\n気をつけて！",
+    translation: "Be careful when using knives or fire!",
+    tokens: [
+      { text: "ナイフ",     furigana: "ナイフ",     romaji: "naifu",         meaning: "knife" },
+      { text: "火",         furigana: "ひ",         romaji: "hi",            meaning: "fire" },
+      { text: "使うとき",   furigana: "つかうとき", romaji: "tsukau toki",   meaning: "when using" },
+      { text: "気をつけて", furigana: "きをつけて", romaji: "ki wo tsukete", meaning: "be careful" },
+    ]
+  },
+  {
+    id: "cooking_schedule",
+    label: "今日のメニュー",
+    color: "#1a3a5c",
+    japanese: "今日のメニューは\nカレーライスです",
+    translation: "Today's menu is curry rice.",
+    tokens: [
+      { text: "今日",         furigana: "きょう",         romaji: "kyou",        meaning: "today" },
+      { text: "メニュー",     furigana: "メニュー",       romaji: "menyuu",      meaning: "menu" },
+      { text: "カレーライス", furigana: "カレーライス",   romaji: "karee raisu", meaning: "curry rice" },
+      { text: "です",         furigana: "です",           romaji: "desu",        meaning: "is" },
+    ]
+  },
+
   // --- HOUSE ---
   {
     id: "house_entrance",
@@ -166,11 +249,63 @@ const WORLD_SIGNS = [
     translation: "Today's dinner is curry rice.",
     tokens: [
       { text: "今日",         furigana: "きょう",         romaji: "kyou",          meaning: "today" },
-      { text: "の",           furigana: "の",             romaji: "no",            meaning: "possessive particle/possessive" },
+      { text: "の",           furigana: "の",             romaji: "no",            meaning: "possessive particle" },
       { text: "夕飯",         furigana: "ゆうはん",       romaji: "yuuhan",        meaning: "dinner" },
-      { text: "は",           furigana: "は",             romaji: "wa",            meaning: "topic particle/topic" },
+      { text: "は",           furigana: "は",             romaji: "wa",            meaning: "topic particle" },
       { text: "カレーライス", furigana: "カレーライス",   romaji: "karee raisu",   meaning: "curry rice" },
       { text: "です",         furigana: "です",           romaji: "desu",          meaning: "is" },
+    ]
+  },
+
+  // --- STREET ---
+  {
+    id: "street_mirai",
+    label: "こどもみらい館",
+    color: "#1a3a6c",
+    japanese: "富山県\nこどもみらい館",
+    translation: "Toyama Prefecture / Children's Future Hall",
+    tokens: [
+      { text: "富山県",       furigana: "とやまけん",     romaji: "toyama ken",       meaning: "Toyama Prefecture" },
+      { text: "こどもみらい館", furigana: "こどもみらいかん", romaji: "kodomo mirai kan", meaning: "Children's Future Hall" },
+    ]
+  },
+  {
+    id: "street_yield",
+    label: "ゆずりましょう",
+    color: "#9a6800",
+    japanese: "出る人に\nゆずりましょう！",
+    translation: "Please yield to people exiting.",
+    tokens: [
+      { text: "出る",         furigana: "でる",           romaji: "deru",             meaning: "to exit" },
+      { text: "人",           furigana: "ひと",           romaji: "hito",             meaning: "person" },
+      { text: "ゆずりましょう", furigana: "ゆずりましょう", romaji: "yuzurimashou",    meaning: "let's yield" },
+    ]
+  },
+  {
+    id: "street_themes",
+    label: "活動テーマ",
+    color: "#2d5a3d",
+    japanese: "集い・遊び・学ぶ",
+    translation: "Gathering · Play · Learning",
+    tokens: [
+      { text: "集い",   furigana: "つどい", romaji: "tsudoi", meaning: "gathering" },
+      { text: "遊び",   furigana: "あそび", romaji: "asobi",  meaning: "play" },
+      { text: "学ぶ",   furigana: "まなぶ", romaji: "manabu", meaning: "to learn" },
+    ]
+  },
+  {
+    id: "street_discovery",
+    label: "発見と創造",
+    color: "#5a1a2a",
+    japanese: "発見と創造\nこどもの未来",
+    translation: "Discovery and Creation / Children's Future",
+    tokens: [
+      { text: "発見",   furigana: "はっけん", romaji: "hakken",  meaning: "discovery" },
+      { text: "と",     furigana: "と",       romaji: "to",      meaning: "and" },
+      { text: "創造",   furigana: "そうぞう", romaji: "souzou",  meaning: "creation" },
+      { text: "こども", furigana: "こども",   romaji: "kodomo",  meaning: "children" },
+      { text: "の",     furigana: "の",       romaji: "no",      meaning: "possessive particle" },
+      { text: "未来",   furigana: "みらい",   romaji: "mirai",   meaning: "future" },
     ]
   },
 ];

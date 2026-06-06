@@ -41,24 +41,23 @@ const TILES = {
   F_WOOD2:   T('interior', 0, 1, false, '#65341A'),  // brown wood variant
   F_GRAY:    T('interior', 3, 0, false, '#A6ABB0'),  // light gray tile (lobby)
   F_BLUE:    T('interior', 2, 0, false, '#87B9CD'),  // blue-tinted mat
-  F_TATAMI:  T('interior', 6, 3, false, '#B7B899'),  // warm green-gray tatami
+  F_TATAMI:   T16('interior', 0, 14, false, '#8E784F'),  // tatami — left
+  F_TATAMI_B: T16('interior', 1, 14, false, '#8E784F'),  // tatami — right
+  F_TATAMI_C: T16('interior', 2, 14, false, '#8E784F'),  // tatami — square
   F_TAN:     T('interior', 0, 6, false, '#8E7850'),  // shoji panels (kept for compat)
-  F_TAN_B:   T('interior', 1, 6, false, '#8E7850'),
-  F_TAN_C:   T('interior', 2, 6, false, '#8E7850'),
+  F_TAN_B:   T('interior', 1, 6, false, '#8E7850'),  // tan floor variant B
+  F_TAN_C:   T('interior', 2, 6, false, '#8E7850'),  // tan floor variant C
   // Library wood-plank floor — interior (4,3) alternating dark/light hardwood planks
   F_LIB:     T('interior', 4, 3, false, '#8B4A20'),
   // Grass floor — 8 variants confirmed by pixel analysis (cols 2-4, rows 0-2 of terrain.png)
   F_GRASS:   T('terrain',  2, 0, false, '#536C2A'),
-  F_GRASS_B: T('terrain',  3, 0, false, '#536C2A'),
-  F_GRASS_C: T('terrain',  2, 1, false, '#536C2A'),
-  F_GRASS_D: T('terrain',  3, 1, false, '#536C2A'),
-  F_GRASS_E: T('terrain',  4, 1, false, '#536C2A'),
-  F_GRASS_F: T('terrain',  2, 2, false, '#536C2A'),
-  F_GRASS_G: T('terrain',  3, 2, false, '#536C2A'),
-  F_GRASS_H: T('terrain',  4, 2, false, '#536C2A'),
   F_STONE:   T('terrain',  3, 3, false, '#737373'),  // gray stone/concrete
   F_LIGHT:   T('terrain',  6, 1, false, '#EEEEEE'),  // near-white paved
   F_SAND:    T16('terrain', 8, 8, false, '#CEC284'),  // sandy path — 16px native art
+  // Road kerb edges — white strip faces the sidewalk, gray faces the road
+  // infra3 col 0, row 2: 2px white top strip then flat gray asphalt (verified by pixel analysis)
+  F_ROAD_CURB_T: T16('infra3', 0, 2, false, '#828387'),                              // white strip on top  (upper kerb)
+  F_ROAD_CURB_B: { ...T16('infra3', 0, 2, false, '#828387'), flipY: true },          // white strip on bottom (lower kerb)
   F_SCHOOL:  T('school',   0, 0, false, '#F6F6F1'),  // classroom floor (near-white)
   F_SALON:   T('school',   0, 1, false, '#B7B899'),  // tatami/linoleum (salon)
 
@@ -75,6 +74,7 @@ const TILES = {
   CRAFT:     T('interior', 4, 3, true,  '#D4A060'),  // craft table surface
   CRAFT2:    T('interior', 5, 3, true,  '#C49050'),  // craft table variant
   BENCH:     T('interior', 4, 4, true,  '#E8E8E8'),  // bench/seat (white-ish)
+  BED:       T('interior', 5, 1, true,  '#E8C898'),  // futon/bed — warm linen
   GATE:      Tp('terrain', 96, 64, true, '#808080'),  // gate/arch
   SWING:     Tp('infra',    0,  0, false,'#8A6030'),  // playground swing (decorative)
 
@@ -103,6 +103,14 @@ const CHARS = {
   salon_staff:    P( 80, 96),               // people.png col5 row3
   guide:          P(208, 32),               // people.png col13 row1
   house_resident: P( 64, 32),               // people.png col4 row1
+  visitor_a:      P(  0, 64),               // people.png col0 row2
+  visitor_b:      P( 16, 64),               // people.png col1 row2
+  student_a:      P( 32, 64),               // people.png col2 row2
+  student_b:      P( 96, 64),               // people.png col6 row2
+  child_a:        P( 64, 64),               // people.png col4 row2
+  child_b:        P(112, 64),               // people.png col7 row2
+  gallery_curator:P(  0, 32),               // people.png col0 row1
+  cook:           P( 48, 32),               // people.png col3 row1
 };
 
 // ── Tree sprites (measured zero-density column boundaries in band0) ─────────
@@ -197,10 +205,9 @@ const NINE_PATCH = {
   },
 };
 
-// Grass variant pool — pixel-verified from terrain.png (cols 2-4, rows 0-2)
 // Tan wood variant pool — pixel-verified: interior cols 0-2 row 6, all 1024/1024 solid, distinct patterns
 const FLOOR_VARIANTS = {
-  F_GRASS: ['F_GRASS','F_GRASS_B','F_GRASS_C','F_GRASS_D','F_GRASS_E','F_GRASS_F','F_GRASS_G','F_GRASS_H'],
-  F_TAN:   ['F_TAN', 'F_TAN_B', 'F_TAN_C'],
-  F_LIB:   ['F_LIB'],  // single tile — no variants needed, it already has grain variation
+  // F_TATAMI handled by renderer (A-B pairs, C for isolated tiles)
+  F_TAN:    ['F_TAN', 'F_TAN_B', 'F_TAN_C'],
+  F_LIB:    ['F_LIB'],  // single tile — no variants needed, it already has grain variation
 };

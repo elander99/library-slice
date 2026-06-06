@@ -61,7 +61,7 @@ class Input2D {
       }
     }
     // Toggle calendar
-    if (e.key==='c'||e.key==='C') {
+    if ((e.key==='c'||e.key==='C') && !e.ctrlKey && !e.metaKey) {
       this.renderer.show_calendar = !this.renderer.show_calendar;
     }
     // Close calendar / action menu on Escape
@@ -113,12 +113,32 @@ class Input2D {
     const S = this.sim;
 
     if (S.state.session_ended) {
+      if (R._end_msg_btn && R._pt_in(R._end_msg_btn,x,y)) {
+        const {text,en} = R._end_msg_btn;
+        const words = text.split(/\s+/);
+        WorkspacePanel.open_npc_sentence(text, words, 0, '', null, en);
+        return;
+      }
       if (R._end_btn && R._pt_in(R._end_btn,x,y)) { S.restart(); R.log_entries=[]; R.notifications=[]; R.action_menu=null; }
       return;
     }
 
-    // Calendar toggle: click clock area in HUD, or anywhere when calendar is open
-    if (R.show_calendar) { R.show_calendar = false; return; }
+    // Calendar: text elements open workspace panel; anything else closes
+    if (R.show_calendar) {
+      const _calOpen = btn => { const words=btn.text.split(/\s+/); const tdefs=words.map((_,i)=>({meaning:i===0?btn.en:''})); WorkspacePanel.open_npc_sentence(btn.text, words, 0, '', tdefs, btn.en); R.show_calendar = false; };
+      if (R._cal_month_btn && R._pt_in(R._cal_month_btn, x, y)) { _calOpen(R._cal_month_btn); return; }
+      for (const btn of (R._cal_dow_btns||[])) { if (btn && R._pt_in(btn, x, y)) { _calOpen(btn); return; } }
+      for (const btn of (R._cal_day_btns||[])) { if (btn && R._pt_in(btn, x, y)) { _calOpen(btn); return; } }
+      R.show_calendar = false;
+      return;
+    }
+
+    // Time widget: date/dow line opens workspace panel; rest of widget opens calendar
+    if (R._time_dow_btn && R._pt_in(R._time_dow_btn, x, y)) {
+      const {text, en} = R._time_dow_btn;
+      WorkspacePanel.open_npc_sentence(text, [text], 0, '', null, en);
+      return;
+    }
     if (R._clock_rect && R._pt_in(R._clock_rect, x, y)) { R.show_calendar = true; return; }
 
     // Action menu click
@@ -135,6 +155,27 @@ class Input2D {
       return;
     }
 
+    // 充実感 / 충실감 label
+    if (R._juujitsukan_btn && R._pt_in(R._juujitsukan_btn, x, y)) {
+      const {text, en} = R._juujitsukan_btn;
+      WorkspacePanel.open_npc_sentence(text, [text], 0, '', null, en);
+      return;
+    }
+
+    // HUD room name (clickable to look up)
+    if (R._hud_room_btn && R._pt_in(R._hud_room_btn, x, y)) {
+      const {text, en} = R._hud_room_btn;
+      WorkspacePanel.open_npc_sentence(text, [text], 0, '', null, en);
+      return;
+    }
+
+    // Floating Korean notification (goal/info type only)
+    if (R._notif_btn && R._pt_in(R._notif_btn, x, y)) {
+      const {text} = R._notif_btn;
+      WorkspacePanel.open_npc_sentence(text, text.split(/\s+/), 0, '', null, '');
+      return;
+    }
+
     // Click in viewport → check for entity clicks then click-to-move
     if (y < R.VP_Y || y > R.VP_Y+R.VP_H) return;
 
@@ -147,8 +188,9 @@ class Input2D {
     const wy = (y - R.VP_Y) + cam.cy;
 
     // Speech bubble dismiss (X button)
-    if (R._bubble_close_btn && S.state.librarian.alert && R._pt_in(R._bubble_close_btn, x, y)) {
-      S.state.librarian.alert = null;
+    if (R._bubble_close_btn && R._pt_in(R._bubble_close_btn, x, y)) {
+      if (S.state.librarian.alert) S.state.librarian.alert = null;
+      if (S.state.room_alert)      S.state.room_alert = null;
       return;
     }
 
@@ -181,7 +223,12 @@ class Input2D {
         const player_near = Math.abs(S.state.px - rect.wx) < TS*2.5 &&
                             Math.abs(S.state.py - rect.wy) < TS*2.5;
         if (player_near) {
-          if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_id, sx, sy);
+          _advance_convo(S, room, npc_id);
+          const npc_def = (room.npcs || []).find(n => n.npc_id === npc_id);
+          if (typeof DialoguePanel !== 'undefined') {
+            if (npc_def?.convo) DialoguePanel.openConvo(npc_def.convo);
+            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_id]) DialoguePanel.open(npc_id);
+          }
         } else {
           S.set_walk_target(rect.wx, rect.wy);
         }
@@ -189,19 +236,27 @@ class Input2D {
       }
     }
 
-    // Check object clicks
+    // Check object clicks — hit area is obj.tile_rect if declared, else single anchor tile
+    const clicked_tc = Math.floor(wx / TS), clicked_tr = Math.floor(wy / TS);
+    let best_obj = null, best_dist = Infinity;
     for (const obj of (room.objects||[])) {
-      const ox=obj.col*TS, oy=obj.row*TS;
-      if (wx>=ox && wx<=ox+TS && wy>=oy && wy<=oy+TS) {
-        const player_near = Math.abs(S.state.px - (ox+TS/2)) < TS*2.5 &&
-                            Math.abs(S.state.py - (oy+TS)) < TS*2.5;
-        if (player_near) {
-          if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, sx, sy);
-          this._open_obj_menu(obj.id, x, y);
-        }
-        else S.set_walk_target(ox+TS/2, oy+TS); // walk toward it
-        return;
+      if (obj_tile_hit(obj, clicked_tc, clicked_tr)) {
+        const dist = Math.abs(wx - (obj.col*TS + TS/2)) + Math.abs(wy - (obj.row*TS + TS/2));
+        if (dist < best_dist) { best_dist = dist; best_obj = obj; }
       }
+    }
+    if (best_obj) {
+      const obj = best_obj;
+      const ox = obj.col*TS, oy = obj.row*TS;
+      const player_near = Math.abs(S.state.px - (ox+TS/2)) < TS*2.5 &&
+                          Math.abs(S.state.py - (oy+TS)) < TS*2.5;
+      if (player_near) {
+        if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, sx, sy);
+        this._open_obj_menu(obj.id, x, y);
+      } else {
+        S.set_walk_target(ox+TS/2, oy+TS);
+      }
+      return;
     }
 
     // Check tile descriptions
@@ -230,8 +285,16 @@ class Input2D {
     for (const npc_def of (room.npcs||[])) {
       const nx=npc_def.col*TS+TS/2, ny=npc_def.row*TS+TS;
       if (Math.abs(s.px-nx)<TS*1.5 && Math.abs(s.py-ny)<TS*2) {
-        if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_def.npc_id, _popup_cx, _popup_cy);
-        if (!npc_def.ambient) DialoguePanel.open(npc_def.npc_id);
+        if (npc_def.ambient) {
+          _advance_convo(S, room, npc_def.npc_id);
+          if (typeof DialoguePanel !== 'undefined') {
+            if (npc_def.convo) DialoguePanel.openConvo(npc_def.convo);
+            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_def.npc_id]) DialoguePanel.open(npc_def.npc_id);
+          }
+        } else {
+          if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_def.npc_id, _popup_cx, _popup_cy);
+          DialoguePanel.open(npc_def.npc_id);
+        }
         return;
       }
     }
@@ -270,8 +333,9 @@ class Input2D {
     const S = this.sim;
     let cursor = 'default';
 
-    // End-screen restart button
+    // End-screen: sentence and restart button
     if (S.state.session_ended) {
+      if (R._end_msg_btn && R._pt_in(R._end_msg_btn, x, y)) cursor = 'pointer';
       if (R._end_btn && R._pt_in(R._end_btn, x, y)) cursor = 'pointer';
       this.canvas.style.cursor = cursor;
       return;
@@ -287,8 +351,46 @@ class Input2D {
       return;
     }
 
+    // Calendar text elements (when calendar open)
+    if (R.show_calendar) {
+      if (R._cal_month_btn && R._pt_in(R._cal_month_btn, x, y)) { this.canvas.style.cursor = 'pointer'; return; }
+      for (const btn of (R._cal_dow_btns||[])) { if (btn && R._pt_in(btn, x, y)) { this.canvas.style.cursor = 'pointer'; return; } }
+      for (const btn of (R._cal_day_btns||[])) { if (btn && R._pt_in(btn, x, y)) { this.canvas.style.cursor = 'pointer'; return; } }
+      this.canvas.style.cursor = cursor;
+      return;
+    }
+
+    // HUD room name
+    if (R._hud_room_btn && R._pt_in(R._hud_room_btn, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+
+    // 充実感 / 충실감 label
+    if (R._juujitsukan_btn && R._pt_in(R._juujitsukan_btn, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+
+    // Floating Korean notification
+    if (R._notif_btn && R._pt_in(R._notif_btn, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+
+    // Time widget dow line (opens word lookup); rest opens calendar
+    if (R._time_dow_btn && R._pt_in(R._time_dow_btn, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+    // Clock/HUD area (opens calendar)
+    if (R._clock_rect && R._pt_in(R._clock_rect, x, y)) {
+      this.canvas.style.cursor = 'pointer';
+      return;
+    }
+
     // Speech bubble close button
-    if (R._bubble_close_btn && S.state.librarian && S.state.librarian.alert && R._pt_in(R._bubble_close_btn, x, y)) {
+    if (R._bubble_close_btn && (S.state.librarian.alert || S.state.room_alert) && R._pt_in(R._bubble_close_btn, x, y)) {
       this.canvas.style.cursor = 'pointer';
       return;
     }
@@ -317,11 +419,19 @@ class Input2D {
           }
         }
 
-        // Objects
+        // Ambient NPCs (visitors etc.)
+        if (cursor === 'default' && R._ambient_npc_rects) {
+          for (const rect of Object.values(R._ambient_npc_rects)) {
+            const nx = rect.col * TS, ny = (rect.row - 1) * TS;
+            if (wx >= nx && wx <= nx + TS && wy >= ny && wy <= ny + TS * 2) { cursor = 'pointer'; break; }
+          }
+        }
+
+        // Objects — use tile_rect if declared
         if (cursor === 'default') {
+          const htc = Math.floor(wx / TS), htr = Math.floor(wy / TS);
           for (const obj of (room.objects || [])) {
-            const ox = obj.col * TS, oy = obj.row * TS;
-            if (wx >= ox && wx <= ox + TS && wy >= oy && wy <= oy + TS) { cursor = 'pointer'; break; }
+            if (obj_tile_hit(obj, htc, htr)) { cursor = 'pointer'; break; }
           }
         }
 
@@ -337,3 +447,41 @@ class Input2D {
     this.canvas.style.cursor = cursor;
   }
 }
+
+// Advance (or start) the ambient conversation for npc_id and store result in sim state.
+function _advance_convo(S, room, npc_id) {
+  const npc_def = (room.npcs || []).find(n => n.npc_id === npc_id);
+
+  // If the NPC has per-goal sayings, show the current one
+  const npc_st = S.state.npc_states?.[npc_id];
+  if (npc_def?.goals?.length && npc_st != null) {
+    const goal = npc_def.goals[npc_st.goal_idx];
+    if (goal?.say_ko) {
+      S.state.convo_bubble = { npc_id, text_ko: goal.say_ko, text_en: goal.say_en };
+      if (typeof DialoguePanel !== 'undefined') DialoguePanel.addAmbient(npc_id, goal.say_ko, goal.say_en);
+      return;
+    }
+  }
+
+  const convo_id = npc_def?.convo;
+  if (!convo_id || typeof CONVERSATIONS === 'undefined' || !CONVERSATIONS[convo_id]) return;
+  const convo = CONVERSATIONS[convo_id];
+  const cur = S.state.convo_bubble;
+  const next = (cur?.convo_id === convo_id) ? (cur.turn_idx + 1) % convo.turns.length : 0;
+  const turn = convo.turns[next];
+  S.state.convo_bubble = { convo_id, turn_idx: next, npc_id: turn.npc_id, text_ko: turn.ko, text_en: turn.en };
+  if (typeof DialoguePanel !== 'undefined') DialoguePanel.addAmbient(turn.npc_id, turn.ko, turn.en);
+}
+
+// Returns true if tile coordinate (tc, tr) falls within the object's interactive area.
+// If obj declares tile_rect:[c1,r1,c2,r2], the entire rectangle is interactive.
+// Otherwise only the single anchor tile (obj.col, obj.row) matches.
+function obj_tile_hit(obj, tc, tr) {
+  if (obj.tile_rect) {
+    const [c1, r1, c2, r2] = obj.tile_rect;
+    return tc >= c1 && tc <= c2 && tr >= r1 && tr <= r2;
+  }
+  return tc === obj.col && tr === obj.row;
+}
+
+if (typeof module !== 'undefined') module.exports = { obj_tile_hit };

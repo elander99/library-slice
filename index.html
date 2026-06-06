@@ -171,6 +171,21 @@
     .ws-token:hover .ws-token-copy-btn { display:block; }
     .ws-token-copy-btn:hover { color:var(--gold); border-color:var(--gold-dim); background:rgba(196,154,26,0.08); }
     .ws-token-copy-btn.flash  { color:var(--jade); border-color:rgba(82,201,142,0.4); }
+    .ws-nav-btn {
+      display:block; margin-top:3px; padding:1px 6px; font-size:10px;
+      font-family:'DM Mono',monospace; color:var(--jade); border-radius:4px;
+      background:rgba(82,201,142,0.08); border:1px solid rgba(82,201,142,0.22);
+      cursor:pointer; white-space:nowrap; line-height:1.6;
+      transition:background 0.1s, border-color 0.1s;
+    }
+    .ws-nav-btn:hover { background:rgba(82,201,142,0.18); border-color:rgba(82,201,142,0.5); }
+    .dlg-nav-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+    .dlg-nav-btn {
+      padding:2px 9px; border-radius:6px; font-family:'Noto Serif JP',serif; font-size:13px;
+      color:var(--jade); border:1px solid rgba(82,201,142,0.25); background:rgba(82,201,142,0.06);
+      cursor:pointer; transition:background 0.1s, border-color 0.1s;
+    }
+    .dlg-nav-btn:hover { background:rgba(82,201,142,0.15); border-color:rgba(82,201,142,0.5); }
     .ws-token:hover    { color:var(--cream); background:rgba(196,154,26,0.07); text-decoration-color:rgba(196,154,26,0.4); }
     .ws-token.selected { color:#fff; background:rgba(148,54,24,0.72); border-radius:6px; text-decoration-color:transparent; box-shadow:inset 0 0 0 1px rgba(148,54,24,0.45); }
     .ws-token.done     { color:var(--jade); text-decoration-color:transparent; text-shadow:0 0 14px rgba(82,201,142,0.18); }
@@ -344,8 +359,14 @@
     .dlg-turn-player-text {
       font-family:'Noto Serif JP',serif; font-size:14px; color:#9bbfe0;
       background:rgba(60,110,200,0.18); border-radius:10px 10px 3px 10px; padding:6px 12px;
-      max-width:85%; line-height:1.5;
+      max-width:85%; line-height:1.5; display:inline-flex; flex-wrap:wrap; gap:1px; align-items:baseline;
     }
+    .dlg-player-word {
+      cursor:pointer; border-radius:3px; padding:0 2px;
+      transition:background 0.12s, color 0.12s;
+    }
+    .dlg-player-word:hover { background:rgba(155,191,224,0.22); color:#cde4f5; text-shadow:0 0 8px rgba(155,191,224,0.35); }
+    .dlg-player-word.active { background:rgba(155,191,224,0.28); color:#cde4f5; }
     .dlg-npc-jp { font-family:'Noto Serif JP',serif; font-size:17px; color:var(--cream); line-height:1.7; flex-wrap:wrap; display:flex; gap:2px; align-items:baseline; }
     .dlg-turn-npc.complete { background:rgba(45,106,79,0.18); box-shadow:inset 0 0 0 1px rgba(82,201,142,0.22); transition:background 0.6s ease, box-shadow 0.6s ease; }
     #ws-dlg-thinking { display:none; gap:6px; align-items:center; margin-top:4px; }
@@ -391,6 +412,19 @@
     }
     .ws-token.drag-src { opacity:0.4; }
     #ws-dlg-input.drag-over { border-color:rgba(196,154,26,0.55); background:rgba(196,154,26,0.05); }
+    #ws-dialogue.convo-mode #ws-dlg-input-row { display:none; }
+    #ws-dialogue.convo-mode #ws-dlg-avatar { display:none; }
+    #ws-dialogue.convo-mode #ws-dlg-copy-all { display:none; }
+    .dlg-convo-speaker { font-family:'DM Mono',monospace; font-size:11px; color:#666; letter-spacing:0.04em; margin-bottom:2px; }
+    .dlg-convo-en { font-family:'DM Mono',monospace; font-size:11px; color:#444; font-style:italic; margin-top:3px; display:none; }
+    .dlg-turn-npc.complete .dlg-convo-en { display:block; }
+    .dlg-convo-row { display:flex; gap:8px; align-items:flex-start; }
+    .dlg-convo-portrait { image-rendering:pixelated; flex-shrink:0; border-radius:3px; width:32px; height:64px; }
+    .dlg-turn-convo-right { display:flex; flex-direction:column; align-items:flex-end; }
+    .dlg-turn-convo-right .dlg-convo-row { flex-direction:row-reverse; }
+    .dlg-turn-convo-right .dlg-turn-npc { background:rgba(196,154,26,0.06); box-shadow:inset 0 0 0 1px rgba(196,154,26,0.14); }
+    .dlg-turn-convo-right .dlg-npc-jp { justify-content:flex-end; }
+    .dlg-turn-convo-right .dlg-convo-en { text-align:right; }
 
     /* ── Vocab button & panel ────────────────────────────────────────────────── */
     #vocab-btn {
@@ -429,7 +463,7 @@
     #vocab-snap-preview[data-zone="right"] { top:16px; right:12px; bottom:16px; width:320px; opacity:1; }
     #vocab-snap-preview[data-zone="top"]   { top:12px; left:12px; right:12px; height:220px; opacity:1; }
     body:has(#ws-panel.open) #vocab-snap-preview:is([data-zone="left"],[data-zone="right"]) { bottom:206px; }
-    #vocab-inner { flex:1; overflow-y:auto; padding:8px 16px 16px; }
+    #vocab-inner { flex:1; min-height:0; overflow-y:auto; padding:8px 16px 16px; }
     #vocab-header { display:flex; align-items:center; justify-content:space-between; padding:16px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
     #vocab-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--gold); font-weight:400; letter-spacing:0.1em; }
     #vocab-close {
@@ -448,8 +482,13 @@
     #vocab-search:focus { border-color:rgba(196,154,26,0.6); }
     #vocab-search.drag-over { border-color:rgba(196,154,26,0.55); background:rgba(196,154,26,0.05); }
     #vocab-search::placeholder { color:#444; }
+    #vocab-add-status { font-family:'DM Mono',monospace; font-size:11px; min-height:14px; margin-top:4px; padding:0 2px; transition:opacity 0.4s; }
     .vocab-sign-header { font-family:'Noto Serif JP',serif; font-size:13px; color:#8a6838; margin:16px 0 6px; letter-spacing:0.05em; }
     .vocab-section:first-child .vocab-sign-header { margin-top:0; }
+    .vocab-cho-divider { font-family:'Noto Serif JP',serif; font-size:15px; color:var(--gold); padding:10px 4px 2px; margin-top:4px; border-bottom:1px solid rgba(196,154,26,0.2); letter-spacing:0.08em; user-select:none; }
+    .vocab-cho-divider:first-child { padding-top:0; margin-top:0; }
+    .vocab-row-misplaced .vocab-jp { color:#c0392b; }
+    .vocab-row-misplaced { border-left:2px solid rgba(192,57,43,0.5); padding-left:6px; }
     #vocab-panel.drop-active { outline:2px dashed rgba(196,154,26,0.55); outline-offset:-3px; }
     #vocab-drop-hint {
       margin:32px 16px; padding:28px 16px;
@@ -458,17 +497,26 @@
       text-align:center; line-height:1.7; pointer-events:none;
     }
     #vocab-panel.drop-active #vocab-drop-hint { border-color:rgba(196,154,26,0.55); color:#8a6838; }
-    #vocab-clear-btn {
+    #vocab-clear-btn, #vocab-sort-btn {
       background:none; border:none; color:#444; font-family:'DM Mono',monospace;
       font-size:11px; padding:4px 8px; cursor:pointer; border-radius:4px;
       transition:color 0.15s;
     }
     #vocab-clear-btn:hover { color:#c0392b; }
+    #vocab-sort-btn { display:none; }
+    #vocab-sort-btn:hover { color:var(--gold); }
     .vocab-row {
-      display:grid; grid-template-columns:60px 1fr 1fr 20px; gap:8px; align-items:baseline;
+      display:grid; grid-template-columns:16px 60px 1fr 1fr 20px; gap:8px; align-items:baseline;
       padding:7px 8px; border-radius:7px; margin-bottom:1px; transition:background 0.1s;
     }
     .vocab-row:hover { background:rgba(196,154,26,0.06); }
+    .vocab-row.drag-over-above { border-top:2px solid rgba(196,154,26,0.6); }
+    .vocab-row.drag-over-below { border-bottom:2px solid rgba(196,154,26,0.6); }
+    .vocab-drag-handle {
+      font-size:12px; color:#333; cursor:grab; user-select:none; opacity:0;
+      transition:opacity 0.1s; align-self:center; line-height:1;
+    }
+    .vocab-row:hover .vocab-drag-handle { opacity:1; }
     .vocab-jp      { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--cream); cursor:grab; }
     .vocab-reading { font-family:'DM Mono',monospace; font-size:12px; color:var(--gold); }
     .vocab-meaning { font-family:'DM Mono',monospace; font-size:12px; color:var(--jade); }
@@ -480,15 +528,100 @@
     .vocab-remove-btn:hover { color:#c0392b; }
     #vocab-empty { font-size:12px; color:#444; text-align:center; margin-top:40px; }
 
-    /* ── Lang button ─────────────────────────────────────────────────────────── */
-    #lang-btn {
-      position: fixed; top: 10px; right: 10px; z-index: 100;
-      background: rgba(12,8,4,0.88); border: 1px solid rgba(196,154,26,0.26); color: var(--cream-dim);
-      font-family: 'DM Mono', monospace; font-size: 12px;
-      padding: 5px 14px; cursor: pointer; letter-spacing: 0.08em; border-radius: 20px;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    /* ── Conversation panel ──────────────────────────────────────────────────── */
+    #convo-panel {
+      position:fixed; bottom:210px; left:50%; transform:translateX(-50%);
+      width:520px; max-height:340px; z-index:40;
+      background:rgba(8,5,2,0.97); border:1px solid rgba(196,154,26,0.32);
+      border-radius:14px; display:none; flex-direction:column; overflow:hidden;
+      box-shadow:0 8px 48px rgba(0,0,0,0.65);
     }
-    #lang-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-faint); }
+    #convo-panel.open { display:flex; }
+    body:has(#ws-panel.open) #convo-panel { bottom:206px; }
+    #convo-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px 10px; border-bottom:1px solid rgba(196,154,26,0.14); flex-shrink:0;
+    }
+    #convo-title { font-family:'Noto Serif JP',serif; font-size:15px; color:var(--gold); letter-spacing:0.06em; }
+    #convo-close {
+      background:rgba(255,255,255,0.04); border:1px solid rgba(196,154,26,0.2);
+      color:var(--cream-dim); font-family:'DM Mono',monospace; font-size:12px;
+      padding:4px 12px; border-radius:20px; cursor:pointer; transition:border-color 0.15s, color 0.15s;
+    }
+    #convo-close:hover { border-color:var(--gold); color:var(--gold); }
+    #convo-body { flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+    .convo-turn { display:flex; flex-direction:column; gap:4px; }
+    .convo-turn-right { align-items:flex-end; }
+    .convo-speaker { font-family:'DM Mono',monospace; font-size:11px; color:#666; letter-spacing:0.04em; }
+    .convo-row { display:flex; gap:8px; align-items:flex-start; }
+    .convo-turn-right .convo-row { flex-direction:row-reverse; }
+    .convo-portrait {
+      image-rendering:pixelated; flex-shrink:0;
+      border-radius:4px; background:rgba(255,255,255,0.03);
+      width:32px; height:64px;
+    }
+    .convo-bubble {
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+      border-radius:10px; padding:8px 12px; max-width:86%;
+      font-family:'Noto Serif JP',serif; font-size:16px; line-height:1.65; color:var(--cream);
+    }
+    .convo-turn-right .convo-bubble {
+      background:rgba(196,154,26,0.08); border-color:rgba(196,154,26,0.2);
+    }
+    .convo-en {
+      font-family:'DM Mono',monospace; font-size:11px; color:#444;
+      max-width:86%; font-style:italic;
+    }
+    .convo-turn-right .convo-en { text-align:right; }
+
+    /* ── Map panel ───────────────────────────────────────────────────────────── */
+    #map-btn {
+      position:fixed; bottom:280px; left:18px; z-index:25; display:none;
+      background:rgba(12,8,4,0.94); border:1px solid rgba(196,154,26,0.32); color:var(--gold);
+      font-family:'DM Mono',monospace; font-size:12px; padding:7px 16px;
+      border-radius:20px; cursor:pointer; letter-spacing:0.08em;
+      box-shadow:0 4px 18px rgba(0,0,0,0.4);
+      transition:background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    #map-btn:hover { border-color:var(--gold); box-shadow:0 4px 20px rgba(196,154,26,0.4); }
+    #map-panel {
+      position:fixed; top:16px; left:12px; bottom:16px; width:300px; z-index:30;
+      background:rgba(8,5,2,0.97); border:1px solid var(--border-md);
+      border-radius:14px; display:none; flex-direction:column; overflow:hidden;
+      box-shadow:0 8px 48px rgba(0,0,0,0.6);
+      transition:bottom 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    #map-panel[data-anchor="right"] { left:auto; right:12px; }
+    body:has(#ws-panel.open) #map-panel { bottom:206px; }
+    #map-panel.open { display:flex; }
+    #map-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; cursor:grab; user-select:none;
+    }
+    #map-header button { cursor:pointer; }
+    #map-header h2 { font-family:'Noto Serif JP',serif; font-size:18px; color:var(--gold); font-weight:400; letter-spacing:0.1em; }
+    #map-close {
+      background:rgba(255,255,255,0.04); border:1px solid var(--border-md); color:var(--cream-dim);
+      font-family:'DM Mono',monospace; font-size:12px; padding:5px 14px; border-radius:20px; cursor:pointer;
+      transition:border-color 0.15s, color 0.15s;
+    }
+    #map-close:hover { border-color:var(--gold); color:var(--gold); }
+    #map-inner { flex:1; overflow-y:auto; padding:8px 16px 16px; }
+    .map-room-row {
+      padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; flex-direction:column; gap:6px;
+      cursor:pointer; border-radius:6px; transition:background 0.12s;
+    }
+    .map-room-row:hover { background:rgba(196,154,26,0.07); }
+    .map-room-row:last-child { border-bottom:none; }
+    .map-room-header { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+    .map-room-name { font-family:'Noto Serif JP',serif; font-size:15px; color:var(--cream-dim); }
+    .map-room-name.current { color:var(--gold); font-size:16px; }
+    .map-room-sub { font-family:'DM Mono',monospace; font-size:11px; color:#555; }
+    .map-room-pct { font-family:'DM Mono',monospace; font-size:12px; color:#666; white-space:nowrap; }
+    .map-room-bar { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+    .map-room-fill { height:100%; border-radius:3px; background:#2d6a4f; transition:width 0.4s ease; }
+    .map-room-fill.done { background:var(--gold); }
+
 
     /* ── Korean virtual keyboard ────────────────────────────────────────────── */
     #ko-kbd { display:none; flex-direction:column; gap:4px; padding:8px 10px 10px; border-top:1px solid var(--border); background:rgba(6,4,2,0.55); flex-shrink:0; }
@@ -537,6 +670,8 @@
       transition:background 0.12s, border-color 0.12s;
     }
     #speech-bubble-close:hover { background:rgba(92,51,23,0.22); border-color:#5c3317; }
+    #speech-bubble-text .sb-word { cursor:pointer; border-radius:2px; }
+    #speech-bubble-text .sb-word:hover { background:rgba(192,57,43,0.12); text-decoration:underline; }
 
     /* ── Object description popup ──────────────────────────────────────────── */
     #obj-popup {
@@ -552,15 +687,18 @@
     #obj-popup.visible { opacity:1; pointer-events:auto; transform:translateY(0) scale(1); }
     #obj-popup-word { display:none; }
     #obj-popup-en {
-      display:inline-block; font-family:'DM Mono',monospace;
+      display:flex; flex-wrap:wrap; gap:4px; justify-content:center;
+    }
+    .obj-word {
+      font-family:'DM Mono',monospace;
       font-size:12px; color:rgba(82,201,142,0.9);
       cursor:grab; padding:3px 11px; border-radius:14px;
       border:1px solid rgba(82,201,142,0.28);
       transition:background 0.12s, border-color 0.12s;
     }
-    #obj-popup-en:hover { background:rgba(82,201,142,0.09); border-color:rgba(82,201,142,0.52); }
-    #obj-popup-en.drag-src { opacity:0.4; cursor:grabbing; }
-    #obj-popup-desc { display:none; font-family:'DM Mono',monospace; font-size:11px; color:rgba(255,255,255,0.45); margin-top:7px; line-height:1.4; }
+    .obj-word:hover { background:rgba(82,201,142,0.09); border-color:rgba(82,201,142,0.52); }
+    .obj-word.drag-src { opacity:0.4; cursor:grabbing; }
+    #obj-popup-desc { display:none; font-family:'DM Mono',monospace; font-size:13px; color:rgba(255,255,255,0.82); line-height:1.4; }
     .ws-token-meaning.slot-drop-over,
     .ws-part-meaning.slot-drop-over {
       background:rgba(82,201,142,0.14) !important;
@@ -639,7 +777,7 @@
 </div>
 <div id="obj-popup">
   <span id="obj-popup-word"></span>
-  <span id="obj-popup-en" draggable="true"></span>
+  <div id="obj-popup-en"></div>
   <span id="obj-popup-desc"></span>
 </div>
 <div id="workspace">
@@ -662,9 +800,19 @@
     </div>
   </div>
 </div>
-<button id="lang-btn"></button>
+<button id="map-btn">🗺 map</button>
 <button id="vocab-btn">📓 vocab</button>
 <button id="settings-btn">⚙ settings</button>
+
+<div id="map-panel">
+  <div id="map-header">
+    <h2 id="map-title">진행 상황</h2>
+    <button id="map-close">✕ close</button>
+  </div>
+  <div id="map-inner">
+    <div id="map-content"></div>
+  </div>
+</div>
 <div id="settings-panel">
   <div id="settings-inner">
     <div id="settings-header">
@@ -672,6 +820,10 @@
       <button id="settings-close">✕ close</button>
     </div>
     <div id="settings-content">
+      <div class="settings-row">
+        <span class="settings-label">Teaching language</span>
+        <button id="lang-btn" style="background:rgba(12,8,4,0.88);border:1px solid rgba(196,154,26,0.26);color:var(--cream-dim);font-family:'DM Mono',monospace;font-size:12px;padding:5px 14px;cursor:pointer;letter-spacing:0.08em;border-radius:20px;transition:border-color 0.15s,color 0.15s,background 0.15s;"></button>
+      </div>
       <div class="settings-row" id="settings-voice-row" style="display:none">
         <span class="settings-label">Korean voice</span>
         <select id="ws-voice-pick"></select>
@@ -685,24 +837,38 @@
 </div>
 <div id="vocab-panel">
   <div id="vocab-header">
-    <h2 id="vocab-title">単語帳 — Word List</h2>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <h2 id="vocab-title">単語帳 — Word List</h2>
+      <span id="vocab-counter" style="display:none;font-size:0.72em;color:#888;font-family:'DM Mono',monospace;letter-spacing:0.03em"></span>
+    </div>
     <div style="display:flex;align-items:center;gap:8px">
+      <button id="vocab-sort-btn">A→Z</button>
       <button id="vocab-clear-btn" style="display:none">clear all</button>
       <button id="vocab-close">✕ close</button>
     </div>
   </div>
   <div id="vocab-search-wrap">
-    <input id="vocab-search" type="text" placeholder="filter…" autocomplete="off" spellcheck="false">
+    <input id="vocab-search" type="text" placeholder="filter or type Korean + Enter to add…" autocomplete="off" spellcheck="false">
+    <div id="vocab-add-status"></div>
   </div>
   <div id="vocab-inner">
     <div id="vocab-content"></div>
   </div>
 </div>
 
+<div id="convo-panel">
+  <div id="convo-header">
+    <span id="convo-title">대화</span>
+    <button id="convo-close">✕</button>
+  </div>
+  <div id="convo-body"></div>
+</div>
+
 <!-- Teaching language tracker (must load first) -->
 <script src="content/i18n.js"></script>
 
 <!-- Content -->
+<script src="content/conversations.js"></script>
 <script src="content/signs.js"></script>
 <script src="content/signs_ko.js"></script>
 <script src="content/world_signs.js"></script>
@@ -760,6 +926,18 @@
     };
   })();
 
+  const NPC_LINE_PROGRESS = (() => {
+    const KEY = 'library-slice-npc-lines-v1';
+    let _data = {};
+    try { _data = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+    function _flush() { try { localStorage.setItem(KEY, JSON.stringify(_data)); } catch {} }
+    return {
+      has(line_id) { return !!(line_id && line_id in _data); },
+      get(line_id) { return line_id ? (_data[line_id] || {}) : {}; },
+      save(line_id, results) { if (!line_id) return; _data[line_id] = {}; Object.keys(results).forEach(k => { _data[line_id][k] = {...results[k]}; }); _flush(); }
+    };
+  })();
+
   const NPC_VOCAB = (() => {
     const KEY = 'library-slice-npc-vocab-v1';
     const _norm = s => s ? s.split(/\s*[/,]\s*/)[0].trim() : s;
@@ -771,12 +949,14 @@
       getAll() { return _entries; },
       add(token, key) {
         let e = _entries.find(x => x.text === token.text);
+        const isNew = !e;
         if (!e) { e = {text:token.text, reading:'', meaning:'', romaji:false, meaning_unlocked:false}; _entries.push(e); }
         if (token.romaji && !e.reading) e.reading = token.romaji;
         if (token.meaning && !e.meaning) e.meaning = _norm(token.meaning);
         if (key === 'romaji') e.romaji = true;
         if (key === 'meaning' && e.meaning) e.meaning_unlocked = true;
         _flush();
+        if (isNew) SoundFX.vocab();
       }
     };
   })();
@@ -807,6 +987,9 @@
       ding()  { _tone(880, 0.18, 0.2, 0); },
       chime() {
         [[523, 0], [659, 0.1], [784, 0.2], [1047, 0.32]].forEach(([f, d]) => _tone(f, 0.4, 0.18, d));
+      },
+      vocab() {
+        [[660, 0], [990, 0.12]].forEach(([f, d]) => _tone(f, 0.25, 0.15, d));
       }
     };
   })();
@@ -822,6 +1005,28 @@
     let _anchor_x = 0, _anchor_y = 0;
     let _user_dx = 0, _user_dy = 0; // persistent offset applied by user drag
     let _alert_key = null;
+    let _cur_text = null;
+
+    function _render_words(text, meta) {
+      text_el.innerHTML = '';
+      const words = text.split(/\s+/);
+      words.forEach((word, wi) => {
+        if (wi > 0) text_el.appendChild(document.createTextNode(' '));
+        const span = document.createElement('span');
+        span.className = 'sb-word';
+        span.textContent = word;
+        span.addEventListener('click', e => {
+          e.stopPropagation();
+          if (_dragging) return;
+          const npc = typeof NPC_DEFS !== 'undefined' ? NPC_DEFS[meta?.npc_id] : null;
+          const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
+          const npc_label = ko ? (npc?.name_ko || '') : (npc?.name_en || '');
+          if (typeof WorkspacePanel !== 'undefined')
+            WorkspacePanel.open_npc_sentence(text, words, wi, npc_label, null, meta?.text_en || '');
+        });
+        text_el.appendChild(span);
+      });
+    }
 
     function _reposition() {
       const bw = el.offsetWidth, bh = el.offsetHeight;
@@ -834,14 +1039,27 @@
       el.style.top  = y + 'px';
     }
 
-    // Called every frame by render2d when alert is active
-    function update(alert, screen_x, screen_y) {
-      const dl = DIALOGUE[alert.key];
-      if (!dl) return;
-      const text = LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese;
-      if (text_el.textContent !== text) text_el.textContent = text;
-      if (alert.key !== _alert_key) {
-        _alert_key = alert.key;
+    // Called every frame by render2d when alert is active.
+    // alert may have { key } (looks up DIALOGUE) or { text } (raw string).
+    // meta (optional): { npc_id, text_en } — used for word-click context.
+    function update(alert, screen_x, screen_y, meta) {
+      let text, text_en;
+      if (alert.text) {
+        text = alert.text;
+        text_en = meta?.text_en || '';
+      } else {
+        const dl = DIALOGUE[alert.key];
+        if (!dl) return;
+        text = LANG.current === 'ko' && dl.korean ? dl.korean : dl.japanese;
+        text_en = dl.english || '';
+      }
+      const cache_key = alert.key || alert.text;
+      if (text !== _cur_text) {
+        _cur_text = text;
+        _render_words(text, meta ? { ...meta, text_en } : { text_en });
+      }
+      if (cache_key !== _alert_key) {
+        _alert_key = cache_key;
         _user_dx = 0; _user_dy = 0;
       }
       _anchor_x = screen_x;
@@ -852,7 +1070,7 @@
 
     function hide() {
       if (!_visible) return;
-      _visible = false; _dragging = false; _alert_key = null;
+      _visible = false; _dragging = false; _alert_key = null; _cur_text = null;
       el.classList.remove('visible', 'sb-dragging');
     }
 
@@ -888,7 +1106,10 @@
     });
 
     close_el.addEventListener('click', () => {
-      if (typeof sim !== 'undefined') sim.state.librarian.alert = null;
+      if (typeof sim !== 'undefined') {
+        sim.state.librarian.alert = null;
+        sim.state.convo_bubble = null;
+      }
       hide();
     });
 
@@ -902,17 +1123,23 @@
     const descEl = document.getElementById('obj-popup-desc');
     let _timer   = null;
 
-    enEl.addEventListener('dragstart', e => {
-      enEl.classList.add('drag-src');
-      e.dataTransfer.setData('obj-label', enEl.textContent);
-      e.dataTransfer.effectAllowed = 'copy';
-    });
-    enEl.addEventListener('dragend', () => enEl.classList.remove('drag-src'));
-
     function show(target_word, en_word, sx, sy, desc) {
       if (_timer) { clearTimeout(_timer); _timer = null; }
       wordEl.textContent = target_word;
-      enEl.textContent   = en_word;
+      enEl.innerHTML = '';
+      (en_word || '').split(/\s+/).filter(Boolean).forEach(w => {
+        const span = document.createElement('span');
+        span.className = 'obj-word';
+        span.textContent = w;
+        span.draggable = true;
+        span.addEventListener('dragstart', e => {
+          span.classList.add('drag-src');
+          e.dataTransfer.setData('obj-label', w);
+          e.dataTransfer.effectAllowed = 'copy';
+        });
+        span.addEventListener('dragend', () => span.classList.remove('drag-src'));
+        enEl.appendChild(span);
+      });
       descEl.textContent = desc || '';
       descEl.style.display = desc ? '' : 'none';
       popup.style.left = '-9999px'; popup.style.top = '-9999px';
@@ -934,7 +1161,7 @@
       const npc = NPC_DEFS[id];
       if (npc) {
         const word = LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp;
-        show(word, npc.name_en, sx, sy);
+        show(word, npc.name_en, sx, sy, npc.desc_en);
         return;
       }
       const def = ENTITY_DEFS[id];
@@ -958,6 +1185,8 @@
     return (f && r && f!==r) ? `${f}  [${r}]` : (f||r);
   }
 
+  let _KO_FALLBACK; // populated by WorkspacePanel, shared with VocabPanel
+
   const WorkspacePanel = (() => {
     const panel_el  = document.getElementById("ws-panel");
     const ws_el     = document.getElementById("workspace");
@@ -967,6 +1196,7 @@
     let _cr_sx=0, _cr_sl=0, _cr_down=false, _cr_moved=false;
     chips_row.addEventListener('pointerdown', e => {
       if (e.target===inp || e.button) return;
+      if (e.target.closest('.ws-token')) return; // let HTML5 drag handle token dragging
       _cr_down=true; _cr_moved=false; _cr_sx=e.clientX; _cr_sl=chips_row.scrollLeft;
       chips_row.classList.add('dragging');
     });
@@ -1018,6 +1248,9 @@
     const inp       = document.getElementById("ws-input");
     inp.addEventListener("mousedown", e => e.stopPropagation());
     inp.addEventListener("click",     e => e.stopPropagation());
+    let _inp_pd = false;
+    inp.addEventListener("pointerdown", () => { _inp_pd = true; });
+    document.addEventListener("pointerup", () => { _inp_pd = false; });
     inp.addEventListener("dragover", e => {
       if (!e.dataTransfer.types.includes('obj-label')) return;
       if (inp.parentElement?.dataset?.field !== 'meaning') return;
@@ -1047,6 +1280,7 @@
     }
 
     let cur_sign_id = null, cur_word_idx = null, cur_part_idx = null, word_results = {}, _lkp_timer = null, _checking = false;
+    let _npc_line_id = null;
     let _active_field = null; // 'romaji' | 'meaning'
     let _hint_by_key = {}; // res_key → {reading, meaning} — persists lookup results per word
     let _npc_defs = {};
@@ -1122,7 +1356,7 @@
             const base=piece.slice(0,-3);
             if (base.length>=3&&(v===base||v_ns===base)) return true;
             const baseE=base+'e';
-            return base.length>=2&&(v===baseE||v_ns===baseE);
+            return base.length>=2&&baseE!=='please'&&(v===baseE||v_ns===baseE);
           }
           // Compound gerund: "bringing in" → accept "bring in"
           const words=piece.split(' ');
@@ -1135,6 +1369,20 @@
           }
           return false;
         }))) return "meaning";
+        // Accept head noun of "X particle" / "X marker": "topic particle" → "topic"
+        if (parts.some(p => {
+          const m = p.match(/^(.+)\s+(particle|marker)$/);
+          return m && (v === m[1] || v_ns === m[1].replace(/\s+/g,''));
+        })) return "meaning";
+        // Accept singular↔plural: strip trailing -s (not -ss, min 4 chars)
+        {const depl=s=>s.endsWith('s')&&!s.endsWith('ss')&&s.length>3?s.slice(0,-1):s;
+        if (parts.some(p=>depl(v)===depl(p)||depl(v_ns)===depl(p.replace(/\s+/g,'')))) return "meaning";}
+        // Accept base form of -es verb conjugations: does→do, goes→go, watches→watch
+        if (parts.some(p=>{
+          if (!p.endsWith('es')||p.length<=3) return false;
+          const base=p.slice(0,-2);
+          return base.length>=2&&(v===base||v_ns===base);
+        })) return "meaning";
         // Accept base verb of -ment nominalizations: replenishment→replenish, movement→move.
         if (parts.some(p=>{
           if (!p.endsWith('ment')) return false;
@@ -1245,6 +1493,23 @@
           span.appendChild(mspan);
 
         } else {
+          const allPRomaji=token.parts.every((_,pi)=>(word_results[`${tok_idx}p${pi}`]||{}).romaji);
+          const allPMeaning=token.parts.every((_,pi)=>(word_results[`${tok_idx}p${pi}`]||{}).meaning);
+
+          // — whole-word reading slot (above parts row) —
+          const wrspan=document.createElement("span"); wrspan.className="ws-token-reading";
+          wrspan.dataset.tokIdx=tok_idx; wrspan.dataset.field='romaji'; wrspan.dataset.whole='1';
+          if (allPRomaji&&(token.romaji||token.furigana)) {
+            wrspan.textContent=token.romaji||token.furigana;
+          } else if (tok_idx===cur_word_idx&&cur_part_idx===-1&&_active_field==='romaji') {
+            wrspan.classList.add("slot-active"); _placeInp(wrspan);
+          } else if (!allPRomaji) {
+            wrspan.classList.add("slot-empty");
+            const wrClick=e=>{ e.stopPropagation(); _select(_i,-1,'romaji'); };
+            wrspan.addEventListener("click",wrClick); wrspan._slotClick=wrClick;
+          }
+          span.appendChild(wrspan);
+
           // — parts token: each part gets its own reading + meaning slots —
           const partsRow=document.createElement("span"); partsRow.className="ws-token-parts";
           token.parts.forEach((part,pi)=>{
@@ -1293,13 +1558,20 @@
           });
           span.appendChild(partsRow);
 
-          // compound meaning — read-only, shown when all parts done
-          if (isDone&&token.meaning) {
-            const cmspan=document.createElement("span"); cmspan.className="ws-token-meaning slot-done";
-            const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
-            cmspan.textContent=raw.split("/")[0].trim();
-            span.appendChild(cmspan);
+          // — whole-word meaning slot (below parts row) —
+          const wmspan=document.createElement("span"); wmspan.className="ws-token-meaning";
+          wmspan.dataset.tokIdx=tok_idx; wmspan.dataset.field='meaning'; wmspan.dataset.whole='1';
+          if (allPMeaning) {
+            if (token.meaning) { const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning; wmspan.textContent=raw.split("/")[0].trim(); }
+            wmspan.classList.add("slot-done");
+          } else if (tok_idx===cur_word_idx&&cur_part_idx===-1&&_active_field==='meaning') {
+            wmspan.classList.add("slot-active"); _placeInp(wmspan);
+          } else {
+            wmspan.classList.add("slot-empty");
+            const wmClick=e=>{ e.stopPropagation(); _select(_i,-1,'meaning'); };
+            wmspan.addEventListener("click",wmClick); wmspan._slotClick=wmClick;
           }
+          span.appendChild(wmspan);
         }
 
         // copy badge
@@ -1308,8 +1580,16 @@
           e.stopPropagation(); _copy_text(token.text, copyBtn);
         });
         span.appendChild(copyBtn);
+        // navigation button (wayfinding tokens only)
+        if (token.points_to) {
+          const dest=ROOM_DEFS[token.points_to];
+          const navBtn=document.createElement("button"); navBtn.className="ws-nav-btn";
+          navBtn.textContent="→ "+(dest?dest.name_en:token.points_to);
+          navBtn.addEventListener("click",e=>{ e.stopPropagation(); clear(); sim.navigate_to_room(token.points_to); });
+          span.appendChild(navBtn);
+        }
         span.draggable=true;
-        span.addEventListener("dragstart",e=>{ if(span.contains(inp)){e.preventDefault();return;} span.classList.add("drag-src"); e.dataTransfer.setData("dlg-word",token.text); e.dataTransfer.effectAllowed="copy"; });
+        span.addEventListener("dragstart",e=>{ if(_inp_pd){e.preventDefault();return;} span.classList.add("drag-src"); e.dataTransfer.setData("dlg-word",token.text); e.dataTransfer.effectAllowed="copy"; });
         span.addEventListener("dragend",()=>span.classList.remove("drag-src"));
         span.addEventListener("click",()=>{
           if (hasParts) {
@@ -1339,10 +1619,13 @@
     function _activate_slot_inplace(idx, part_idx, field) {
       const merged=chips_row.querySelector('.ws-merged-chip');
       if (!merged) return false;
-      const isPartSlot=part_idx!=null;
-      const newSlot=isPartSlot
-        ? merged.querySelector(`[data-tok-idx="${idx}"][data-part-idx="${part_idx}"][data-field="${field}"]`)
-        : merged.querySelector(`[data-tok-idx="${idx}"][data-field="${field}"]:not([data-part-idx])`);
+      const isWholeSlot=part_idx===-1;
+      const isPartSlot=part_idx!=null&&part_idx>=0;
+      const newSlot=isWholeSlot
+        ? merged.querySelector(`[data-tok-idx="${idx}"][data-whole="1"][data-field="${field}"]`)
+        : isPartSlot
+          ? merged.querySelector(`[data-tok-idx="${idx}"][data-part-idx="${part_idx}"][data-field="${field}"]`)
+          : merged.querySelector(`[data-tok-idx="${idx}"][data-field="${field}"]:not([data-part-idx]):not([data-whole])`);
       if (!newSlot||newSlot.classList.contains('slot-done')) return false;
       const oldSlot=merged.querySelector('.slot-active');
       // Activate new slot (moves inp away from old slot automatically)
@@ -1364,7 +1647,10 @@
       }
       // Update selected state
       merged.querySelectorAll('.selected').forEach(el=>el.classList.remove('selected'));
-      if (part_idx==null) {
+      if (isWholeSlot) {
+        const tokSpan=merged.querySelector(`.ws-token[data-tok-span="${idx}"]`);
+        if (tokSpan) tokSpan.classList.add('selected');
+      } else if (part_idx==null) {
         const tokSpan=merged.querySelector(`.ws-token[data-tok-span="${idx}"]:not([data-has-parts])`);
         if (tokSpan) tokSpan.classList.add('selected');
       } else {
@@ -1374,25 +1660,25 @@
       return true;
     }
 
-    const _KO_FALLBACK = {
+    _KO_FALLBACK = {
       // ── copula ────────────────────────────────────────────────────────────
       '이에요':    {reading:'ieyo',            meaning:'is'},
       '예요':      {reading:'yeyo',            meaning:'is'},
       // ── birthday ──────────────────────────────────────────────────────────
       '생일':      {reading:'saengil',         meaning:'birthday'},
       // ── months (N월) ──────────────────────────────────────────────────────
-      '1월':  {reading:'irwol',      meaning:'January'},
-      '2월':  {reading:'iwol',       meaning:'February'},
-      '3월':  {reading:'samwol',     meaning:'March'},
-      '4월':  {reading:'sawol',      meaning:'April'},
-      '5월':  {reading:'owol',       meaning:'May'},
-      '6월':  {reading:'yuwol',      meaning:'June'},
-      '7월':  {reading:'chirwol',    meaning:'July'},
-      '8월':  {reading:'parwol',     meaning:'August'},
-      '9월':  {reading:'guwol',      meaning:'September'},
-      '10월': {reading:'siwol',      meaning:'October'},
-      '11월': {reading:'sibirwol',   meaning:'November'},
-      '12월': {reading:'sibiwol',    meaning:'December'},
+      '1월':  {reading:'irwol',    meaning:'January',   parts:[{text:'1', furigana:'1', romaji:'il',   meaning:'one'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '2월':  {reading:'iwol',     meaning:'February',  parts:[{text:'2', furigana:'2', romaji:'i',    meaning:'two'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '3월':  {reading:'samwol',   meaning:'March',     parts:[{text:'3', furigana:'3', romaji:'sam',  meaning:'three' },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '4월':  {reading:'sawol',    meaning:'April',     parts:[{text:'4', furigana:'4', romaji:'sa',   meaning:'four'  },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '5월':  {reading:'owol',     meaning:'May',       parts:[{text:'5', furigana:'5', romaji:'o',    meaning:'five'  },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '6월':  {reading:'yuwol',    meaning:'June',      parts:[{text:'6', furigana:'6', romaji:'yuk',  meaning:'six'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '7월':  {reading:'chirwol',  meaning:'July',      parts:[{text:'7', furigana:'7', romaji:'chil', meaning:'seven' },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '8월':  {reading:'parwol',   meaning:'August',    parts:[{text:'8', furigana:'8', romaji:'pal',  meaning:'eight' },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '9월':  {reading:'guwol',    meaning:'September', parts:[{text:'9', furigana:'9', romaji:'gu',   meaning:'nine'  },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '10월': {reading:'siwol',    meaning:'October',   parts:[{text:'10',furigana:'10',romaji:'sip',  meaning:'ten'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '11월': {reading:'sibirwol', meaning:'November',  parts:[{text:'11',furigana:'11',romaji:'sibil',meaning:'eleven'},{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
+      '12월': {reading:'sibiwol',  meaning:'December',  parts:[{text:'12',furigana:'12',romaji:'sibi', meaning:'twelve'},{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
       '월':   {reading:'wol',        meaning:'month'},
       // ── days (N일) ────────────────────────────────────────────────────────
       '일':   {reading:'il',         meaning:'day'},
@@ -1422,6 +1708,7 @@
       '환영합니다': {reading:'hwanyeonghamnida',meaning:'welcome (formal)'},
       '천천히':    {reading:'cheoncheonhi',     meaning:'slowly / take your time'},
       '즐기세요':  {reading:'jeulgiseyo',       meaning:'please enjoy'},
+      '살펴보세요': {reading:'salpyeoboseyo',   meaning:'please take a look / please look / look'},
       '즐겨':      {reading:'jeulgeo',          meaning:'enjoy'},
       '편히':      {reading:'pyeonhi',          meaning:'comfortably'},
       '쉬다':      {reading:'swida',            meaning:'rest / relax / take a break'},
@@ -1442,6 +1729,7 @@
       '말씀해':    {reading:'malsseum-hae',     meaning:'please say / speak'},
       '주시겠어요':{reading:'jusigesseoyo',     meaning:'would you please?'},
       '네':        {reading:'ne',               meaning:'yes'},
+      '아':        {reading:'a',               meaning:'ah (exclamation)'},
       '아니요':    {reading:'aniyo',            meaning:'no'},
       '아니에요':  {reading:'anieyo',           meaning:"isn't / no"},
       '감사합니다':{reading:'gamsahamnida',     meaning:'thank you (formal)'},
@@ -1482,6 +1770,7 @@
       '삼가':      {reading:'samga',            meaning:'refrain / hold back'},
       '삼가세요':  {reading:'samgaseyo',        meaning:'please refrain / please hold back'},
       '금지':      {reading:'geunji',           meaning:'prohibited / banned / forbidden / not allowed'},
+      '주목':      {reading:'jumok',            meaning:'attention'},
       '주의':      {reading:'juui',             meaning:'caution / attention / careful / warning'},
       '양보':      {reading:'yangbo',           meaning:'yield / give way / let pass / make way / priority'},
       '반입':      {reading:'banip',            meaning:'bringing in / bringing inside / carrying in'},
@@ -1553,6 +1842,7 @@
       '어린':      {reading:'eorin',            meaning:'young / little / small'},
       '아이':      {reading:'ai',               meaning:'child / children / kid'},
       '어른':      {reading:'eoreun',           meaning:'adult / grown-up'},
+      '갤러리':    {reading:'gaelreori',         meaning:'gallery'},
       '살롱':      {reading:'sallong',          meaning:'salon / lounge'},
       '살롱에':    {reading:'sallonge',         meaning:'at the salon'},
       '요리실':    {reading:'yorisil',          meaning:'cooking room / kitchen'},
@@ -1780,13 +2070,451 @@
       '힘내요':    {reading:'himnaeyo',       meaning:'cheer up / hang in there'},
       '웃어요':    {reading:'useoyo',         meaning:'laugh / smile'},
       '울어요':    {reading:'ureoyo',         meaning:'cry'},
+      // ── days of the week ───────────────────────────────────────────────────
+      '월요일':    {reading:'woryoil',        meaning:'Monday'},
+      '화요일':    {reading:'hwayoil',        meaning:'Tuesday'},
+      '수요일':    {reading:'suyoil',         meaning:'Wednesday'},
+      '목요일':    {reading:'mogyoil',        meaning:'Thursday'},
+      '금요일':    {reading:'geumyoil',       meaning:'Friday'},
+      '토요일':    {reading:'toyoil',         meaning:'Saturday'},
+      '일요일':    {reading:'iryoil',         meaning:'Sunday'},
+      '요일':      {reading:'yoil',           meaning:'day of the week'},
+      // ── seasons ────────────────────────────────────────────────────────────
+      '봄':        {reading:'bom',            meaning:'spring'},
+      '여름':      {reading:'yeoreum',        meaning:'summer'},
+      '가을':      {reading:'gaeul',          meaning:'autumn / fall'},
+      '겨울':      {reading:'gyeoul',         meaning:'winter'},
+      // ── time ───────────────────────────────────────────────────────────────
+      '시간':      {reading:'sigan',          meaning:'time / hour'},
+      '분':        {reading:'bun',            meaning:'minute'},
+      '초':        {reading:'cho',            meaning:'second'},
+      '주':        {reading:'ju',             meaning:'week'},
+      '년':        {reading:'nyeon',          meaning:'year'},
+      '이번':      {reading:'ibeon',          meaning:'this time / this'},
+      '다음':      {reading:'daeum',          meaning:'next'},
+      '지난':      {reading:'jinan',          meaning:'last / past'},
+      '때':        {reading:'ttae',           meaning:'time / when / moment'},
+      '동안':      {reading:'dongan',         meaning:'during / for (a period)'},
+      '후':        {reading:'hu',             meaning:'after'},
+      '전':        {reading:'jeon',           meaning:'before / ago'},
+      '처음':      {reading:'cheoeum',        meaning:'first / for the first time'},
+      '마지막':    {reading:'majimak',        meaning:'last / final'},
+      '끝':        {reading:'kkeut',          meaning:'end'},
+      '시작':      {reading:'sijak',          meaning:'beginning / start'},
+      '다음에':    {reading:'daume',          meaning:'next time / later'},
+      // ── colors ─────────────────────────────────────────────────────────────
+      '빨간':      {reading:'palgan',         meaning:'red'},
+      '파란':      {reading:'paran',          meaning:'blue'},
+      '노란':      {reading:'noran',          meaning:'yellow'},
+      '초록':      {reading:'chorok',         meaning:'green'},
+      '흰':        {reading:'hwin',           meaning:'white'},
+      '검은':      {reading:'geomeon',        meaning:'black'},
+      '주황':      {reading:'juhwang',        meaning:'orange'},
+      '보라':      {reading:'bora',           meaning:'purple'},
+      '분홍':      {reading:'bunhong',        meaning:'pink'},
+      '갈색':      {reading:'galsaek',        meaning:'brown'},
+      '회색':      {reading:'hoesaek',        meaning:'gray'},
+      '빨개요':    {reading:'palgaeyo',       meaning:'is red'},
+      '파래요':    {reading:'paraeyo',        meaning:'is blue'},
+      '노래요':    {reading:'noraeyo',        meaning:'is yellow'},
+      '초록색':    {reading:'choroksaek',     meaning:'green (color)'},
+      // ── body parts ─────────────────────────────────────────────────────────
+      '머리':      {reading:'meori',          meaning:'head / hair'},
+      '눈':        {reading:'nun',            meaning:'eye / snow'},
+      '코':        {reading:'ko',             meaning:'nose'},
+      '입':        {reading:'ip',             meaning:'mouth'},
+      '귀':        {reading:'gwi',            meaning:'ear'},
+      '손':        {reading:'son',            meaning:'hand'},
+      '발':        {reading:'bal',            meaning:'foot'},
+      '팔':        {reading:'pal',            meaning:'arm'},
+      '다리':      {reading:'dari',           meaning:'leg'},
+      '배':        {reading:'bae',            meaning:'belly / stomach / boat'},
+      '등':        {reading:'deung',          meaning:'back'},
+      '얼굴':      {reading:'eolgul',         meaning:'face'},
+      '목':        {reading:'mok',            meaning:'neck / throat'},
+      '이':        {reading:'i',              meaning:'tooth / teeth'},
+      // ── clothing ───────────────────────────────────────────────────────────
+      '옷':        {reading:'ot',             meaning:'clothes / clothing'},
+      '바지':      {reading:'baji',           meaning:'pants / trousers'},
+      '셔츠':      {reading:'syeocheu',       meaning:'shirt'},
+      '모자':      {reading:'moja',           meaning:'hat / cap'},
+      '가방':      {reading:'gabang',         meaning:'bag'},
+      '양말':      {reading:'yangmal',        meaning:'socks'},
+      '치마':      {reading:'chima',          meaning:'skirt'},
+      '코트':      {reading:'koteu',          meaning:'coat'},
+      '장갑':      {reading:'janggap',        meaning:'gloves'},
+      '스카프':    {reading:'seukApeu',       meaning:'scarf'},
+      // ── animals ────────────────────────────────────────────────────────────
+      '개':        {reading:'gae',            meaning:'dog'},
+      '고양이':    {reading:'goyangi',        meaning:'cat'},
+      '새':        {reading:'sae',            meaning:'bird'},
+      '물고기':    {reading:'mulgogi',        meaning:'fish'},
+      '토끼':      {reading:'tokki',          meaning:'rabbit'},
+      '곰':        {reading:'gom',            meaning:'bear'},
+      '사자':      {reading:'saja',           meaning:'lion'},
+      '호랑이':    {reading:'horangi',        meaning:'tiger'},
+      '코끼리':    {reading:'kokkiri',        meaning:'elephant'},
+      '원숭이':    {reading:'wonsungi',       meaning:'monkey'},
+      '돼지':      {reading:'dwaeji',         meaning:'pig'},
+      '말':        {reading:'mal',            meaning:'horse / word / speech'},
+      '마리':      {reading:'mari',           meaning:'animal (counter)'},
+      // ── toys & gallery ─────────────────────────────────────────────────────
+      '장난감':    {reading:'jangnangam',     meaning:'toy'},
+      '인형':      {reading:'inhyeong',       meaning:'doll / figure'},
+      '기차':      {reading:'gicha',          meaning:'train'},
+      '자동차':    {reading:'jadongcha',      meaning:'car / automobile'},
+      '블록':      {reading:'beullok',        meaning:'blocks (building toy)'},
+      '퍼즐':      {reading:'peojeu',         meaning:'puzzle'},
+      '로봇':      {reading:'robot',          meaning:'robot'},
+      '공':        {reading:'gong',           meaning:'ball'},
+      '팽이':      {reading:'paengi',         meaning:'spinning top'},
+      '연':        {reading:'yeon',           meaning:'kite'},
+      '수집':      {reading:'sujip',          meaning:'collection / collecting'},
+      '진열':      {reading:'jinyeol',        meaning:'display / arrangement'},
+      '전통':      {reading:'jeontong',       meaning:'tradition / traditional'},
+      '오래된':    {reading:'oraedoen',       meaning:'old / vintage / antique'},
+      '소중한':    {reading:'sojunghan',      meaning:'precious / valuable'},
+      '만지다':    {reading:'manjida',        meaning:'touch / handle'},
+      '만져요':    {reading:'manjyeoyo',      meaning:'touch (polite)'},
+      '구경하다':  {reading:'gugyeonghada',   meaning:'look around / browse'},
+      '구경해요':  {reading:'gugyeonghaeyo',  meaning:'look around (polite)'},
+      '보물':      {reading:'bomul',          meaning:'treasure'},
+      '역사':      {reading:'yeoksa',         meaning:'history'},
+      '문화':      {reading:'munhwa',         meaning:'culture'},
+      '예술':      {reading:'yesul',          meaning:'art'},
+      // ── cooking room ───────────────────────────────────────────────────────
+      '요리하다':  {reading:'yorihada',       meaning:'cook / prepare food'},
+      '요리해요':  {reading:'yorihaeyo',      meaning:'cook (polite)'},
+      '재료':      {reading:'jaeryo',         meaning:'ingredient / material'},
+      '냄비':      {reading:'naembi',         meaning:'pot / saucepan'},
+      '칼':        {reading:'kal',            meaning:'knife'},
+      '접시':      {reading:'jeopsi',         meaning:'plate / dish'},
+      '숟가락':    {reading:'sutgarak',       meaning:'spoon'},
+      '젓가락':    {reading:'jeotgarak',      meaning:'chopsticks'},
+      '포크':      {reading:'pokeu',          meaning:'fork'},
+      '컵':        {reading:'keop',           meaning:'cup'},
+      '그릇':      {reading:'geureut',        meaning:'bowl / vessel'},
+      '맛있다':    {reading:'masitda',        meaning:'delicious / tasty'},
+      '맛있어요':  {reading:'massisseoyo',    meaning:'delicious (polite)'},
+      '맛없어요':  {reading:'maseopsseoyo',   meaning:'tasteless / not tasty'},
+      '달다':      {reading:'dalda',          meaning:'sweet'},
+      '달아요':    {reading:'darayo',         meaning:'sweet (polite)'},
+      '짜다':      {reading:'jjada',          meaning:'salty'},
+      '짜요':      {reading:'jjayo',          meaning:'salty (polite)'},
+      '맵다':      {reading:'maepda',         meaning:'spicy / hot'},
+      '매워요':    {reading:'maewoyo',        meaning:'spicy (polite)'},
+      '시다':      {reading:'sida',           meaning:'sour'},
+      '씻다':      {reading:'ssitda',         meaning:'wash'},
+      '씻어요':    {reading:'ssiseoyo',       meaning:'wash (polite)'},
+      '썰다':      {reading:'sseolda',        meaning:'cut / slice'},
+      '볶다':      {reading:'bokda',          meaning:'stir-fry'},
+      '끓이다':    {reading:'kkeurida',       meaning:'boil'},
+      '굽다':      {reading:'gupda',          meaning:'grill / bake'},
+      '맛':        {reading:'mat',            meaning:'taste / flavor'},
+      '냄새':      {reading:'naemsae',        meaning:'smell / odor'},
+      '레시피':    {reading:'resipi',         meaning:'recipe'},
+      // ── shopping & money ───────────────────────────────────────────────────
+      '돈':        {reading:'don',            meaning:'money'},
+      '가격':      {reading:'gagyeok',        meaning:'price'},
+      '비싸요':    {reading:'bissayo',        meaning:'expensive'},
+      '싸요':      {reading:'ssayo',          meaning:'cheap / inexpensive'},
+      '사다':      {reading:'sada',           meaning:'buy'},
+      '사요':      {reading:'sayo',           meaning:'buy (polite)'},
+      '팔다':      {reading:'palda',          meaning:'sell'},
+      '팔아요':    {reading:'parayo',         meaning:'sell (polite)'},
+      '영수증':    {reading:'yeongsujeung',   meaning:'receipt'},
+      '거스름돈':  {reading:'geoseureudon',   meaning:'change (money)'},
+      '할인':      {reading:'harin',          meaning:'discount'},
+      '무료':      {reading:'muryo',          meaning:'free / no charge'},
+      '유료':      {reading:'yuryo',          meaning:'paid / for a fee'},
+      // ── transportation ─────────────────────────────────────────────────────
+      '버스':      {reading:'beoseu',         meaning:'bus'},
+      '지하철':    {reading:'jihacheol',      meaning:'subway / metro'},
+      '택시':      {reading:'taeksi',         meaning:'taxi'},
+      '비행기':    {reading:'bihaenggi',      meaning:'airplane'},
+      '자전거':    {reading:'jajeongeo',      meaning:'bicycle'},
+      '걷다':      {reading:'geotda',         meaning:'walk'},
+      '걸어요':    {reading:'georeoyo',       meaning:'walk (polite)'},
+      '타다':      {reading:'tada',           meaning:'ride / board / get on'},
+      '타요':      {reading:'tayo',           meaning:'ride (polite)'},
+      // ── more places ────────────────────────────────────────────────────────
+      '병원':      {reading:'byeongwon',      meaning:'hospital / clinic'},
+      '약국':      {reading:'yakguk',         meaning:'pharmacy'},
+      '식당':      {reading:'sikdang',        meaning:'restaurant'},
+      '가게':      {reading:'gage',           meaning:'store / shop'},
+      '마트':      {reading:'mateu',          meaning:'supermarket / mart'},
+      '시장':      {reading:'sijang',         meaning:'market'},
+      '역':        {reading:'yeok',           meaning:'station'},
+      '공항':      {reading:'gonghang',       meaning:'airport'},
+      '호텔':      {reading:'hotel',          meaning:'hotel'},
+      '카페':      {reading:'kape',           meaning:'cafe / coffee shop'},
+      '박물관':    {reading:'bangmulgwan',    meaning:'museum'},
+      '미술관':    {reading:'misulgwan',      meaning:'art museum / gallery'},
+      '동물원':    {reading:'dongmurwon',     meaning:'zoo'},
+      // ── nature ─────────────────────────────────────────────────────────────
+      '하늘':      {reading:'haneul',         meaning:'sky'},
+      '바다':      {reading:'bada',           meaning:'sea / ocean'},
+      '산':        {reading:'san',            meaning:'mountain'},
+      '강':        {reading:'gang',           meaning:'river'},
+      '꽃':        {reading:'kkot',           meaning:'flower'},
+      '나무':      {reading:'namu',           meaning:'tree'},
+      '별':        {reading:'byeol',          meaning:'star'},
+      '달':        {reading:'dal',            meaning:'moon'},
+      '해':        {reading:'hae',            meaning:'sun / year'},
+      '비':        {reading:'bi',             meaning:'rain'},
+      '바람':      {reading:'param',          meaning:'wind'},
+      '구름':      {reading:'gureum',         meaning:'cloud'},
+      '땅':        {reading:'ttang',          meaning:'ground / earth / land'},
+      '숲':        {reading:'sup',            meaning:'forest / woods'},
+      '돌':        {reading:'dol',            meaning:'stone / rock'},
+      // ── house & furniture ──────────────────────────────────────────────────
+      '의자':      {reading:'uija',           meaning:'chair'},
+      '테이블':    {reading:'teibeu',         meaning:'table'},
+      '침대':      {reading:'chimdae',        meaning:'bed'},
+      '문':        {reading:'mun',            meaning:'door'},
+      '창문':      {reading:'changmun',       meaning:'window'},
+      '부엌':      {reading:'bueok',          meaning:'kitchen'},
+      '소파':      {reading:'sopa',           meaning:'sofa / couch'},
+      '거울':      {reading:'geoul',          meaning:'mirror'},
+      '시계':      {reading:'sigye',          meaning:'clock / watch'},
+      '냉장고':    {reading:'naengjanggo',    meaning:'refrigerator'},
+      '전등':      {reading:'jeondeung',      meaning:'light / lamp'},
+      '복도':      {reading:'bokdo',          meaning:'corridor / hallway'},
+      // ── more verbs ─────────────────────────────────────────────────────────
+      '원하다':    {reading:'wonhada',        meaning:'want'},
+      '원해요':    {reading:'wonhaeyo',       meaning:'want (polite)'},
+      '생각하다':  {reading:'saenggakhada',   meaning:'think'},
+      '생각해요':  {reading:'saenggakhaeyo',  meaning:'think (polite)'},
+      '느끼다':    {reading:'neukkida',       meaning:'feel'},
+      '느껴요':    {reading:'neukkyeoyo',     meaning:'feel (polite)'},
+      '사랑하다':  {reading:'saranghada',     meaning:'love'},
+      '사랑해요':  {reading:'saranghaeyo',    meaning:'love (polite)'},
+      '싫어하다':  {reading:'sirheohada',     meaning:'dislike / hate'},
+      '싫어해요':  {reading:'sirheohaeoyo',   meaning:'dislike (polite)'},
+      '달리다':    {reading:'dallida',        meaning:'run'},
+      '달려요':    {reading:'dallyeoyo',      meaning:'run (polite)'},
+      '뛰다':      {reading:'ttwida',         meaning:'run / jump'},
+      '뛰어요':    {reading:'ttwioyo',        meaning:'run / jump (polite)'},
+      '공부하다':  {reading:'gongbuhada',     meaning:'study'},
+      '공부해요':  {reading:'gongbuhaeyo',    meaning:'study (polite)'},
+      '물어보다':  {reading:'mureoboda',      meaning:'ask'},
+      '물어봐요':  {reading:'mureobwayo',     meaning:'ask (polite)'},
+      '대답하다':  {reading:'daedaphada',     meaning:'answer / reply'},
+      '대답해요':  {reading:'daedaphaeyo',    meaning:'answer (polite)'},
+      '가르치다':  {reading:'gareuchida',     meaning:'teach'},
+      '가르쳐요':  {reading:'gareuchyeoyo',   meaning:'teach (polite)'},
+      '기억하다':  {reading:'gieokada',       meaning:'remember'},
+      '기억해요':  {reading:'gieokhaeyo',     meaning:'remember (polite)'},
+      '잊다':      {reading:'itda',           meaning:'forget'},
+      '잊어요':    {reading:'ijeoyo',         meaning:'forget (polite)'},
+      '부르다':    {reading:'bureuda',        meaning:'call / sing'},
+      '불러요':    {reading:'bulleoyo',       meaning:'call / sing (polite)'},
+      '보내다':    {reading:'bonaeda',        meaning:'send'},
+      '보내요':    {reading:'bonaeoyo',       meaning:'send (polite)'},
+      '준비하다':  {reading:'junbihada',      meaning:'prepare'},
+      '준비해요':  {reading:'junbihaeyo',     meaning:'prepare (polite)'},
+      '걱정하다':  {reading:'geokjeonghada',  meaning:'worry'},
+      '걱정해요':  {reading:'geokjeonghaeyo', meaning:'worry (polite)'},
+      '고르다':    {reading:'goreuda',        meaning:'choose / select'},
+      '골라요':    {reading:'gollayo',        meaning:'choose (polite)'},
+      '설명하다':  {reading:'seolmyeonghada', meaning:'explain'},
+      '설명해요':  {reading:'seolmyeonghaeyo',meaning:'explain (polite)'},
+      '소개하다':  {reading:'sogaehada',      meaning:'introduce'},
+      '소개해요':  {reading:'sogaehaeyo',     meaning:'introduce (polite)'},
+      '확인하다':  {reading:'hwakinada',      meaning:'confirm / check'},
+      '확인해요':  {reading:'hwakinhaeyo',    meaning:'confirm (polite)'},
+      '청소하다':  {reading:'cheongsohada',   meaning:'clean'},
+      '청소해요':  {reading:'cheongsohaeyo',  meaning:'clean (polite)'},
+      '만나다':    {reading:'mannada',        meaning:'meet'},
+      '만나요':    {reading:'mannayo',        meaning:'meet (polite)'},
+      // ── verb & adjective roots (dictionary forms) ──────────────────────────
+      '크다':      {reading:'keuda',          meaning:'big / large'},
+      '작다':      {reading:'jakda',          meaning:'small'},
+      '좋다':      {reading:'jota',           meaning:'good'},
+      '나쁘다':    {reading:'nappuda',        meaning:'bad'},
+      '예쁘다':    {reading:'yeppuda',        meaning:'pretty'},
+      '귀엽다':    {reading:'gwiyeopda',      meaning:'cute'},
+      '따뜻하다':  {reading:'ttatteuthada',   meaning:'warm'},
+      '차갑다':    {reading:'chagapda',       meaning:'cold (to touch)'},
+      '배고프다':  {reading:'baegopuda',      meaning:'hungry'},
+      '피곤하다':  {reading:'pigonhada',      meaning:'tired'},
+      '바쁘다':    {reading:'bappuda',        meaning:'busy'},
+      '행복하다':  {reading:'haengbokhada',   meaning:'happy'},
+      '슬프다':    {reading:'seulpeuda',      meaning:'sad'},
+      '무섭다':    {reading:'museopda',       meaning:'scary / frightening'},
+      '앉다':      {reading:'anda',           meaning:'sit'},
+      '서다':      {reading:'seoda',          meaning:'stand'},
+      '자다':      {reading:'jada',           meaning:'sleep'},
+      '일어나다':  {reading:'ireonada',       meaning:'wake up / get up'},
+      '만들다':    {reading:'mandeulda',      meaning:'make'},
+      '주다':      {reading:'juda',           meaning:'give'},
+      '열다':      {reading:'yeolda',         meaning:'open'},
+      '닫다':      {reading:'datda',          meaning:'close'},
+      '나가다':    {reading:'nagada',         meaning:'go out / leave'},
+      '들어가다':  {reading:'deureogada',     meaning:'enter / go in'},
+      '기다리다':  {reading:'gidarida',       meaning:'wait'},
+      '시작하다':  {reading:'sijakhada',      meaning:'start / begin'},
+      // ── more adjectives (polite forms) ─────────────────────────────────────
+      '새로워요':  {reading:'saeroweoyo',     meaning:'new / fresh'},
+      '특별해요':  {reading:'teukbyeolhaeyo', meaning:'special'},
+      '신기해요':  {reading:'singihaeyo',     meaning:'amazing / fascinating'},
+      '멋있어요':  {reading:'meositsseoyo',   meaning:'cool / stylish / awesome'},
+      '아파요':    {reading:'apayo',          meaning:'hurt / painful / sick'},
+      '건강해요':  {reading:'geonganghaeyo',  meaning:'healthy'},
+      '조용해요':  {reading:'joyonghaeyo',    meaning:'quiet'},
+      '시끄러워요':{reading:'sikkeureowoyo',  meaning:'noisy / loud'},
+      '빨라요':    {reading:'ppallayo',       meaning:'fast / quick'},
+      '느려요':    {reading:'neuryeoyo',      meaning:'slow'},
+      '높아요':    {reading:'nopayo',         meaning:'high / tall'},
+      '낮아요':    {reading:'najayo',         meaning:'low'},
+      '길어요':    {reading:'gireoyo',        meaning:'long'},
+      '짧아요':    {reading:'jjarbayo',       meaning:'short'},
+      '무거워요':  {reading:'mugeowoyo',      meaning:'heavy'},
+      '가벼워요':  {reading:'gabyeowoyo',     meaning:'light (in weight)'},
+      '밝아요':    {reading:'balgayo',        meaning:'bright'},
+      '어두워요':  {reading:'eoduwoyo',       meaning:'dark'},
+      '맑아요':    {reading:'malgayo',        meaning:'clear / sunny'},
+      '깨끗해요':  {reading:'kkaekkuthaeyo',  meaning:'clean'},
+      '더러워요':  {reading:'deoreowoyo',     meaning:'dirty'},
+      '넓어요':    {reading:'neolbeoyo',      meaning:'wide / spacious'},
+      '좁아요':    {reading:'jobayo',         meaning:'narrow / cramped'},
+      '많아요':    {reading:'manayo',         meaning:'many / a lot'},
+      '적어요':    {reading:'jeogeoyo',       meaning:'few / not many'},
+      '복잡해요':  {reading:'bokjaphaeyo',    meaning:'complicated / crowded'},
+      '간단해요':  {reading:'gandanhaeyo',    meaning:'simple'},
+      '중요해요':  {reading:'jungyohaeyo',    meaning:'important'},
+      '충분해요':  {reading:'chungbunhaeyo',  meaning:'enough / sufficient'},
+      // ── school & learning ──────────────────────────────────────────────────
+      '공부':      {reading:'gongbu',         meaning:'study / studying'},
+      '숙제':      {reading:'sukje',          meaning:'homework'},
+      '시험':      {reading:'siheom',         meaning:'test / exam'},
+      '교실':      {reading:'gyosil',         meaning:'classroom'},
+      '연필':      {reading:'yeonpil',        meaning:'pencil'},
+      '지우개':    {reading:'jiugae',         meaning:'eraser'},
+      '종이':      {reading:'jongi',          meaning:'paper'},
+      '색연필':    {reading:'saegyeonpil',    meaning:'colored pencil / crayon'},
+      '가위':      {reading:'gawi',           meaning:'scissors'},
+      '단어':      {reading:'daneo',          meaning:'word / vocabulary'},
+      '문장':      {reading:'munjang',        meaning:'sentence'},
+      '숫자':      {reading:'sutja',          meaning:'number / digit'},
+      '글자':      {reading:'geulja',         meaning:'letter / character'},
+      // ── family & people ────────────────────────────────────────────────────
+      '할머니':    {reading:'halmeoni',       meaning:'grandmother'},
+      '할아버지':  {reading:'harabeoji',      meaning:'grandfather'},
+      '오빠':      {reading:'oppa',           meaning:"older brother (female speaker's)"},
+      '언니':      {reading:'eonni',          meaning:"older sister (female speaker's)"},
+      '형':        {reading:'hyeong',         meaning:"older brother (male speaker's)"},
+      '누나':      {reading:'nuna',           meaning:"older sister (male speaker's)"},
+      '동생':      {reading:'dongsaeng',      meaning:'younger sibling'},
+      '아기':      {reading:'agi',            meaning:'baby'},
+      '아저씨':    {reading:'ajeossi',        meaning:'middle-aged man / sir'},
+      '아줌마':    {reading:'ajumma',         meaning:"middle-aged woman / ma'am"},
+      // ── social & events ────────────────────────────────────────────────────
+      '파티':      {reading:'pati',           meaning:'party'},
+      '선물':      {reading:'seonmul',        meaning:'gift / present'},
+      '초대':      {reading:'chodae',         meaning:'invitation / invite'},
+      '약속':      {reading:'yaksok',         meaning:'promise / appointment'},
+      '행사':      {reading:'haengsa',        meaning:'event'},
+      '축제':      {reading:'chukje',         meaning:'festival'},
+      '대회':      {reading:'daehoe',         meaning:'competition / contest'},
+      '팀':        {reading:'tim',            meaning:'team'},
+      // ── weather ────────────────────────────────────────────────────────────
+      '흐려요':    {reading:'heuryeoyo',      meaning:'cloudy'},
+      '덥다':      {reading:'deoptda',        meaning:'hot (weather)'},
+      '더워요':    {reading:'deowoyo',        meaning:'hot (polite)'},
+      '춥다':      {reading:'chupda',         meaning:'cold (weather)'},
+      '추워요':    {reading:'chuwoyo',        meaning:'cold (polite)'},
+      '습해요':    {reading:'seupaeyo',       meaning:'humid'},
+      // ── expressions & phrases ──────────────────────────────────────────────
+      '물론':      {reading:'mulleon',        meaning:'of course'},
+      '사실':      {reading:'sasil',          meaning:'actually / in fact / truth'},
+      '혹시':      {reading:'hoksi',          meaning:'by any chance / perhaps'},
+      '드디어':    {reading:'deudio',         meaning:'finally / at last'},
+      '역시':      {reading:'yeoksi',         meaning:'as expected / indeed / also'},
+      '게다가':    {reading:'gedaga',         meaning:'moreover / on top of that'},
+      '그러나':    {reading:'geureona',       meaning:'however / but'},
+      '따라서':    {reading:'ttaraseo',       meaning:'therefore / accordingly'},
+      '그러면':    {reading:'geureomyeon',    meaning:'in that case / if so'},
+      '왜냐하면':  {reading:'waenyahamyeon',  meaning:'because / the reason is'},
+      '갑자기':    {reading:'gapjagi',        meaning:'suddenly'},
+      '바로':      {reading:'baro',           meaning:'right away / directly'},
+      '특히':      {reading:'teuki',          meaning:'especially / particularly'},
+      '계속':      {reading:'gyesok',         meaning:'continue / continuously'},
+      // ── particles (for lookup) ─────────────────────────────────────────────
+      '에서':      {reading:'eseo',           meaning:'at / in / from (place marker)'},
+      '에게':      {reading:'ege',            meaning:'to / for (person marker)'},
+      '한테':      {reading:'hante',          meaning:'to / from (informal person marker)'},
+      '께':        {reading:'kke',            meaning:'to (honorific person marker)'},
+      '처럼':      {reading:'cheoreom',       meaning:'like / as / similar to'},
+      '만큼':      {reading:'mankeum',        meaning:'as much as / to the extent of'},
+      '마다':      {reading:'mada',           meaning:'every / each'},
+      '으로':      {reading:'euro',           meaning:'to / toward / by means of'},
+      '부터':      {reading:'buteo',          meaning:'from / since'},
+      '까지':      {reading:'kkaji',          meaning:'until / up to / as far as'},
+      '라고':      {reading:'rago',           meaning:'called / named (quotation)'},
+      '보다':      {reading:'boda',           meaning:'than / compared to / see / watch'},
+      // ── sport & play ───────────────────────────────────────────────────────
+      '운동':      {reading:'undong',         meaning:'exercise / sport'},
+      '운동하다':  {reading:'undonghada',     meaning:'exercise'},
+      '수영':      {reading:'suyeong',        meaning:'swimming'},
+      '축구':      {reading:'chukgu',         meaning:'soccer / football'},
+      '야구':      {reading:'yagu',           meaning:'baseball'},
+      '농구':      {reading:'nonggu',         meaning:'basketball'},
+      '달리기':    {reading:'dalligi',        meaning:'running'},
+      '그네':      {reading:'geune',          meaning:'swing (playground)'},
+      '미끄럼틀':  {reading:'mikkeureomt',    meaning:'slide (playground)'},
+      // ── music & media ──────────────────────────────────────────────────────
+      '음악':      {reading:'eumak',          meaning:'music'},
+      '노래':      {reading:'norae',          meaning:'song'},
+      '노래하다':  {reading:'noraehada',      meaning:'sing'},
+      '영화':      {reading:'yeonghwa',       meaning:'movie / film'},
+      '그림':      {reading:'geurim',         meaning:'picture / drawing / painting'},
+      '그리다':    {reading:'geurida',        meaning:'draw / paint'},
+      '만화':      {reading:'manhwa',         meaning:'comics / manhwa'},
+      '게임':      {reading:'geim',           meaning:'game'},
+      // ── health & safety ────────────────────────────────────────────────────
+      '건강':      {reading:'geongang',       meaning:'health'},
+      '약':        {reading:'yak',            meaning:'medicine / drug'},
+      '의사':      {reading:'uisa',           meaning:'doctor'},
+      '간호사':    {reading:'ganhosa',        meaning:'nurse'},
+      '조심하다':  {reading:'josimhada',      meaning:'be careful / watch out'},
+      '조심해요':  {reading:'josimhaeyo',     meaning:'be careful (polite)'},
+      '위험':      {reading:'wiheom',         meaning:'danger / dangerous'},
+      '안전':      {reading:'anjeon',         meaning:'safety / safe'},
+      // ── building & navigation ──────────────────────────────────────────────
+      '입구':      {reading:'ipgu',           meaning:'entrance'},
+      '출구':      {reading:'chulgu',         meaning:'exit'},
+      '비상구':    {reading:'bisanggu',       meaning:'emergency exit'},
+      '엘리베이터':{reading:'ellibeiteo',     meaning:'elevator / lift'},
+      '안내':      {reading:'annae',          meaning:'guide / information / directions'},
+      '직원':      {reading:'jigwon',         meaning:'staff / employee'},
+      '문제':      {reading:'munje',          meaning:'problem / question'},
+      '정보':      {reading:'jeongbo',        meaning:'information'},
+      '게시판':    {reading:'gesipan',        meaning:'bulletin board / notice board'},
+      '표지판':    {reading:'pyojipan',       meaning:'sign / signboard'},
+      // ── counter words ──────────────────────────────────────────────────────
+      '명':        {reading:'myeong',         meaning:'person (counter)'},
+      '권':        {reading:'gwon',           meaning:'volume / book (counter)'},
+      '장':        {reading:'jang',           meaning:'sheet / page (counter)'},
+      '번':        {reading:'beon',           meaning:'time / number / turn'},
+      '번째':      {reading:'beonjjae',       meaning:'(ordinal suffix) -st / -nd / -th'},
+      '잔':        {reading:'jan',            meaning:'cup / glass (counter)'},
+      '병':        {reading:'byeong',         meaning:'bottle'},
+      '봉지':      {reading:'bongji',         meaning:'bag / packet'},
     };
     // Compound verb endings listed longest-first so the greedy match works correctly
     const _KO_PARTICLES = [
       '하시려면','하려면','하시겠어요','하겠습니다','하겠어요','했습니다','했어요',
       '하십시오','하시면','하세요','합니까','합니다','해요','해서','하면','하다','하고',
       '시려면','겠습니다','겠어요','습니다','었어요','았어요','이에요','으면','려면',
-      '에서','에게','으로','까지','부터','이라','라고','이나','으나','이고','이면','예요',
+      // Compound postpositions — must come before their embedded short particles
+      '밖에서','밖에도','밖에','밖으로',
+      '으로부터','으로서도','으로서','으로도','으로만','으로는',
+      '에서부터','에서도','에서만','에서는',
+      '에서','에게','으로','까지도','까지만','까지','부터','이라','라고','이나','으나','이고','이면','예요',
+      '에도','에만','에는',
+      '로서','로부터','로도','로만','로는',
+      '한테서','한테도','한테',
       '를','을','가','이','는','은','에','로','와','과','도','만','의',
     ];
     const _KO_NO_SPLIT = new Set([
@@ -1824,7 +2552,10 @@
             );
           } else {
             out_words.push(w);
-            out_defs.push(defs ? (defs[i] || {text:w, reading:'', meaning:''}) : {text:w, reading:'', meaning:''});
+            const _fb = _KO_FALLBACK?.[clean];
+            const _def = defs ? (defs[i] || {text:w, reading:romanizeKo(clean), meaning:''}) : {text:w, reading:romanizeKo(clean), meaning:''};
+            if (_fb?.parts) _def.parts = _fb.parts;
+            out_defs.push(_def);
           }
         }
       });
@@ -1841,7 +2572,7 @@
       return null;
     }
     // Strip comma- or slash-separated synonyms from LLM-returned meanings — pick only the first.
-    function _first_meaning(s) { return s ? s.split(/\s*[,\/]\s*/)[0] : s; }
+    function _first_meaning(s) { return s ? s.split(/\s*[,\/]\s*|\s+or\s+/)[0] : s; }
 
     async function _npc_lookup(word, on_status) {
       const clean=word.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'');
@@ -1863,7 +2594,7 @@
         const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),15000);
         const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
           body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
-            `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
+            `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"core English word or short phrase (3 words max)"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
         clearTimeout(tid); if(pulse)clearInterval(pulse);
         if (!res.ok) throw new Error();
@@ -1892,9 +2623,11 @@
     _populate_voices();
     speechSynthesis.addEventListener('voiceschanged', _populate_voices);
 
+    const _NATIVE_HOUR_KO = [null,'한','두','세','네','다섯','여섯','일곱','여덟','아홉','열','열한','열두','열세','열네','열다섯','열여섯','열일곱','열여덟','열아홉','스무','스물한','스물두','스물세','스물네'];
     function _speak(text) {
       if (!window.speechSynthesis) return;
       speechSynthesis.cancel();
+      if (LANG.current === 'ko') text = text.replace(/(\d+)시/g, (_,n) => { const h=_NATIVE_HOUR_KO[+n]; return (h||n)+'시'; });
       const u = new SpeechSynthesisUtterance(text);
       u.rate = 0.9;
       if (LANG.current === 'ko') {
@@ -1911,8 +2644,8 @@
     function _select(idx, part_idx=null, field=null) {
       cur_word_idx=idx; cur_part_idx=part_idx;
       const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[idx];
-      const active=(part_idx!=null&&token.parts)?token.parts[part_idx]:token;
-      const res_key=part_idx!=null?`${idx}p${part_idx}`:idx;
+      const active=(part_idx!=null&&part_idx>=0&&token.parts)?token.parts[part_idx]:token;
+      const res_key=(part_idx!=null&&part_idx>=0)?`${idx}p${part_idx}`:idx;
       const res=word_results[res_key]||{};
       if (!field) field=!res.romaji?'romaji':'meaning';
       _active_field=field;
@@ -1926,7 +2659,7 @@
       _update_lkp();
       if (inp.parentElement!==panel_el) inp.focus();
       if (cur_sign_id==='__npc__') {
-        if (part_idx!=null&&token.parts) {
+        if (part_idx!=null&&part_idx>=0&&token.parts) {
           const part=token.parts[part_idx];
           if (!part.romaji&&!part.furigana) {
             _npc_lookup(part.text).then(def=>{
@@ -1957,6 +2690,7 @@
         if (td?.parts) tok.parts=td.parts;
         return tok;
       });
+      _npc_line_id = jp_text || words.join('');
       SIGN_BY_ID['__npc__']={id:'__npc__', label:npc_label||'', japanese:jp_text||words.join(''), tokens, translation:en_text||''};
       open('__npc__');
       const _ct=tokens[clicked_idx];
@@ -1971,7 +2705,7 @@
       chips_row.style.display='';
       const sign=SIGN_BY_ID[sign_id]; if (!sign) return;
       cur_sign_id=sign_id; cur_word_idx=null; cur_part_idx=null; _active_field=null; _hint_by_key={};
-      const saved=sign_id==='__npc__'?{}:WORD_PROGRESS.getSign(sign_id); word_results={};
+      const saved=sign_id==='__npc__'?NPC_LINE_PROGRESS.get(_npc_line_id):WORD_PROGRESS.getSign(sign_id); word_results={};
       Object.keys(saved).forEach(k=>{
         if (/^\d+$/.test(k)) word_results[+k]={...saved[k]};
         else word_results[k]={...saved[k]};
@@ -1982,6 +2716,18 @@
           if (_isNumericToken(part)) { const pk=`${i}p${pi}`; word_results[pk]=word_results[pk]||{}; word_results[pk].meaning=true; }
         });
       });
+      // Migration: tokens that were saved as atomic before parts were added
+      if (sign_id!=='__npc__') sign.tokens.forEach((tok,i)=>{
+        if (!tok.parts||!tok.parts.length) return;
+        const atomicRes=word_results[i]||{};
+        if (!atomicRes.romaji&&!atomicRes.meaning) return;
+        tok.parts.forEach((_,pi)=>{
+          const pk=`${i}p${pi}`;
+          word_results[pk]=word_results[pk]||{};
+          if (atomicRes.romaji&&!word_results[pk].romaji) { word_results[pk].romaji=true; WORD_PROGRESS.unlock_part(sign_id,i,pi,'romaji'); }
+          if (atomicRes.meaning&&!word_results[pk].meaning) { word_results[pk].meaning=true; WORD_PROGRESS.unlock_part(sign_id,i,pi,'meaning'); }
+        });
+      });
       if (sign_id==='__npc__') {
         const vocab=NPC_VOCAB.getAll(), sign=SIGN_BY_ID['__npc__'];
         if (sign) sign.tokens.forEach((tok,i)=>{
@@ -1989,17 +2735,15 @@
             tok.parts.forEach((part,pi)=>{
               const e=vocab.find(v=>v.text===part.text);
               if (e) {
-                const pk=`${i}p${pi}`; word_results[pk]={};
-                if (e.romaji)                    { word_results[pk].romaji=true; part.romaji=e.reading; part.furigana=e.reading; }
-                if (e.meaning_unlocked&&e.meaning){ word_results[pk].meaning=true; part.meaning=e.meaning; }
+                if (e.romaji&&e.reading)          { part.romaji=e.reading; part.furigana=e.reading; }
+                if (e.meaning_unlocked&&e.meaning) { part.meaning=e.meaning; }
               }
             });
           } else {
             const e=vocab.find(v=>v.text===tok.text);
             if (e) {
-              word_results[i]={};
-              if (e.romaji)                    { word_results[i].romaji=true; tok.romaji=e.reading; tok.furigana=e.reading; }
-              if (e.meaning_unlocked&&e.meaning){ word_results[i].meaning=true; tok.meaning=e.meaning; }
+              if (e.romaji&&e.reading)          { tok.romaji=e.reading; tok.furigana=e.reading; }
+              if (e.meaning_unlocked&&e.meaning) { tok.meaning=e.meaning; }
             }
           }
         });
@@ -2039,9 +2783,22 @@
     function _accept(token, matched, res) {
       res[matched]=true;
       if (cur_sign_id!=='__npc__') {
-        if (cur_part_idx!=null) WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,matched);
-        else WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
-      } else NPC_VOCAB.add(token, matched);
+        if (cur_part_idx!=null&&cur_part_idx>=0) {
+          WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,matched);
+        } else if (cur_part_idx===-1) {
+          // Whole-word answer: save token-level and propagate to all parts
+          WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
+          const _wsign=SIGN_BY_ID[cur_sign_id], _wtok=_wsign.tokens[cur_word_idx];
+          if (_wtok?.parts) _wtok.parts.forEach((_,pi)=>{
+            const pk=`${cur_word_idx}p${pi}`;
+            word_results[pk]=word_results[pk]||{}; word_results[pk][matched]=true;
+            WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,pi,matched);
+          });
+        } else {
+          WORD_PROGRESS.unlock(cur_sign_id,cur_word_idx,matched);
+        }
+        if (typeof MapPanel !== 'undefined' && document.getElementById('map-panel')?.classList.contains('open')) MapPanel.refresh();
+      } else { NPC_VOCAB.add(token, matched); NPC_LINE_PROGRESS.save(_npc_line_id, word_results); }
       // Advance to the other slot if one was just answered
       if (matched==='romaji'&&!res.meaning) { _active_field='meaning'; inp.placeholder=''; }
       if (matched==='meaning'&&!res.romaji) { _active_field='romaji';  inp.placeholder=''; }
@@ -2080,15 +2837,15 @@
         const nextIdx=activeIdx===-1?(e.shiftKey?openSlots.length-1:0):(activeIdx+step+openSlots.length)%openSlots.length;
         const next=openSlots[nextIdx];
         const tok_idx=+next.dataset.tokIdx;
-        const part_idx=next.dataset.partIdx!==undefined?+next.dataset.partIdx:null;
+        const part_idx=next.dataset.whole==='1'?-1:(next.dataset.partIdx!==undefined?+next.dataset.partIdx:null);
         _select(tok_idx,part_idx,next.dataset.field);
         return;
       }
       if (e.key!=="Enter") return;
       if (cur_sign_id==null||cur_word_idx==null||_checking) return;
       const sign=SIGN_BY_ID[cur_sign_id], token=sign.tokens[cur_word_idx];
-      const active=(cur_part_idx!=null&&token.parts)?token.parts[cur_part_idx]:token;
-      const res_key=cur_part_idx!=null?`${cur_word_idx}p${cur_part_idx}`:cur_word_idx;
+      const active=(cur_part_idx!=null&&cur_part_idx>=0&&token.parts)?token.parts[cur_part_idx]:token;
+      const res_key=(cur_part_idx!=null&&cur_part_idx>=0)?`${cur_word_idx}p${cur_part_idx}`:cur_word_idx;
       word_results[res_key]=word_results[res_key]||{};
       const res=word_results[res_key], raw=inp.value;
       // Auto-match: pre-fill from NPC_VOCAB only (confirmed correct answers, not LLM guesses)
@@ -2122,16 +2879,6 @@
         const ok=await _llama_judge_meaning(active,raw.trim(), msg=>{ fb.textContent=msg; fb.style.color="#b8860b"; });
         _checking=false;
         if (ok){ inp.value=""; _accept(active,"meaning",res); }
-        else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
-      } else if (cur_sign_id==='__npc__'&&cur_part_idx==null&&!token.meaning) {
-        // NPC token with no meaning and romaji not yet answered — look up and check
-        _checking=true;
-        const def=await _npc_lookup(token.text, msg=>{ fb.textContent=msg; fb.style.color='#b8860b'; });
-        _checking=false;
-        if (def) { token.romaji=def.reading; token.furigana=def.reading; token.meaning=def.meaning; }
-        else { token.meaning=raw.trim(); }
-        const m2=_checkWhat(token,raw,res);
-        if (m2) { _accept(token,m2,res); }
         else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
       } else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); }
     });
@@ -2194,7 +2941,7 @@
       if (inp.parentElement!==panel_el) inp.focus();
     });
 
-    return { open, clear, open_npc_sentence, speak: _speak, prefetch: words => words.forEach(w => _npc_lookup(w)), split_ko_words: _ko_split_words };
+    return { open, clear, open_npc_sentence, speak: _speak, prefetch: words => words.forEach(w => _npc_lookup(w)), split_ko_words: _ko_split_words, lookup: _npc_lookup };
   })();
 
   const sim      = new Sim2D();
@@ -2203,6 +2950,7 @@
 
   document.getElementById("start-btn").addEventListener("click", () => {
     document.getElementById("start-screen").style.display = "none";
+    document.getElementById("map-btn").style.display = "block";
     document.getElementById("vocab-btn").style.display = "block";
     document.getElementById("settings-btn").style.display = "block";
     sim.start();
@@ -2215,6 +2963,7 @@
     const btn      = document.getElementById("vocab-btn");
     const closeBtn = document.getElementById("vocab-close");
     const clearBtn = document.getElementById("vocab-clear-btn");
+    const sortBtn  = document.getElementById("vocab-sort-btn");
     const searchInput = document.getElementById("vocab-search");
     const titleEl  = document.getElementById("vocab-title");
     const dlg_inp  = document.getElementById("ws-dlg-input");
@@ -2248,9 +2997,30 @@
       return { text, reading: '', meaning: '' };
     }
 
+    function _play_add_sound() {
+      try {
+        const ac = new (window.AudioContext || window.webkitAudioContext)();
+        [[880, 0, 0.22], [1320, 0.11, 0.28]].forEach(([freq, delay, dur]) => {
+          const osc = ac.createOscillator(), g = ac.createGain();
+          osc.connect(g); g.connect(ac.destination);
+          osc.type = 'sine'; osc.frequency.value = freq;
+          const t = ac.currentTime + delay;
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.15, t + 0.012);
+          g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          osc.start(t); osc.stop(t + dur);
+        });
+      } catch {}
+    }
+
+    function _sort() {
+      _words.sort((a, b) => a.text.localeCompare(b.text, 'ko'));
+    }
     function _add(text) {
       if (_words.some(w => w.text === text)) return;
       _words.push(_lookup(text));
+      _sort();
+      _play_add_sound();
       _save(); _render();
     }
     function _remove(text) {
@@ -2261,7 +3031,18 @@
     function _render() {
       const ko = LANG.current === 'ko';
       titleEl.textContent = ko ? '단어장 — Word List' : '単語帳 — Word List';
+      const counterEl = document.getElementById('vocab-counter');
+      if (ko && counterEl) {
+        const npcMap = new Map(NPC_VOCAB.getAll().map(e => [e.text, e]));
+        const total = _words.length;
+        const found = _words.filter(w => { const e = npcMap.get(w.text); return e && e.romaji && e.meaning_unlocked; }).length;
+        counterEl.textContent = `${found} / ${total} words found`;
+        counterEl.style.display = total ? '' : 'none';
+      } else if (counterEl) {
+        counterEl.style.display = 'none';
+      }
       clearBtn.style.display = _words.length ? '' : 'none';
+      sortBtn.style.display  = _words.length ? '' : 'none';
       content.innerHTML = '';
 
       if (!_words.length) {
@@ -2274,11 +3055,77 @@
       }
 
       const q = searchInput.value.trim().toLowerCase();
-      const visible = q ? _words.filter(w => (w.text + ' ' + w.reading + ' ' + w.meaning).toLowerCase().includes(q)) : _words;
+      let visible = q ? _words.filter(w => (w.text + ' ' + w.reading + ' ' + w.meaning).toLowerCase().includes(q)) : _words.slice();
 
-      visible.forEach(w => {
+      const CHO_CHARS = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+      function _cho(text) {
+        const cp = text && text.codePointAt(0);
+        return (cp >= 0xAC00 && cp <= 0xD7A3) ? CHO_CHARS[Math.floor((cp - 0xAC00) / 588)] : null;
+      }
+
+      let _drag_idx = null;
+
+      let lastCho = null;
+      let prevWord = null;
+      visible.forEach((w, vi) => {
+        if (ko) {
+          const wcho = _cho(w.text);
+          if (wcho && wcho !== lastCho) {
+            const div = document.createElement('div');
+            div.className = 'vocab-cho-divider';
+            div.textContent = wcho;
+            content.appendChild(div);
+            lastCho = wcho;
+          }
+        }
+
+        const misplaced = ko && prevWord !== null && w.text.localeCompare(prevWord.text, 'ko') < 0;
+        if (ko) prevWord = w;
+
         const row = document.createElement('div');
-        row.className = 'vocab-row';
+        row.className = 'vocab-row' + (misplaced ? ' vocab-row-misplaced' : '');
+        row.dataset.idx = String(_words.indexOf(w));
+
+        const handle = document.createElement('span');
+        handle.className = 'vocab-drag-handle'; handle.textContent = '⠿'; handle.title = 'Drag to reorder';
+        handle.draggable = true;
+        handle.addEventListener('dragstart', e => {
+          _drag_idx = _words.indexOf(w);
+          e.dataTransfer.setData('vocab-reorder', String(_drag_idx));
+          e.dataTransfer.effectAllowed = 'move';
+          e.stopPropagation();
+        });
+        handle.addEventListener('dragend', () => {
+          _drag_idx = null;
+          content.querySelectorAll('.vocab-row').forEach(r => r.classList.remove('drag-over-above','drag-over-below'));
+        });
+
+        row.addEventListener('dragover', e => {
+          if (!e.dataTransfer.types.includes('vocab-reorder')) return;
+          e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+          const half = row.getBoundingClientRect().top + row.offsetHeight / 2;
+          content.querySelectorAll('.vocab-row').forEach(r => r.classList.remove('drag-over-above','drag-over-below'));
+          row.classList.add(e.clientY < half ? 'drag-over-above' : 'drag-over-below');
+        });
+        row.addEventListener('dragleave', e => {
+          if (!row.contains(e.relatedTarget)) row.classList.remove('drag-over-above','drag-over-below');
+        });
+        row.addEventListener('drop', e => {
+          if (!e.dataTransfer.types.includes('vocab-reorder')) return;
+          e.preventDefault(); e.stopPropagation();
+          row.classList.remove('drag-over-above','drag-over-below');
+          const from = _drag_idx;
+          if (from === null) return;
+          const toWord = w;
+          let toIdx = _words.indexOf(toWord);
+          const half = row.getBoundingClientRect().top + row.offsetHeight / 2;
+          if (e.clientY >= half) toIdx++;
+          if (from === toIdx || from === toIdx - 1) return;
+          const [moved] = _words.splice(from, 1);
+          const insertAt = from < toIdx ? toIdx - 1 : toIdx;
+          _words.splice(insertAt, 0, moved);
+          _save(); _render();
+        });
 
         const jp = document.createElement('span');
         jp.className = 'vocab-jp'; jp.textContent = w.text;
@@ -2286,6 +3133,7 @@
         jp.addEventListener('dragstart', e => {
           e.dataTransfer.setData('dlg-word', w.text);
           e.dataTransfer.effectAllowed = 'copy';
+          e.stopPropagation();
         });
         jp.addEventListener('click', () => {
           if (!dlg_open()) return;
@@ -2308,7 +3156,7 @@
         rm.className = 'vocab-remove-btn'; rm.textContent = '×'; rm.title = 'Remove';
         rm.addEventListener('click', e => { e.stopPropagation(); _remove(w.text); });
 
-        row.append(jp, reading, meaning, rm);
+        row.append(handle, jp, reading, meaning, rm);
         content.appendChild(row);
       });
 
@@ -2357,7 +3205,42 @@
       if (moved) { const z = _snap_zone(e.clientX, e.clientY); if (z) _apply_anchor(z); }
     });
 
+    const statusEl = document.getElementById('vocab-add-status');
+    let _status_timer = null;
+    function _set_status(msg, color) {
+      statusEl.textContent = msg; statusEl.style.color = color; statusEl.style.opacity = '1';
+      clearTimeout(_status_timer);
+      _status_timer = setTimeout(() => { statusEl.style.opacity = '0'; }, 2000);
+    }
+
+    function _isKorean(s) { return /[가-힣ᄀ-ᇿ㄰-㆏]/.test(s); }
+
+    searchInput.addEventListener('keydown', async e => {
+      if (e.key !== 'Enter') return;
+      const text = searchInput.value.trim();
+      if (!text || !_isKorean(text)) return;
+      e.preventDefault();
+      // Already in list?
+      if (_words.some(w => w.text === text)) { _set_status('already in list', '#8a6838'); return; }
+      // Try sync lookup first
+      const sync = _lookup(text);
+      if (sync.reading || sync.meaning) { _add(text); searchInput.value = ''; _render(); _set_status('added: ' + (sync.meaning || sync.reading), '#2d6a4f'); return; }
+      // Try async (Ollama)
+      _set_status('looking up…', '#8a6838');
+      try {
+        const def = await WorkspacePanel.lookup(text);
+        if (def && (def.reading || def.meaning)) {
+          _words.push({ text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim() : '' });
+          _play_add_sound(); _save(); _render();
+          searchInput.value = ''; _set_status('added: ' + (def.meaning || def.reading), '#2d6a4f');
+        } else {
+          _set_status('not found', '#c0392b');
+        }
+      } catch { _set_status('not found', '#c0392b'); }
+    });
+
     searchInput.addEventListener('input', _render);
+    sortBtn.addEventListener('click', () => { _sort(); _save(); _render(); });
     clearBtn.addEventListener('click', () => { _words = []; _save(); _render(); });
     btn.addEventListener('click', open);
     closeBtn.addEventListener('click', close_panel);
@@ -2366,6 +3249,155 @@
     function open() { _load(); searchInput.value = ''; _render(); panel.classList.add('open'); }
     function close_panel() { panel.classList.remove('open'); }
     return { open, close: close_panel, add: _add };
+  })();
+
+  const ConvoPanel = (() => {
+    const panel    = document.getElementById('convo-panel');
+    const body_el  = document.getElementById('convo-body');
+    const title_el = document.getElementById('convo-title');
+    const close_btn = document.getElementById('convo-close');
+
+    function open(convo_id) {
+      if (typeof DialoguePanel !== 'undefined') DialoguePanel.openConvo(convo_id);
+    }
+
+    function close() { panel.classList.remove('open'); }
+    close_btn.addEventListener('click', close);
+    panel.addEventListener('click', e => { if (e.target === panel) close(); });
+
+    return { open, close };
+  })();
+
+  const MapPanel = (() => {
+    const panel    = document.getElementById('map-panel');
+    const content  = document.getElementById('map-content');
+    const btn      = document.getElementById('map-btn');
+    const close_btn = document.getElementById('map-close');
+    const title_el = document.getElementById('map-title');
+
+    const ROOM_ORDER = ['street','lobby','play_area','gallery','library','salon','cooking_room','outdoor','house'];
+
+    function _sign_progress(room_id) {
+      const room = ROOM_MAP_DATA[room_id];
+      if (!room) return { done: 0, total: 0 };
+      let done = 0, total = 0;
+      for (const sr of (room.signs || [])) {
+        const sign = SIGN_BY_ID[sr.sign_id];
+        if (!sign) continue;
+        const prog = WORD_PROGRESS.getSign(sr.sign_id);
+        (sign.tokens || []).forEach((tok, i) => {
+          total++;
+          if (tok.parts && tok.parts.length) {
+            // Compound token: progress lives on part keys ("0p0", "0p1", …), not the token key
+            if (tok.parts.some((_, pi) => { const r = prog[`${i}p${pi}`] || {}; return r.romaji || r.meaning; }))
+              done++;
+          } else {
+            const r = prog[i] || {};
+            if (r.romaji || r.meaning) done++;
+          }
+        });
+      }
+      return { done, total };
+    }
+
+    function _render() {
+      const ko = LANG.current === 'ko';
+      title_el.textContent = ko ? '진행 상황' : '進捗マップ';
+      const current = sim.state.room;
+      content.innerHTML = '';
+      for (const room_id of ROOM_ORDER) {
+        const room = ROOM_MAP_DATA[room_id];
+        if (!room) continue;
+        const { done, total } = _sign_progress(room_id);
+        const pct = total > 0 ? Math.round(done / total * 100) : 0;
+        const is_here = room_id === current;
+
+        const row = document.createElement('div');
+        row.className = 'map-room-row';
+
+        const hdr = document.createElement('div');
+        hdr.className = 'map-room-header';
+
+        const name = document.createElement('span');
+        name.className = 'map-room-name' + (is_here ? ' current' : '');
+        name.textContent = (is_here ? '▶ ' : '') + (ko ? room.name_ko : room.name_jp);
+
+        const right = document.createElement('span');
+        right.style.cssText = 'display:flex;align-items:baseline;gap:8px;';
+
+        const count = document.createElement('span');
+        count.className = 'map-room-sub';
+        count.textContent = total > 0 ? `${done}/${total}` : '';
+
+        const pct_el = document.createElement('span');
+        pct_el.className = 'map-room-pct';
+        pct_el.textContent = total > 0 ? `${pct}%` : '—';
+
+        right.append(count, pct_el);
+        hdr.append(name, right);
+
+        const bar = document.createElement('div');
+        bar.className = 'map-room-bar';
+        const fill = document.createElement('div');
+        fill.className = 'map-room-fill' + (pct === 100 && total > 0 ? ' done' : '');
+        fill.style.width = pct + '%';
+        bar.appendChild(fill);
+
+        row.append(hdr, bar);
+
+        row.addEventListener('click', () => {
+          // Find first sign in the room that has any incomplete token
+          const rm = ROOM_MAP_DATA[room_id];
+          const room_signs = rm ? (rm.signs || []) : [];
+          let target_col = null;
+          for (const sr of room_signs) {
+            const sign = SIGN_BY_ID[sr.sign_id];
+            if (!sign) continue;
+            const prog = WORD_PROGRESS.getSign(sr.sign_id);
+            const incomplete = (sign.tokens || []).some((tok, i) => {
+              const r = prog[i] || {};
+              return !r.romaji || !r.meaning;
+            });
+            if (incomplete) { target_col = sr.col; break; }
+          }
+          // Fall back to first sign if all done
+          if (target_col === null && room_signs.length > 0) target_col = room_signs[0].col;
+          const warp_px = ((target_col !== null ? target_col : 10) + 0.5) * TS;
+          sim.warp_to(room_id, warp_px, 7 * TS);
+          close_panel();
+        });
+
+        content.appendChild(row);
+      }
+    }
+
+    // Panel repositioning (same snap behaviour as VocabPanel)
+    const ANCHOR_KEY = 'map-anchor-v1';
+    let _drag = null, _anchor = localStorage.getItem(ANCHOR_KEY) || 'left';
+    function _apply_anchor(a) { _anchor = a; panel.dataset.anchor = a; try { localStorage.setItem(ANCHOR_KEY, a); } catch {} }
+    function _snap_zone(x, y) { const sw = window.innerWidth, sh = window.innerHeight; if (x < sw*0.3) return 'left'; if (x > sw*0.7) return 'right'; return null; }
+    _apply_anchor(_anchor);
+    document.getElementById('map-header').addEventListener('mousedown', e => {
+      if (e.button !== 0 || e.target.closest('button')) return;
+      e.preventDefault(); _drag = { moved: false, x0: e.clientX, y0: e.clientY };
+    });
+    window.addEventListener('mousemove', e => {
+      if (!_drag) return;
+      if (!_drag.moved && Math.hypot(e.clientX-_drag.x0, e.clientY-_drag.y0) < 8) return;
+      _drag.moved = true; panel.classList.add('dragging');
+    });
+    window.addEventListener('mouseup', e => {
+      if (!_drag) return;
+      const moved = _drag.moved; _drag = null; panel.classList.remove('dragging');
+      if (moved) { const z = _snap_zone(e.clientX, e.clientY); if (z) _apply_anchor(z); }
+    });
+
+    function open() { _render(); panel.classList.add('open'); }
+    function close_panel() { panel.classList.remove('open'); }
+    btn.addEventListener('click', open);
+    close_btn.addEventListener('click', close_panel);
+    panel.addEventListener('click', e => { if (e.target === panel) close_panel(); });
+    return { open, close: close_panel, refresh: _render };
   })();
 
   const SettingsPanel = (() => {
@@ -2473,16 +3505,22 @@
         const raw=(await res.json()).message?.content?.trim()||'';
         let p=null; try{p=JSON.parse(raw);}catch{}
         if (!p){const m=raw.match(/\{[\s\S]*?\}/);if(m)try{p=JSON.parse(m[0]);}catch{}}
-        if (p?.reading) { if (p.meaning) p.meaning=_first_meaning(p.meaning); _lookup_cache[word]=p; return p; }
+        if (p?.reading) { if (p.meaning) { p.meaning=_first_meaning(p.meaning); p.meaning=p.meaning.charAt(0).toLowerCase()+p.meaning.slice(1); } _lookup_cache[word]=p; return p; }
       } catch {}
       return null;
     }
 
     function _refresh_dlg_word_colors() {
-      const vocab = NPC_VOCAB.getAll();
       body_el.querySelectorAll('.dlg-word').forEach(span => {
-        const e = vocab.find(v => v.text === span.textContent);
-        span.classList.toggle('done', !!(e && e.romaji && e.meaning_unlocked));
+        const turn = span.closest('[data-line-id]');
+        if (!turn) return;
+        const saved = NPC_LINE_PROGRESS.get(turn.dataset.lineId);
+        const i = +span.dataset.wordIdx;
+        const partCount = +span.dataset.partCount || 0;
+        const done = partCount
+          ? Array.from({length: partCount}, (_,pi) => saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
+          : !!(saved[i]?.romaji && saved[i]?.meaning);
+        span.classList.toggle('done', done);
       });
     }
 
@@ -2491,6 +3529,7 @@
       turn.className = 'dlg-turn dlg-turn-npc';
       turn.dataset.jp = jp;
       turn.dataset.en = en || '';
+      turn.dataset.lineId = jp;
       if (already_revealed) turn.classList.add('complete');
 
       const jp_row = document.createElement('div');
@@ -2501,12 +3540,17 @@
         all_words = split.words; tokens = split.defs;
       }
       if (!tokens) WorkspacePanel.prefetch(all_words);
-      const vocab = NPC_VOCAB.getAll();
+      const line_saved = NPC_LINE_PROGRESS.get(jp);
       all_words.forEach((word, i) => {
         const span = document.createElement('span');
         span.className = 'dlg-word'; span.textContent = word; span.draggable = true;
-        const ve = vocab.find(v => v.text === word);
-        if (ve && ve.romaji && ve.meaning_unlocked) span.classList.add('done');
+        span.dataset.wordIdx = i;
+        if (tokens && tokens[i]?.parts?.length) span.dataset.partCount = tokens[i].parts.length;
+        const partCount = tokens && tokens[i]?.parts?.length;
+        const isDone = partCount
+          ? Array.from({length: partCount}, (_,pi) => line_saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
+          : !!(line_saved[i]?.romaji && line_saved[i]?.meaning);
+        if (isDone) span.classList.add('done');
         span.addEventListener('dragstart', ev => {
           span.classList.add('drag-src');
           ev.dataTransfer.setData('dlg-word', word);
@@ -2533,6 +3577,20 @@
       });
       turn.appendChild(copy_btn);
 
+      // Room navigation row — detect room names mentioned in this NPC turn
+      const _mentioned_rooms = Object.values(ROOM_DEFS)
+        .filter(r => r.name_jp && jp.includes(r.name_jp) && r.id !== sim.state.room);
+      if (_mentioned_rooms.length > 0) {
+        const navRow = document.createElement('div'); navRow.className = 'dlg-nav-row';
+        _mentioned_rooms.forEach(room => {
+          const btn = document.createElement('button'); btn.className = 'dlg-nav-btn';
+          btn.textContent = room.name_jp; btn.title = room.name_en;
+          btn.addEventListener('click', () => { close(); sim.navigate_to_room(room.id); });
+          navRow.appendChild(btn);
+        });
+        turn.appendChild(navRow);
+      }
+
       body_el.insertBefore(turn, thinking);
       body_el.scrollTop = body_el.scrollHeight;
       WorkspacePanel.speak(jp);
@@ -2542,7 +3600,26 @@
       const turn = document.createElement('div');
       turn.className = 'dlg-turn dlg-turn-player';
       const bubble = document.createElement('span');
-      bubble.className = 'dlg-turn-player-text'; bubble.textContent = text;
+      bubble.className = 'dlg-turn-player-text';
+      let all_words = _tokenize(text);
+      let _pdefs = null;
+      if (LANG.current === 'ko') {
+        const split = WorkspacePanel.split_ko_words(all_words, null);
+        all_words = split.words; _pdefs = split.defs;
+      }
+      const label = LANG.current === 'ko' ? '나' : '私';
+      all_words.forEach((word, i) => {
+        if (i > 0) bubble.appendChild(document.createTextNode(' '));
+        const span = document.createElement('span');
+        span.className = 'dlg-player-word'; span.textContent = word;
+        span.addEventListener('click', () => {
+          bubble.querySelectorAll('.dlg-player-word.active').forEach(c => c.classList.remove('active'));
+          span.classList.add('active');
+          WorkspacePanel.open_npc_sentence(text, all_words, i, label, _pdefs, '');
+        });
+        bubble.appendChild(span);
+      });
+      if (!all_words.length) bubble.textContent = text;
       turn.appendChild(bubble);
       body_el.insertBefore(turn, thinking);
       body_el.scrollTop = body_el.scrollHeight;
@@ -2601,12 +3678,11 @@
         throw new Error('parse: '+raw.slice(0,120));
       } catch(err) {
         console.error('[NPC] failed — error:', err?.message, '| type:', err?.name, '| npc:', npc_id, '| url:', OLLAMA_URL);
-        if (LANG.current==='ko') {
-          return {jp:'죄송해요, 잘 이해하지 못했어요. 다시 한번 말씀해 주시겠어요?', en:"Sorry, I didn't quite understand. Could you say that again?", tokens:null};
-        }
         const intent_id=npc_fallback_classify(npc_id,text);
         const intent=NPC_DEFS[npc_id]?.intents[intent_id];
-        return intent?{jp:intent.jp,en:intent.en,tokens:null}:null;
+        if (intent) return {jp:(LANG.current==='ko'&&intent.ko?intent.ko:intent.jp),en:intent.en,tokens:null};
+        if (LANG.current==='ko') return {jp:'죄송해요, 잘 이해하지 못했어요. 다시 한번 말씀해 주시겠어요?', en:"Sorry, I didn't quite understand. Could you say that again?", tokens:null};
+        return null;
       }
     }
 
@@ -2624,7 +3700,7 @@
         if (_is_affirmative(text)) {
           const intent=NPC_DEFS[cur_npc_id]?.intents[pend.intent_id];
           if (intent) {
-            const jp=intent.jp, en=intent.en;
+            const jp=(LANG.current==='ko'&&intent.ko?intent.ko:intent.jp), en=intent.en;
             _histories[_hk(cur_npc_id)]=[...(_histories[_hk(cur_npc_id)]||[]),{role:"user",content:text},{role:"assistant",content:JSON.stringify({jp,en})}];
             _save_dlg(cur_npc_id);
             _append_npc_turn(jp, en, null);
@@ -2642,6 +3718,88 @@
       send_btn.disabled=false; inp.disabled=false; inp.focus();
     }
 
+    function openConvo(convo_id) {
+      const convo = (typeof CONVERSATIONS !== 'undefined') && CONVERSATIONS[convo_id];
+      if (!convo) return;
+      cur_npc_id = convo_id;
+      const ko = LANG.current === 'ko';
+      document.getElementById("ws-panel").classList.remove("open");
+      dlg_el.style.transform=''; dlg_el.style.left=''; dlg_el.style.top='';
+      dlg_el.classList.add("open", "convo-mode");
+      avatar.style.background='';
+      name_el.textContent = ko ? convo.title_ko : convo.title_en;
+      body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
+      thinking.classList.remove("visible");
+      inp.disabled = true;
+
+      const first_npc = convo.turns[0]?.npc_id;
+      convo.turns.forEach(turn => {
+        const is_right = turn.npc_id !== first_npc;
+        const speaker_name = ko ? turn.name_ko : turn.name_en;
+        const text = turn.ko;
+        const words = text.split(/\s+/);
+
+        const turn_el = document.createElement('div');
+        turn_el.className = 'dlg-turn' + (is_right ? ' dlg-turn-convo-right' : '');
+
+        const speaker_el = document.createElement('div');
+        speaker_el.className = 'dlg-convo-speaker';
+        speaker_el.textContent = speaker_name;
+
+        const already_revealed = _is_revealed(convo_id, turn.ko);
+
+        const npc_el = document.createElement('div');
+        npc_el.className = 'dlg-turn-npc';
+        npc_el.dataset.jp = turn.ko;
+        npc_el.dataset.en = turn.en;
+        if (already_revealed) npc_el.classList.add('complete');
+
+        const jp_row = document.createElement('div');
+        jp_row.className = 'dlg-npc-jp';
+        words.forEach((word, wi) => {
+          if (wi > 0) jp_row.appendChild(document.createTextNode(' '));
+          const span = document.createElement('span');
+          span.className = 'dlg-word'; span.textContent = word; span.draggable = true;
+          span.addEventListener('dragstart', ev => { ev.dataTransfer.setData('dlg-word', word); ev.dataTransfer.effectAllowed = 'copy'; });
+          span.addEventListener('click', () => {
+            jp_row.querySelectorAll('.dlg-word.active').forEach(c => c.classList.remove('active'));
+            span.classList.add('active');
+            WorkspacePanel.open_npc_sentence(text, words, wi, speaker_name, null, turn.en);
+          });
+          jp_row.appendChild(span);
+        });
+        npc_el.appendChild(jp_row);
+
+        const en_el = document.createElement('div');
+        en_el.className = 'dlg-convo-en';
+        en_el.textContent = turn.en;
+        npc_el.appendChild(en_el);
+
+        // Portrait canvas — crops the character sprite from the loaded spritesheet
+        const portrait = document.createElement('canvas');
+        portrait.className = 'dlg-convo-portrait';
+        const dpr = window.devicePixelRatio || 1;
+        portrait.width  = Math.round(32 * dpr);
+        portrait.height = Math.round(64 * dpr);
+        const spr = (typeof CHARS !== 'undefined') && CHARS[turn.npc_id];
+        if (spr && typeof renderer !== 'undefined') {
+          const pimg = renderer._imgs[spr.img];
+          if (pimg && pimg.complete && pimg.naturalWidth) {
+            const pctx = portrait.getContext('2d');
+            pctx.imageSmoothingEnabled = false;
+            pctx.drawImage(pimg, spr.sx, spr.sy, spr.sw, spr.sh, 0, 0, portrait.width, portrait.height);
+          }
+        }
+
+        const row_el = document.createElement('div');
+        row_el.className = 'dlg-convo-row';
+        row_el.append(portrait, npc_el);
+
+        turn_el.append(speaker_el, row_el);
+        body_el.insertBefore(turn_el, thinking);
+      });
+    }
+
     function open(npc_id) {
       const npc=NPC_DEFS[npc_id]; if (!npc) return;
       cur_npc_id=npc_id;
@@ -2653,12 +3811,16 @@
       document.getElementById("ws-panel").classList.remove("open");
       // Reset to default centered position
       dlg_el.style.transform=''; dlg_el.style.left=''; dlg_el.style.top='';
+      dlg_el.classList.remove("convo-mode");
       dlg_el.classList.add("open");
+      inp.disabled = false;
       avatar.style.background=npc.color; name_el.textContent='';
       body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
       if (greeting.follow_up) _pending[npc_id]={intent_id:greeting.follow_up};
       const saved=_dlg_store[_hk(npc_id)];
-      if (saved && saved.length > 0) {
+      // "established" = player has formally opened this dialogue before (greeting was sent)
+      const established=saved?.some(m=>m.greeting||m.role==='user');
+      if (established) {
         delete _pending[npc_id];  // pending only for fresh conversations
         _histories[_hk(npc_id)]=saved;
         for (const msg of saved) {
@@ -2670,7 +3832,14 @@
           }
         }
       } else {
-        _histories[_hk(npc_id)]=[{role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en})}];
+        // First interactive open — show any ambient lines seen so far, then greeting
+        const ambient=saved||[];
+        for (const msg of ambient) {
+          let p=null; try{p=JSON.parse(msg.content);}catch{}
+          if (p?.jp) _append_npc_turn(p.jp, p.en, null, false);
+        }
+        const greeting_msg={role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en}),greeting:true};
+        _histories[_hk(npc_id)]=[...ambient,greeting_msg];
         _append_npc_turn(greeting.jp, greeting.en, null);
         _save_dlg(npc_id);
       }
@@ -2681,7 +3850,8 @@
 
     function close() {
       if (cur_npc_id) delete _pending[cur_npc_id];
-      cur_npc_id=null; dlg_el.classList.remove("open");
+      cur_npc_id=null; dlg_el.classList.remove("open", "convo-mode");
+      inp.disabled = false;
       _koKbdReset();
     }
 
@@ -2791,10 +3961,42 @@
     dlg_header.addEventListener('pointerup',     () => { _dlg_drag = null; dlg_header.classList.remove('dragging'); });
     dlg_header.addEventListener('pointercancel', () => { _dlg_drag = null; dlg_header.classList.remove('dragging'); });
 
-    return {open, close, refreshWordColors: _refresh_dlg_word_colors, revealTranslation: _reveal_translation};
+    function hasFresh(npc_id) { return !_dlg_store[_hk(npc_id)]?.some(m=>m.greeting||m.role==='user'); }
+
+    // Save an ambient speech-bubble line to this NPC's persistent history.
+    // Called from input2d._advance_convo() each time a convo_bubble is shown.
+    function addAmbient(npc_id, ko, en) {
+      const hk=_hk(npc_id);
+      const msg={role:'assistant',content:JSON.stringify({jp:ko,en}),ambient:true};
+      const hist=[...(_dlg_store[hk]||[]),msg];
+      _dlg_store[hk]=hist;
+      if (_histories[hk]) _histories[hk]=hist; // sync if panel is open for this NPC
+      try{localStorage.setItem(DLG_KEY,JSON.stringify(_dlg_store));}catch{}
+    }
+
+    return {open, openConvo, close, refreshWordColors: _refresh_dlg_word_colors, revealTranslation: _reveal_translation, hasFresh, addAmbient};
   })();
 
   // ── Teaching language switch ───────────────────────────────────────────────
+
+  function _migrateAtomicProgress() {
+    for (const id of Object.keys(SIGN_BY_ID)) {
+      const sign = SIGN_BY_ID[id];
+      if (!sign.tokens) continue;
+      const prog = WORD_PROGRESS.getSign(id);
+      sign.tokens.forEach((tok, i) => {
+        if (!tok.parts || !tok.parts.length) return;
+        const atomicRes = prog[i] || {};
+        if (!atomicRes.romaji && !atomicRes.meaning) return;
+        tok.parts.forEach((_, pi) => {
+          const pk = `${i}p${pi}`;
+          const partRes = prog[pk] || {};
+          if (atomicRes.romaji && !partRes.romaji) WORD_PROGRESS.unlock_part(id, i, pi, 'romaji');
+          if (atomicRes.meaning && !partRes.meaning) WORD_PROGRESS.unlock_part(id, i, pi, 'meaning');
+        });
+      });
+    }
+  }
 
   function switchTeachingLang(lang) {
     try {
@@ -2805,6 +4007,8 @@
       signs.forEach(s => { SIGN_BY_ID[s.id] = s; });
       // Reload per-language vocab progress
       WORD_PROGRESS.reload();
+      // Migrate any tokens that were saved as atomic before parts were added
+      _migrateAtomicProgress();
       // Close any open panels so stale sign data isn't shown
       WorkspacePanel.clear();
     } catch(e) { console.error('switchTeachingLang error:', e); }
@@ -2837,6 +4041,7 @@
 
     if (sim.state.session_active) {
       input.update(dt, now);
+      sim.tick_npcs(dt);
 
       if (sim.state.transition) {
         const changed = sim.advance_transition(dt);

@@ -9,9 +9,17 @@ function get_room_signs(room_id) {
 }
 
 const ROOM_DEFS = {
+  street: {
+    id: "street", name_jp: "通り", name_ko: "거리", name_en: "Street",
+    left: "house", right: "lobby",
+    wall_color: "#87ceeb", floor_color: "#808080", floor_dark: "#505050",
+    outdoor: true,
+    sign_layout: [],
+    object_hotspots: (W, FY, SY) => ({}),
+  },
   lobby: {
     id: "lobby", name_jp: "ロビー", name_ko: "로비", name_en: "Lobby",
-    left: null, right: "play_area",
+    left: "street", right: "play_area",
     wall_color: "#ede8da", floor_color: "#9a6830", floor_dark: "#6a4010",
     sign_layout: [
       { sign_id: "lobby_directory", x: 60,  w: 220, h: 130 },
@@ -79,8 +87,8 @@ const ROOM_DEFS = {
   },
   house: {
     id: "house", name_jp: "家", name_ko: "집", name_en: "Home",
-    left: "outdoor", right: null,
-    wall_color: "#f5f0e8", floor_color: "#B7B899", floor_dark: "#8a8770",
+    left: "outdoor", right: "street",
+    wall_color: "#f5f0e8", floor_color: "#8B4A20", floor_dark: "#4b2d12",
     sign_layout: [
       { sign_id: "house_entrance", x: 60,  w: 180, h: 110 },
       { sign_id: "house_kotatsu",  x: 280, w: 200, h:  90 },
@@ -88,6 +96,33 @@ const ROOM_DEFS = {
     ],
     object_hotspots: (W, FY, SY) => ({
       npc_house_resident: { x: Math.round(W * 0.58) - 22, y: FY - 90, w: 44, h: 90 },
+      house_window:       { x: Math.round(W * 0.15),       y: SY + 10,  w: 60, h: 50 },
+    }),
+  },
+  gallery: {
+    id: "gallery", name_jp: "おもちゃ画廊", name_ko: "장난감 갤러리", name_en: "Toy Gallery",
+    left: null, right: null, down: "play_area",
+    wall_color: "#f5f0e8", floor_color: "#c8a060", floor_dark: "#a06030",
+    sign_layout: [
+      { sign_id: "gallery_welcome", x: 60,  w: 200, h:  90 },
+      { sign_id: "gallery_care",    x: 290, w: 200, h: 110 },
+      { sign_id: "gallery_hours",   x: 510, w: 190, h:  90 },
+    ],
+    object_hotspots: (W, FY, SY) => ({
+      npc_gallery_curator: { x: Math.round(W * 0.5) - 22, y: FY - 90, w: 44, h: 90 },
+    }),
+  },
+  cooking_room: {
+    id: "cooking_room", name_jp: "料理室", name_ko: "요리실", name_en: "Cooking Room",
+    left: null, right: null, up: "salon",
+    wall_color: "#f0ebe0", floor_color: "#737373", floor_dark: "#505050",
+    sign_layout: [
+      { sign_id: "cooking_welcome",  x: 40,  w: 180, h:  90 },
+      { sign_id: "cooking_safety",   x: 250, w: 200, h: 110 },
+      { sign_id: "cooking_schedule", x: 470, w: 210, h:  90 },
+    ],
+    object_hotspots: (W, FY, SY) => ({
+      npc_cook: { x: Math.round(W * 0.5) - 22, y: FY - 90, w: 44, h: 90 },
     }),
   },
 };

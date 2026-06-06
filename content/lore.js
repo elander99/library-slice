@@ -18,9 +18,13 @@ const SCENE_LORE = {
     l1: "It's a 窓 — a window.",
     l2: "Inside, keep it quiet, please."
   },
+  house_window: {
+    l1: "It's a 窓 — a window.",
+    l2: "The view outside is peaceful. A moment to breathe."
+  },
   bookshelf_obj: {
-    l1: "It's a 書棚 — a bookshelf.",
-    l2: "Library work only. Eating/drinking not allowed."
+    l1: "It's a 書棚/서가 — a bookshelf.",
+    l2: "本/책 — books. 검색 (search) the catalogue to find them. Library work only."
   },
   laptop: {
     l1: "It's your ノートパソコン.",
@@ -35,8 +39,8 @@ const SCENE_LORE = {
     l2: "Reading it here is why you came."
   },
   phone: {
-    l1: "It's your 携帯電話 — your phone.",
-    l2: "In the building: refrain, please."
+    l1: "It's your 携帯電話/휴대전화 — your phone.",
+    l2: "In the building: 통화 (phone calls) — refrain, please."
   },
   snack: {
     l1: "It's an お菓子 — a rice cracker.",
@@ -50,10 +54,10 @@ const SCENE_LORE = {
   // Lobby
   info_desk: {
     l1: "It's the 案内所 — the information desk.",
-    l2: "Floor maps, event schedules, and lost-and-found."
+    l2: "In the ロビー — the lobby. 접수 (reception) and info. Floor maps, event schedules, lost-and-found."
   },
   exit_door: {
-    l1: "It's the 出口 — the exit.",
+    l1: "It's the 出口/출구 — the exit.",
     l2: "The main entrance and exit for the building."
   },
 
@@ -63,7 +67,7 @@ const SCENE_LORE = {
     l2: "Remove your shoes before entering the play area."
   },
   play_gate: {
-    l1: "It's the 入口 — the entrance gate.",
+    l1: "It's the 入口/입구 — the entrance gate.",
     l2: "Small children must be accompanied by an adult."
   },
 
@@ -75,6 +79,14 @@ const SCENE_LORE = {
   salon_seat: {
     l1: "It's a 椅子 — a chair.",
     l2: "The salon is mainly for upper elementary students and adults."
+  },
+  visitor_a: {
+    l1: "It's 음식물 — food.",
+    l2: "음식물 반입은 삼가 주세요 — no food in the salon."
+  },
+  visitor_b: {
+    l1: "It's 음식물 — a drink.",
+    l2: "음식물 반입은 삼가 주세요 — no drinks in the salon."
   },
 
   // Outdoor
