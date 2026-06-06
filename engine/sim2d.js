@@ -77,6 +77,8 @@ class Sim2D {
         goal_idx: gi,
         pause_timer: (g0.pause_ms || 0) / 1000,
         activity: g0.activity || null,
+        say_ko: g0.say_ko || null,
+        say_en: g0.say_en || null,
         zipline_t: 0,
         facing_left: false,
       };
@@ -109,6 +111,8 @@ class Sim2D {
           st.goal_idx   = (st.goal_idx + 1) % n.goals.length;
           const gnext   = n.goals[st.goal_idx];
           st.activity   = gnext.activity || null;
+          st.say_ko     = gnext.say_ko || null;
+          st.say_en     = gnext.say_en || null;
           st.pause_timer = (gnext.pause_ms || 0) / 1000;
         }
         continue;
@@ -121,7 +125,9 @@ class Sim2D {
           st.pause_timer = 0;
           st.goal_idx    = (st.goal_idx + 1) % n.goals.length;
           const gnext    = n.goals[st.goal_idx];
-          st.activity = gnext.activity || null;
+          st.activity    = gnext.activity || null;
+          st.say_ko      = gnext.say_ko || null;
+          st.say_en      = gnext.say_en || null;
           if (gnext.activity === 'zipline_ride') st.zipline_t = 0;
         }
         continue;
@@ -142,10 +148,14 @@ class Sim2D {
           st.zipline_t  = 0;
         } else {
           st.pause_timer = (goal.pause_ms || 0) / 1000;
+          st.say_ko      = goal.say_ko || null;
+          st.say_en      = goal.say_en || null;
           if (st.pause_timer <= 0) {
             st.goal_idx  = (st.goal_idx + 1) % n.goals.length;
             const gnext  = n.goals[st.goal_idx];
             st.activity  = gnext.activity || null;
+            st.say_ko    = gnext.say_ko || null;
+            st.say_en    = gnext.say_en || null;
             if (gnext.activity === 'zipline_ride') st.zipline_t = 0;
           }
         }

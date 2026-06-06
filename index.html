@@ -60,7 +60,7 @@
     }
     #workspace.active {
       height: 190px; pointer-events: auto;
-      background: rgba(9,6,2,0.78);
+      background: rgba(9,6,2,0.90);
       backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
       border-top: 1px solid var(--border-md);
       box-shadow: 0 -1px 0 rgba(196,154,26,0.06), 0 -24px 60px rgba(0,0,0,0.45);
@@ -147,7 +147,7 @@
 
     /* token display */
     .ws-merged-chip {
-      font-family:'Noto Serif JP',serif; font-size:21px; color:#cfc0a0;
+      font-family:'Noto Serif JP',serif; font-size:21px; color:#f0e8d4;
       display:inline-flex; align-items:center; flex-shrink:0; white-space:nowrap;
       letter-spacing:0.03em; gap:8px;
     }
@@ -192,7 +192,7 @@
     /* ── token input slots ─────────────────────────────────────────────────── */
     /* reading slot — above the kanji */
     .ws-token-reading {
-      font-family:'DM Mono',monospace; font-size:12px; color:rgba(196,154,26,0.8);
+      font-family:'DM Mono',monospace; font-size:12px; color:#d4aa22;
       letter-spacing:0.05em; min-height:22px; display:flex; align-items:center;
       justify-content:center; width:100%; border-radius:4px; padding:1px 3px;
       text-decoration:none; box-sizing:border-box;
@@ -205,9 +205,10 @@
     .ws-token-reading.slot-empty:hover {
       border-color:rgba(196,154,26,0.62); background:rgba(196,154,26,0.06);
     }
+    .ws-token-reading.slot-spacer { visibility:hidden; pointer-events:none; }
     /* meaning slot — below the kanji */
     .ws-token-meaning {
-      font-family:'DM Mono',monospace; font-size:12px; color:#4aaa78;
+      font-family:'DM Mono',monospace; font-size:12px; color:#52c98e;
       letter-spacing:0.03em; min-height:22px; display:flex; align-items:center;
       justify-content:center; width:100%; border-radius:4px; padding:1px 3px;
       text-decoration:none; box-sizing:border-box;
@@ -232,7 +233,7 @@
     .ws-part.selected { background:rgba(148,54,24,0.72); color:#fff; }
     .ws-part.done     { color:var(--jade); text-shadow:0 0 14px rgba(82,201,142,0.18); }
     .ws-part-reading {
-      font-family:'DM Mono',monospace; font-size:11px; color:rgba(196,154,26,0.72);
+      font-family:'DM Mono',monospace; font-size:11px; color:#c8a01e;
       letter-spacing:0.05em; min-height:22px; display:flex; align-items:center;
       justify-content:center; width:100%; border-radius:3px; padding:1px 2px;
       box-sizing:border-box; transition:background 0.1s, min-height 0.18s ease;
@@ -241,7 +242,7 @@
     .ws-part-reading.slot-empty { border:1.5px dashed rgba(196,154,26,0.3); cursor:pointer; }
     .ws-part-reading.slot-empty:hover { border-color:rgba(196,154,26,0.58); background:rgba(196,154,26,0.05); }
     .ws-part-meaning {
-      font-family:'DM Mono',monospace; font-size:11px; color:#4aaa78;
+      font-family:'DM Mono',monospace; font-size:11px; color:#52c98e;
       letter-spacing:0.03em; min-height:22px; display:flex; align-items:center;
       justify-content:center; width:100%; border-radius:3px; padding:1px 2px;
       box-sizing:border-box; transition:background 0.1s, min-height 0.18s ease;
@@ -416,8 +417,7 @@
     #ws-dialogue.convo-mode #ws-dlg-avatar { display:none; }
     #ws-dialogue.convo-mode #ws-dlg-copy-all { display:none; }
     .dlg-convo-speaker { font-family:'DM Mono',monospace; font-size:11px; color:#666; letter-spacing:0.04em; margin-bottom:2px; }
-    .dlg-convo-en { font-family:'DM Mono',monospace; font-size:11px; color:#444; font-style:italic; margin-top:3px; display:none; }
-    .dlg-turn-npc.complete .dlg-convo-en { display:block; }
+    .dlg-convo-en { display:none; }
     .dlg-convo-row { display:flex; gap:8px; align-items:flex-start; }
     .dlg-convo-portrait { image-rendering:pixelated; flex-shrink:0; border-radius:3px; width:32px; height:64px; }
     .dlg-turn-convo-right { display:flex; flex-direction:column; align-items:flex-end; }
@@ -1284,6 +1284,7 @@
     let _active_field = null; // 'romaji' | 'meaning'
     let _hint_by_key = {}; // res_key → {reading, meaning} — persists lookup results per word
     let _npc_defs = {};
+    let _player_translations = {}; // sentence text → English translation
 
     function _copy_text(text, flashEl) {
       if (!text) return;
@@ -1471,6 +1472,7 @@
             const rClick=e=>{ e.stopPropagation(); _select(_i,null,'romaji'); };
             rspan.addEventListener("click",rClick); rspan._slotClick=rClick;
           }
+          if (isDone) { rspan.draggable=true; rspan.addEventListener('dragstart',e=>e.preventDefault()); }
           span.appendChild(rspan);
 
           // — kanji text —
@@ -1490,6 +1492,7 @@
             const mClick=e=>{ e.stopPropagation(); _select(_i,null,'meaning'); };
             mspan.addEventListener("click",mClick); mspan._slotClick=mClick;
           }
+          if (isDone) { mspan.draggable=true; mspan.addEventListener('dragstart',e=>e.preventDefault()); }
           span.appendChild(mspan);
 
         } else {
@@ -1497,16 +1500,19 @@
           const allPMeaning=token.parts.every((_,pi)=>(word_results[`${tok_idx}p${pi}`]||{}).meaning);
 
           // — whole-word reading slot (above parts row) —
+          // Always appended so compound tokens maintain consistent height with
+          // simple tokens (align-items:center on .ws-merged-chip requires equal
+          // reading-slot heights or the Korean text rows won't line up).
           const wrspan=document.createElement("span"); wrspan.className="ws-token-reading";
           wrspan.dataset.tokIdx=tok_idx; wrspan.dataset.field='romaji'; wrspan.dataset.whole='1';
-          if (allPRomaji&&(token.romaji||token.furigana)) {
-            wrspan.textContent=token.romaji||token.furigana;
-          } else if (tok_idx===cur_word_idx&&cur_part_idx===-1&&_active_field==='romaji') {
+          if (tok_idx===cur_word_idx&&cur_part_idx===-1&&_active_field==='romaji') {
             wrspan.classList.add("slot-active"); _placeInp(wrspan);
           } else if (!allPRomaji) {
             wrspan.classList.add("slot-empty");
             const wrClick=e=>{ e.stopPropagation(); _select(_i,-1,'romaji'); };
             wrspan.addEventListener("click",wrClick); wrspan._slotClick=wrClick;
+          } else {
+            wrspan.classList.add("slot-spacer");
           }
           span.appendChild(wrspan);
 
@@ -1532,6 +1538,7 @@
               const prClick=e=>{ e.stopPropagation(); _select(_i,_pi,'romaji'); };
               prspan.addEventListener("click",prClick); prspan._slotClick=prClick;
             }
+            if (isDone) { prspan.draggable=true; prspan.addEventListener('dragstart',e=>e.preventDefault()); }
             pspan.appendChild(prspan);
 
             // part kanji text
@@ -1551,6 +1558,7 @@
               const pmClick=e=>{ e.stopPropagation(); _select(_i,_pi,'meaning'); };
               pmspan.addEventListener("click",pmClick); pmspan._slotClick=pmClick;
             }
+            if (isDone) { pmspan.draggable=true; pmspan.addEventListener('dragstart',e=>e.preventDefault()); }
             pspan.appendChild(pmspan);
 
             pspan.addEventListener("click",e=>{ e.stopPropagation(); _select(_i,_pi); });
@@ -1571,6 +1579,7 @@
             const wmClick=e=>{ e.stopPropagation(); _select(_i,-1,'meaning'); };
             wmspan.addEventListener("click",wmClick); wmspan._slotClick=wmClick;
           }
+          if (isDone) { wmspan.draggable=true; wmspan.addEventListener('dragstart',e=>e.preventDefault()); }
           span.appendChild(wmspan);
         }
 
@@ -1691,6 +1700,7 @@
       '무엇이':    {reading:'mueosi',           meaning:'what (subject)'},
       '도와드릴까요':{reading:'dowadeurilkkayo',meaning:'shall I help you?'},
       '도와줄까요': {reading:'dowajulkkayo',    meaning:'shall I help you?'},
+      '도와줄게요': {reading:'dowajulgeyo',     meaning:"I'll help you"},
       '오늘':      {reading:'oneul',            meaning:'today'},
       '놀러':      {reading:'nolleo',           meaning:'play / visit / hang out'},
       '오셨어요':  {reading:'osyeosseoyo',      meaning:'did you come?'},
@@ -1740,6 +1750,7 @@
       '알겠어요':  {reading:'algeseoyo',        meaning:'I understand'},
       '모르겠어요':{reading:'moreugeseoyo',     meaning:"I don't know"},
       '좋아요':    {reading:'joayo',            meaning:'good / I like it'},
+      '좋겠다':    {reading:'jokkeda',          meaning:'sounds nice / that\'s nice / how nice / nice'},
       '있어요':    {reading:'isseoyo',          meaning:'there is / is / are / exist / exists / have / has / I have'},
       '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have"},
       '그래요':    {reading:'geuraeyo',         meaning:"I see / that's right"},
@@ -1802,9 +1813,25 @@
       '서가':      {reading:'seoga',            meaning:'bookshelf / stacks'},
       '층':        {reading:'cheung',           meaning:'floor / level / story'},
       '관람':      {reading:'gwallam',          meaning:'viewing / browsing'},
-      // ── library sign ──────────────────────────────────────────────────────
+      // ── particles ─────────────────────────────────────────────────────────
+      '은':        {reading:'eun',              meaning:'topic particle'},
+      '는':        {reading:'neun',             meaning:'topic particle'},
+      '이':        {reading:'i',               meaning:'subject particle / this'},
+      '가':        {reading:'ga',              meaning:'subject particle'},
       '을':        {reading:'eul',              meaning:'object marker'},
       '를':        {reading:'reul',             meaning:'object marker'},
+      '와':        {reading:'wa',              meaning:'and / with'},
+      '과':        {reading:'gwa',             meaning:'and / with'},
+      '도':        {reading:'do',              meaning:'also / too'},
+      '만':        {reading:'man',             meaning:'only'},
+      '의':        {reading:'ui',              meaning:"possessive ('s)"},
+      '에':        {reading:'e',               meaning:'at / in / to'},
+      '로':        {reading:'ro',              meaning:'to / by / with'},
+      // ── home / host vocabulary ────────────────────────────────────────────
+      '주인':      {reading:'juin',             meaning:'owner / host / master'},
+      '집주인':    {reading:'jipjuin',          meaning:'landlord / homeowner / host'},
+      // ── library sign ──────────────────────────────────────────────────────
+
       '콘센트':    {reading:'konsenteu',        meaning:'outlet'},
       '도서관':    {reading:'doseogwan',        meaning:'library'},
       '도서':      {reading:'doseo',            meaning:'books / reading material / literature'},
@@ -2132,7 +2159,7 @@
       '등':        {reading:'deung',          meaning:'back'},
       '얼굴':      {reading:'eolgul',         meaning:'face'},
       '목':        {reading:'mok',            meaning:'neck / throat'},
-      '이':        {reading:'i',              meaning:'tooth / teeth'},
+      '이빨':      {reading:'ippal',           meaning:'tooth / teeth'},
       // ── clothing ───────────────────────────────────────────────────────────
       '옷':        {reading:'ot',             meaning:'clothes / clothing'},
       '바지':      {reading:'baji',           meaning:'pants / trousers'},
@@ -2543,13 +2570,15 @@
         } else {
           const base = _ko_base_raw(clean);
           if (base) {
-            const suffix = clean.slice(base.length) + punct;
-            const suffix_clean = suffix.replace(/[.!?,;:…]+$/, '');
-            out_words.push(base, suffix);
-            out_defs.push(
-              {text: base,   reading: romanizeKo(base),         meaning: ''},
-              {text: suffix, reading: romanizeKo(suffix_clean), meaning: ''}
-            );
+            const particle = clean.slice(base.length);
+            out_words.push(w);
+            out_defs.push({
+              text: clean, reading: romanizeKo(clean), meaning: _KO_FALLBACK?.[clean]?.meaning || '',
+              parts: [
+                {text: base,     reading: romanizeKo(base),     meaning: _KO_FALLBACK?.[base]?.meaning     || ''},
+                {text: particle, reading: romanizeKo(particle), meaning: _KO_FALLBACK?.[particle]?.meaning || ''},
+              ]
+            });
           } else {
             out_words.push(w);
             const _fb = _KO_FALLBACK?.[clean];
@@ -2572,7 +2601,15 @@
       return null;
     }
     // Strip comma- or slash-separated synonyms from LLM-returned meanings — pick only the first.
-    function _first_meaning(s) { return s ? s.split(/\s*[,\/]\s*|\s+or\s+/)[0] : s; }
+    function _first_meaning(s) {
+      if (!s) return s;
+      const first = s.split(/\s*[,\/]\s*|\s+or\s+/)[0];
+      const words = first.trim().split(/\s+/);
+      if (words.length < 3) return first;
+      // If 3+ words and none is a connector/function word, LLM returned space-separated synonyms — keep only first
+      const conn = /^(and|or|a|an|the|to|is|are|be|not|for|in|at|of|on|by|but|do|no|so|please|with|as|from|its|up|can|may|will|would|should|have|has|had|am|was|were|been|get|go|ll|i|you|we|they|he|she|it)$/i;
+      return words.some(w => conn.test(w)) ? first : words[0];
+    }
 
     async function _npc_lookup(word, on_status) {
       const clean=word.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'');
@@ -2606,6 +2643,23 @@
         if (reading||meaning){const def={reading,meaning};_npc_defs[clean]=def;return def;}
       } catch { if(pulse)clearInterval(pulse); }
       return null;
+    }
+
+    async function _fetch_player_translation(text, tokens) {
+      if (_player_translations[text]) return _player_translations[text];
+      try {
+        const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),10000);
+        const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
+          body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
+            `Translate this Korean sentence to natural English. Reply ONLY with the translation, no other text.\nKorean: "${text}"`
+          }],stream:false,options:{temperature:0,num_predict:60}})});
+        clearTimeout(tid);
+        if (res.ok) { const raw=(await res.json()).message?.content?.trim()||''; if(raw){_player_translations[text]=raw;return raw;} }
+      } catch {}
+      const parts=tokens.map(t=>(t.meaning||'').split(/\s*[\/,]\s*/)[0]).filter(Boolean);
+      const fb=parts.length ? parts.join(' / ') : null;
+      if (fb) _player_translations[text]=fb;
+      return fb;
     }
 
     function _populate_voices() {
@@ -2765,10 +2819,18 @@
         if (t.parts&&t.parts.length) return t.parts.every((_,pi)=>{ const r=word_results[`${i}p${pi}`]||{}; return r.romaji&&r.meaning; });
         const r=word_results[i]||{}; return r.romaji&&r.meaning;
       });
-      if (alreadyDone&&sign.translation) {
-        ws_el.classList.add('done');
-        transl_el.textContent=sign.translation;
-        transl_el.classList.add('visible');
+      if (alreadyDone) {
+        const _cached=sign.translation||_player_translations[sign.japanese]||'';
+        if (_cached) {
+          ws_el.classList.add('done');
+          transl_el.textContent=_cached;
+          transl_el.classList.add('visible');
+        } else if (cur_sign_id==='__npc__' && sign.japanese) {
+          ws_el.classList.add('done');
+          _fetch_player_translation(sign.japanese, sign.tokens).then(en=>{
+            if (en) { transl_el.textContent=en; transl_el.classList.add('visible'); }
+          });
+        }
       }
     }
 
@@ -2814,10 +2876,14 @@
       });
       if (allDone) {
         ws_el.classList.add('done');
+        const transl_el=document.getElementById("ws-translation");
         if (sign.translation) {
-          const transl_el=document.getElementById("ws-translation");
           transl_el.textContent=sign.translation;
           setTimeout(()=>transl_el.classList.add('visible'),20);
+        } else if (cur_sign_id==='__npc__' && sign.japanese) {
+          _fetch_player_translation(sign.japanese, sign.tokens).then(en=>{
+            if (en) { transl_el.textContent=en; setTimeout(()=>transl_el.classList.add('visible'),20); }
+          });
         }
         if (cur_sign_id==='__npc__') DialoguePanel.revealTranslation(sign.japanese);
         SoundFX.chime();
@@ -2907,24 +2973,24 @@
     lkp.addEventListener("click", async () => {
       if (cur_sign_id==null||cur_word_idx==null) return;
       const _token=SIGN_BY_ID[cur_sign_id==='__npc__'?'__npc__':cur_sign_id].tokens[cur_word_idx];
-      const active=(cur_part_idx!=null&&_token.parts)?_token.parts[cur_part_idx]:_token;
-      const res_key=cur_part_idx!=null?`${cur_word_idx}p${cur_part_idx}`:cur_word_idx;
+      const active=(cur_part_idx!=null&&cur_part_idx>=0&&_token.parts)?_token.parts[cur_part_idx]:_token;
+      const res_key=(cur_part_idx!=null&&cur_part_idx>=0)?`${cur_word_idx}p${cur_part_idx}`:cur_word_idx;
       word_results[res_key]=word_results[res_key]||{};
       const res=word_results[res_key];
       if (res.romaji&&res.meaning) return;
       if (sim.state.phone.lookup_cooldown>0) return;
       if (cur_sign_id==='__npc__') {
-        if ((!_token.romaji&&!_token.furigana)||!_token.meaning) {
+        if ((!active.romaji&&!active.furigana)||!active.meaning) {
           lkp.disabled=true;
-          const def=await _npc_lookup(_token.text, msg=>{ fb.textContent=msg; fb.style.color='#b8860b'; });
+          const def=await _npc_lookup(active.text, msg=>{ fb.textContent=msg; fb.style.color='#b8860b'; });
           lkp.disabled=false;
-          if (def) { if(!_token.romaji)_token.romaji=def.reading; if(!_token.furigana)_token.furigana=def.reading; if(!_token.meaning)_token.meaning=def.meaning; }
+          if (def) { if(!active.romaji)active.romaji=def.reading; if(!active.furigana)active.furigana=def.reading; if(!active.meaning)active.meaning=def.meaning; }
         }
-        const reading=_token.romaji||_token.furigana;
-        const meaning=(_token.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
+        const reading=active.romaji||active.furigana;
+        const meaning=(active.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
         fb.textContent=''; fb.style.color='';
         if (!reading&&!meaning) { fb.textContent='not found'; fb.style.color='#888'; _update_lkp(); return; }
-        const _hr=_fmt_read(_token.furigana||reading,reading);
+        const _hr=_fmt_read(active.furigana||reading,reading);
         _hint_by_key[res_key]={reading:_hr, meaning};
         _show_hint(_hr, meaning);
         sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer();
@@ -3499,7 +3565,7 @@
       try {
         const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
-            `${lang_name} word: "${word}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"English meaning"}`
+            `${lang_name} word: "${word}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"core English word or short phrase (3 words max)"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
         if (!res.ok) throw new Error();
         const raw=(await res.json()).message?.content?.trim()||'';
@@ -3638,6 +3704,14 @@
     function _save_revealed(npc_id, jp){ const k=_hk(npc_id)+'_rev'; if(!_dlg_store[k])_dlg_store[k]=[]; if(!_dlg_store[k].includes(jp))_dlg_store[k].push(jp); try{localStorage.setItem(DLG_KEY,JSON.stringify(_dlg_store));}catch{} }
     function _is_revealed(npc_id, jp){ return (_dlg_store[_hk(npc_id)+'_rev']||[]).includes(jp); }
 
+    function _npc_current_activity(npc_id) {
+      const ns = sim?.state?.npc_states?.[npc_id];
+      if (ns?.say_en) return { ko: ns.say_ko, en: ns.say_en };
+      const npc = NPC_DEFS[npc_id];
+      if (npc?.activity_en) return { ko: npc.activity_ko, en: npc.activity_en };
+      return null;
+    }
+
     function _system_prompt(npc_id) {
       const npc=NPC_DEFS[npc_id];
       const facts=(NPC_KNOWLEDGE[npc_id]||[]).map(f=>"- "+f).join("\n");
@@ -3651,7 +3725,9 @@
         : `{"jp": "Japanese response", "en": "English translation", "tokens": [{"text": "word", "reading": "${reading_label}", "meaning": "English meaning"}]}`;
       const token_instruction = ko ? '' : '\n- The tokens array must list every word/morpheme in your Japanese response in order';
       const script_rule = ko ? '\n- Write the Korean response entirely in Hangul — do not use any Latin/English characters in the Korean field' : '';
-      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: ${format}${token_instruction}${script_rule}\n- CRITICAL: never invent or confirm the existence of specific books, items, rooms, services, or locations that are not explicitly listed in "What you know" above — say you don't know instead\n- If asked about something not covered above, say politely that you don't know or cannot confirm\n- Do not include any text outside the JSON`;
+      const act = _npc_current_activity(npc_id);
+      const act_line = act ? `\n- Right now you are: ${act.en}` : '';
+      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}${act_line}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: ${format}${token_instruction}${script_rule}\n- CRITICAL: never invent or confirm the existence of specific books, items, rooms, services, or locations that are not explicitly listed in "What you know" above — say you don't know instead\n- If asked about something not covered above, say politely that you don't know or cannot confirm\n- Do not include any text outside the JSON`;
     }
 
     const _hk = (npc_id) => `${npc_id}_${LANG.current}`;
@@ -3737,7 +3813,9 @@
         const is_right = turn.npc_id !== first_npc;
         const speaker_name = ko ? turn.name_ko : turn.name_en;
         const text = turn.ko;
-        const words = text.split(/\s+/);
+        const raw_words = text.split(/\s+/);
+        const _split = WorkspacePanel.split_ko_words(raw_words, null);
+        const all_words = _split.words, all_defs = _split.defs;
 
         const turn_el = document.createElement('div');
         turn_el.className = 'dlg-turn' + (is_right ? ' dlg-turn-convo-right' : '');
@@ -3752,28 +3830,31 @@
         npc_el.className = 'dlg-turn-npc';
         npc_el.dataset.jp = turn.ko;
         npc_el.dataset.en = turn.en;
+        npc_el.dataset.lineId = turn.ko;
         if (already_revealed) npc_el.classList.add('complete');
 
         const jp_row = document.createElement('div');
         jp_row.className = 'dlg-npc-jp';
-        words.forEach((word, wi) => {
-          if (wi > 0) jp_row.appendChild(document.createTextNode(' '));
+        const line_saved = NPC_LINE_PROGRESS.get(turn.ko);
+        all_words.forEach((word, wi) => {
           const span = document.createElement('span');
           span.className = 'dlg-word'; span.textContent = word; span.draggable = true;
+          span.dataset.wordIdx = wi;
+          if (all_defs[wi]?.parts?.length) span.dataset.partCount = all_defs[wi].parts.length;
+          const partCount = all_defs[wi]?.parts?.length || 0;
+          const isDone = partCount
+            ? Array.from({length: partCount}, (_,pi) => line_saved[`${wi}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
+            : !!(line_saved[wi]?.romaji && line_saved[wi]?.meaning);
+          if (isDone) span.classList.add('done');
           span.addEventListener('dragstart', ev => { ev.dataTransfer.setData('dlg-word', word); ev.dataTransfer.effectAllowed = 'copy'; });
           span.addEventListener('click', () => {
             jp_row.querySelectorAll('.dlg-word.active').forEach(c => c.classList.remove('active'));
             span.classList.add('active');
-            WorkspacePanel.open_npc_sentence(text, words, wi, speaker_name, null, turn.en);
+            WorkspacePanel.open_npc_sentence(text, all_words, wi, speaker_name, all_defs, turn.en);
           });
           jp_row.appendChild(span);
         });
         npc_el.appendChild(jp_row);
-
-        const en_el = document.createElement('div');
-        en_el.className = 'dlg-convo-en';
-        en_el.textContent = turn.en;
-        npc_el.appendChild(en_el);
 
         // Portrait canvas — crops the character sprite from the loaded spritesheet
         const portrait = document.createElement('canvas');

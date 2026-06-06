@@ -452,12 +452,12 @@ class Input2D {
 function _advance_convo(S, room, npc_id) {
   const npc_def = (room.npcs || []).find(n => n.npc_id === npc_id);
 
-  // If the NPC has per-goal sayings, show the current one
+  // If the NPC has a per-goal saying, store it in ambient history only — do NOT
+  // set convo_bubble, which would float a speech bubble above the NPC's head.
   const npc_st = S.state.npc_states?.[npc_id];
   if (npc_def?.goals?.length && npc_st != null) {
     const goal = npc_def.goals[npc_st.goal_idx];
     if (goal?.say_ko) {
-      S.state.convo_bubble = { npc_id, text_ko: goal.say_ko, text_en: goal.say_en };
       if (typeof DialoguePanel !== 'undefined') DialoguePanel.addAmbient(npc_id, goal.say_ko, goal.say_en);
       return;
     }
@@ -484,4 +484,4 @@ function obj_tile_hit(obj, tc, tr) {
   return tc === obj.col && tr === obj.row;
 }
 
-if (typeof module !== 'undefined') module.exports = { obj_tile_hit };
+if (typeof module !== 'undefined') module.exports = { obj_tile_hit, _advance_convo };

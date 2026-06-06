@@ -26,6 +26,8 @@ const NPC_DEFS = {
     hotspot: "librarian",
     color: "#1a3a5c",
     birthday: { month: 11, day: 3, jp: "11月3日", ko: "11월 3일" },
+    activity_ko: '도서관 업무를 보고 있어요.',
+    activity_en: "I'm working at the library desk.",
     greeting: {
       jp: "いらっしゃいませ。何かお手伝いできますか？",
       en: "Welcome. Can I help you with something?"
@@ -41,6 +43,13 @@ const NPC_DEFS = {
         jp: "こんにちは！今日もよろしくお願いします。",
         ko: "안녕하세요! 오늘도 잘 부탁드립니다.",
         en: "Hello! Good to see you today."
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "本の整理や貸し出し処理をしています。何かお手伝いできますか？",
+        ko: "도서관 업무를 보고 있어요. 책 정리나 대출 처리가 주 업무예요. 도움 필요하세요?",
+        en: "I'm doing library work — organizing books and handling checkouts. Can I help you?"
       },
       ask_book: {
         keywords: ["本","書","図書","読","探","持ってきて","取って","ください"],
@@ -108,6 +117,8 @@ const NPC_DEFS = {
     hotspot: "npc_receptionist",
     color: "#5c3317",
     birthday: { month: 1, day: 1, jp: "1月1日", ko: "1월 1일" },
+    activity_ko: '안내 데스크에서 방문객을 돕고 있어요.',
+    activity_en: "I'm helping visitors at the reception desk.",
     greeting: {
       jp: "こんにちは！富山県こどもみらい館へようこそ。何かお手伝いできますか？",
       en: "Hello! Welcome to Toyama Children's Future Hall. How can I help you?"
@@ -123,6 +134,13 @@ const NPC_DEFS = {
         jp: "こんにちは！何かご用件がございましたら、お気軽にどうぞ。",
         ko: "안녕하세요! 방문객 여러분을 환영합니다. 무엇이든 도움이 필요하시면 말씀해 주세요.",
         en: "Hello! Feel free to ask if there's anything you need."
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "受付で来館者のご案内をしています。何かお手伝いできますか？",
+        ko: "안내 데스크에서 방문객을 돕고 있어요! 무엇이든 도움이 필요하시면 말씀해 주세요.",
+        en: "I'm helping visitors at the reception desk! Feel free to ask anything."
       },
       ask_directions: {
         keywords: ["どこ","場所","行き方","案内","地図","図書館","サロン","料理","2階","1階"],
@@ -183,6 +201,8 @@ const NPC_DEFS = {
     hotspot: "npc_play_staff",
     color: "#2d6a4f",
     birthday: { month: 5, day: 5, jp: "5月5日", ko: "5월 5일" },
+    activity_ko: '놀이 공간을 관리하고 있어요.',
+    activity_en: "I'm supervising the play area.",
     greeting: {
       jp: "こんにちは！今日は遊びに来てくれたの？楽しんでいってね！",
       en: "Hello! Did you come to play today? Have fun!"
@@ -198,6 +218,13 @@ const NPC_DEFS = {
         jp: "こんにちは！安全に楽しく遊んでね。何かあったらすぐに声をかけてください。",
         ko: "안녕하세요! 이 공간에서 즐겁게 놀아요. 무슨 일이 있으면 바로 불러 주세요.",
         en: "Hello! Play safely and have fun. Let me know right away if anything happens."
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "遊び場の管理をしています。子どもたちが安全に遊べるように見守っています。",
+        ko: "놀이 공간을 관리하고 있어요. 어린이들이 안전하게 놀 수 있도록 지켜보고 있어요.",
+        en: "I'm supervising the play area — making sure all the children can play safely."
       },
       ask_age: {
         keywords: ["何歳","年齢","対象","才","歳","子供","こども","小学","年","何年"],
@@ -251,6 +278,8 @@ const NPC_DEFS = {
     hotspot: "npc_salon_staff",
     color: "#5c1a5c",
     birthday: { month: 3, day: 3, jp: "3月3日", ko: "3월 3일" },
+    activity_ko: '살롱을 관리하고 있어요.',
+    activity_en: "I'm looking after the salon.",
     greeting: {
       jp: "こどもサロンへようこそ！ゆっくりしていってね。何かあったら声をかけてね。",
       en: "Welcome to the Children's Salon! Take your time. Just call if you need anything."
@@ -266,6 +295,13 @@ const NPC_DEFS = {
         jp: "こんにちは！今日はどんな工作をしますか？楽しんでね。",
         ko: "안녕하세요! 어린이 살롱 공간에 오신 것을 환영해요! 오늘은 무슨 공작을 할 건가요?",
         en: "Hello! What kind of craft are you making today? Have fun."
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "サロンの管理をしています。工作台の準備もしていますよ。",
+        ko: "살롱을 관리하고 있어요. 공작대 준비도 하고 있어요. 마음껏 사용하세요!",
+        en: "I'm looking after the salon and getting the craft tables ready. Feel free to use them!"
       },
       ask_food: {
         keywords: ["食べ","飲み","飲食","お菓子","弁当","ランチ","水","お腹"],
@@ -319,6 +355,8 @@ const NPC_DEFS = {
     hotspot: "npc_outdoor_guide",
     color: "#2d6a1f",
     birthday: { month: 7, day: 7, jp: "7月7日", ko: "7월 7일" },
+    activity_ko: '야외 구역을 안내하고 있어요.',
+    activity_en: "I'm guiding the outdoor area.",
     greeting: {
       jp: "こんにちは！ジップラインをご利用の方は、順番をお守りください。",
       en: "Hello! If you're using the zipline, please wait your turn."
@@ -334,6 +372,13 @@ const NPC_DEFS = {
         jp: "こんにちは！外の空気は気持ちいいですね。何かお手伝いできますか？",
         ko: "안녕하세요! 바깥 공기가 상쾌하죠? 도움이 필요하시면 말씀해 주세요.",
         en: "Hello! The fresh air is nice, isn't it? Can I help you with something?"
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "外のエリアを案内しています。ジップラインの利用者が安全に使えるよう見守っています。",
+        ko: "야외 구역을 안내하고 있어요. 짚라인 이용자들이 안전하게 이용할 수 있도록 지켜보고 있어요.",
+        en: "I'm guiding the outdoor area and keeping an eye on the zipline users."
       },
       ask_zipline: {
         keywords: ["ジップライン","zipline","乗り方","使い方","順番","並ぶ","並んで","待つ"],
@@ -380,6 +425,8 @@ const NPC_DEFS = {
     hotspot: "npc_gallery_curator",
     color: "#8b5a2b",
     birthday: { month: 4, day: 1, jp: "4月1日", ko: "4월 1일" },
+    activity_ko: '전시품을 관리하고 있어요.',
+    activity_en: "I'm tending to the gallery exhibits.",
     greeting: {
       jp: "おもちゃ画廊へようこそ！展示品にはぜひ目を近づけてみてください。",
       en: "Welcome to the Toy Gallery! Please take a close look at the exhibits."
@@ -395,6 +442,13 @@ const NPC_DEFS = {
         jp: "こんにちは！ゆっくり見ていってください。何かご質問があればどうぞ。",
         ko: "안녕하세요! 완구 전시관에 오신 것을 환영합니다! 천천히 둘러보세요.",
         en: "Hello! Take your time looking around. Feel free to ask if you have any questions."
+      },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "展示品の状態を確認したり、来館者のご案内をしています。",
+        ko: "전시품 상태를 확인하고 관리하고 있어요. 오늘도 전시관을 정리 중이에요.",
+        en: "I'm checking on the exhibits and tidying up the gallery today."
       },
       ask_exhibits: {
         keywords: ["展示","おもちゃ","玩具","飾り","何","見る","触"],
@@ -441,6 +495,8 @@ const NPC_DEFS = {
     hotspot: "npc_cook",
     color: "#c0392b",
     birthday: { month: 11, day: 23, jp: "11月23日", ko: "11월 23일" },
+    activity_ko: '카레라이스를 만들고 있어요.',
+    activity_en: "I'm making curry rice.",
     greeting: {
       jp: "料理室へようこそ！今日はカレーライスを作っていますよ。いい匂いでしょう？",
       en: "Welcome to the Cooking Room! We're making curry rice today. Smells good, doesn't it?"
@@ -457,9 +513,16 @@ const NPC_DEFS = {
         ko: "안녕하세요! 요리 좋아해요? 같이 만들어요!",
         en: "Hello! Do you like cooking? Let's make something together!"
       },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "カレーライスを作っていますよ！いい匂いでしょう？もうすぐ完成します。",
+        ko: "카레라이스 만들고 있어요! 좋은 냄새 나죠? 저녁이 되면 완성돼요.",
+        en: "I'm making curry rice! Smells good, doesn't it? It'll be ready by evening."
+      },
       ask_menu: {
         keywords: ["メニュー","今日","何","カレー","作る","料理","夕飯","ご飯"],
-        keywords_ko: ["메뉴","오늘","뭐","카레","만들","요리","저녁"],
+        keywords_ko: ["메뉴","오늘","카레","만들","요리","저녁"],
         jp: "今日はカレーライスです。夕方にはできあがりますよ。お家の方にもお届けする予定です。",
         ko: "오늘의 메뉴는 카레라이스예요. 저녁이 되면 완성돼요.",
         en: "Today it's curry rice. It'll be ready by evening. We're planning to send some home too."
@@ -502,6 +565,8 @@ const NPC_DEFS = {
     hotspot: "npc_house_resident",
     color: "#5c3a1e",
     birthday: { month: 5, day: 31, jp: "5月31日", ko: "5월 31일" },
+    activity_ko: '코타츠에서 쉬고 있어요.',
+    activity_en: "I'm resting by the kotatsu.",
     greeting: {
       jp: "おかえりなさい！ゆっくりしていってね。",
       en: "Welcome back! Make yourself at home."
@@ -528,9 +593,16 @@ const NPC_DEFS = {
         ko: "어서 왔어요! 많이 피곤하죠? 코타츠에서 좀 쉬어요.",
         en: "You're home! You must be tired. Rest by the kotatsu."
       },
+      ask_what_doing: {
+        keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
+        keywords_ko: ["뭐해","뭐 해","무엇 하","하고 계","지금 뭐","뭐하고"],
+        jp: "こたつでゆっくりしていますよ。温かくて気持ちいいですね。",
+        ko: "코타츠에서 쉬고 있어요. 따뜻해서 너무 좋아요~",
+        en: "I'm resting by the kotatsu. So warm and cozy~"
+      },
       ask_food: {
         keywords: ["食べ","飲み","お茶","ご飯","何か","腹","お腹","空いた","夕飯","カレー"],
-        keywords_ko: ["먹","마시","차","밥","뭐","배","저녁","카레","메뉴"],
+        keywords_ko: ["먹","마시","차","밥","배","저녁","카레","메뉴","음식"],
         jp: "今日はカレーライスですよ。台所にお茶もあるので、先にどうぞ。",
         ko: "오늘 저녁은 카레라이스예요. 배가 고프면 카레라이스 드세요. 오늘의 메뉴는 이걸로 결정!",
         en: "Tonight's dinner is curry rice. There's also tea in the kitchen — help yourself."
