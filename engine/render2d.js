@@ -8,6 +8,7 @@ class Renderer2D {
     this._dpr   = window.devicePixelRatio || 1;
     this._imgs  = {};          // loaded Image objects keyed by SHEET key
     this._room_cache = null;   // last drawn room id
+    this._known_words = null;  // cache of words the player has fully answered
     this.notifications = [];
     this.log_entries   = [];
     this.action_menu   = null;
@@ -1011,7 +1012,9 @@ class Renderer2D {
     const DOW_EN      = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const dow = new Date(gt.year, gt.month-1, gt.day).getDay();
     const dowStr = LANG.current === 'ko' ? DOW_KO[dow] : DOW_JP[dow];
-    ctx.fillStyle = '#c8b080'; ctx.font = `10px ${this.FONT_MONO}`;
+    const dowFull = LANG.current === 'ko' ? DOW_KO_FULL[dow] : DOW_JP_FULL[dow];
+    ctx.fillStyle = this._get_known().has(dowFull) ? '#52c98e' : '#c8b080';
+    ctx.font = `10px ${this.FONT_MONO}`;
     ctx.fillText(`${dowStr} · ${gt.month}/${gt.day}`, px + 8, py + 28);
     this._time_dow_btn = {x: px+6, y: py+17, w: PW-12, h: 13,
       text: LANG.current==='ko' ? DOW_KO_FULL[dow] : DOW_JP_FULL[dow], en: DOW_EN[dow]};
@@ -1345,8 +1348,10 @@ class Renderer2D {
     const DOW_FULL = LANG.current==='ko' ? CAL_DOW_KO_FULL : CAL_DOW_JP_FULL;
     ctx.font=`11px ${this.FONT_JP}`; ctx.textAlign='center';
     this._cal_dow_btns = [];
+    const _cal_known = this._get_known();
     for (let d=0;d<7;d++) {
-      ctx.fillStyle = d===0?'#c0392b':d===6?'#2255aa':'#a09070';
+      const _dow_known = _cal_known.has(DOW_FULL[d]);
+      ctx.fillStyle = _dow_known ? '#52c98e' : (d===0?'#c0392b':d===6?'#2255aa':'#a09070');
       ctx.fillText(DOW[d], px+PAD+d*CW+CW/2, py+HEADER);
       this._cal_dow_btns[d] = {x: px+PAD+d*CW+2, y: py+HEADER-14, w: CW-4, h: 18, text: DOW_FULL[d], en: CAL_DOW_EN[d]};
     }
@@ -1426,6 +1431,12 @@ class Renderer2D {
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  _get_known() {
+    if (!this._known_words && typeof _build_known_words !== 'undefined')
+      this._known_words = _build_known_words();
+    return this._known_words || new Set();
+  }
 
   _pt_in(r, x, y) { return x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h; }
 

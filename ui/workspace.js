@@ -1706,6 +1706,7 @@ const WorkspacePanel = (() => {
 
     function _accept(token, matched, res) {
       res[matched]=true;
+      if (typeof renderer !== 'undefined') renderer._known_words = null; // invalidate canvas cache
       if (cur_sign_id!=='__npc__') {
         if (cur_part_idx!=null&&cur_part_idx>=0) {
           WORD_PROGRESS.unlock_part(cur_sign_id,cur_word_idx,cur_part_idx,matched);
