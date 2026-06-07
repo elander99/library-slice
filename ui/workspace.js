@@ -13,6 +13,29 @@ function _first_meaning(s) {
   return words.some(w => conn.test(w)) ? first : words[0];
 }
 
+// Returns a Set of token texts the player has fully answered (romaji + meaning) anywhere.
+function _build_known_words() {
+  const known = new Set();
+  const allProg = WORD_PROGRESS.getAll();
+  for (const [sid, prog] of Object.entries(allProg)) {
+    const sign = SIGN_BY_ID[sid];
+    if (!sign || !sign.tokens) continue;
+    sign.tokens.forEach((tok, i) => {
+      if (tok.parts && tok.parts.length) {
+        tok.parts.forEach((part, pi) => {
+          const r = prog[`${i}p${pi}`] || {};
+          if (r.romaji && r.meaning) known.add(part.text);
+        });
+      } else {
+        const r = prog[i] || {};
+        if (r.romaji && r.meaning) known.add(tok.text);
+      }
+    });
+  }
+  NPC_VOCAB.getAll().forEach(e => { if (e.romaji && e.meaning_unlocked) known.add(e.text); });
+  return known;
+}
+
 let _KO_FALLBACK; // populated by WorkspacePanel, shared with VocabPanel
 
 const WorkspacePanel = (() => {
@@ -1620,6 +1643,27 @@ const WorkspacePanel = (() => {
           }
         });
       }
+      // Pre-mark tokens whose text has been fully answered in any other sign/encounter
+      if (sign_id !== '__npc__') {
+        const _known = _build_known_words();
+        sign.tokens.forEach((tok, i) => {
+          if (tok.parts && tok.parts.length) {
+            tok.parts.forEach((part, pi) => {
+              if (!_known.has(part.text)) return;
+              const pk = `${i}p${pi}`;
+              word_results[pk] = word_results[pk] || {};
+              if (!word_results[pk].romaji)  { word_results[pk].romaji  = true; WORD_PROGRESS.unlock_part(sign_id, i, pi, 'romaji'); }
+              if (!word_results[pk].meaning) { word_results[pk].meaning = true; WORD_PROGRESS.unlock_part(sign_id, i, pi, 'meaning'); }
+            });
+          } else {
+            if (!_known.has(tok.text)) return;
+            word_results[i] = word_results[i] || {};
+            if (!word_results[i].romaji)  { word_results[i].romaji  = true; WORD_PROGRESS.unlock(sign_id, i, 'romaji'); }
+            if (!word_results[i].meaning) { word_results[i].meaning = true; WORD_PROGRESS.unlock(sign_id, i, 'meaning'); }
+          }
+        });
+      }
+
       lbl_el.textContent=sign.label||'';
       const koMode=LANG.current==='ko';
       speak_all.style.display=koMode?'':'none';

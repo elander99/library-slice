@@ -88,6 +88,7 @@
     }
 
     function _refresh_dlg_word_colors() {
+      const known = _build_known_words();
       body_el.querySelectorAll('.dlg-word').forEach(span => {
         const turn = span.closest('[data-line-id]');
         if (!turn) return;
@@ -97,7 +98,8 @@
         const done = partCount
           ? Array.from({length: partCount}, (_,pi) => saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
           : !!(saved[i]?.romaji && saved[i]?.meaning);
-        span.classList.toggle('done', done);
+        const clean = span.textContent.replace(/[.!?,;:…]+$/, '');
+        span.classList.toggle('done', done || known.has(clean));
       });
     }
 
@@ -118,6 +120,7 @@
       }
       if (!tokens) WorkspacePanel.prefetch(all_words);
       const line_saved = NPC_LINE_PROGRESS.get(jp);
+      const _known_npc = _build_known_words();
       all_words.forEach((word, i) => {
         const span = document.createElement('span');
         span.className = 'dlg-word'; span.textContent = word; span.draggable = true;
@@ -127,7 +130,8 @@
         const isDone = partCount
           ? Array.from({length: partCount}, (_,pi) => line_saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
           : !!(line_saved[i]?.romaji && line_saved[i]?.meaning);
-        if (isDone) span.classList.add('done');
+        const _clean = word.replace(/[.!?,;:…]+$/, '');
+        if (isDone || _known_npc.has(_clean)) span.classList.add('done');
         span.addEventListener('dragstart', ev => {
           span.classList.add('drag-src');
           ev.dataTransfer.setData('dlg-word', word);
@@ -320,6 +324,7 @@
       inp.disabled = true;
 
       const first_npc = convo.turns[0]?.npc_id;
+      const _known_convo = _build_known_words();
       convo.turns.forEach(turn => {
         const is_right = turn.npc_id !== first_npc;
         const speaker_name = ko ? turn.name_ko : turn.name_en;
@@ -356,7 +361,8 @@
           const isDone = partCount
             ? Array.from({length: partCount}, (_,pi) => line_saved[`${wi}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
             : !!(line_saved[wi]?.romaji && line_saved[wi]?.meaning);
-          if (isDone) span.classList.add('done');
+          const _clean_w = word.replace(/[.!?,;:…]+$/, '');
+          if (isDone || _known_convo.has(_clean_w)) span.classList.add('done');
           span.addEventListener('dragstart', ev => { ev.dataTransfer.setData('dlg-word', word); ev.dataTransfer.effectAllowed = 'copy'; });
           span.addEventListener('click', () => {
             jp_row.querySelectorAll('.dlg-word.active').forEach(c => c.classList.remove('active'));
