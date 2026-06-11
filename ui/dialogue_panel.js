@@ -88,7 +88,8 @@
     }
 
     function _refresh_dlg_word_colors() {
-      const known = _build_known_words();
+      const inConvo = dlg_el.classList.contains('convo-mode');
+      const known = inConvo ? null : _build_known_words();
       body_el.querySelectorAll('.dlg-word').forEach(span => {
         const turn = span.closest('[data-line-id]');
         if (!turn) return;
@@ -99,7 +100,7 @@
           ? Array.from({length: partCount}, (_,pi) => saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
           : !!(saved[i]?.romaji && saved[i]?.meaning);
         const clean = span.textContent.replace(/[.!?,;:…]+$/, '');
-        span.classList.toggle('done', done || known.has(clean));
+        span.classList.toggle('done', done || (!inConvo && known.has(clean)));
       });
     }
 
@@ -205,7 +206,7 @@
       body_el.insertBefore(turn, thinking);
       body_el.scrollTop = body_el.scrollHeight;
     }
-    let cur_npc_id=null; const _histories={};
+    let cur_npc_id=null; const _histories={}; let _convo_play_id=0;
     const _pending={};  // npc_id → {intent_id} when NPC asked a yes/no question
     function _is_affirmative(text) {
       const t=text.toLowerCase().trim().replace(/[!.?~\s]+$/,'');
@@ -263,7 +264,7 @@
         if (parsed?.jp&&parsed?.en){
           _histories[_hk(npc_id)]=[...history,{role:"user",content:text},{role:"assistant",content:raw}];
           _save_dlg(npc_id);
-          const toks=Array.isArray(parsed.tokens)?parsed.tokens.map(t=>({...t,meaning:_first_meaning(t.meaning)})):null;
+          const toks=Array.isArray(parsed.tokens)?parsed.tokens.map(t=>({...t,meaning:(_first_meaning(t.meaning)||'').toLowerCase()})):null;
           return {jp:parsed.jp,en:parsed.en,tokens:toks};
         }
         throw new Error('parse: '+raw.slice(0,120));
@@ -309,9 +310,11 @@
       send_btn.disabled=false; inp.disabled=false; inp.focus();
     }
 
-    function openConvo(convo_id) {
+    async function openConvo(convo_id) {
       const convo = (typeof CONVERSATIONS !== 'undefined') && CONVERSATIONS[convo_id];
       if (!convo) return;
+      const play_id = ++_convo_play_id;
+      if (window.speechSynthesis) speechSynthesis.cancel();
       cur_npc_id = convo_id;
       const ko = LANG.current === 'ko';
       document.getElementById("ws-panel").classList.remove("open");
@@ -324,8 +327,18 @@
       inp.disabled = true;
 
       const first_npc = convo.turns[0]?.npc_id;
-      const _known_convo = _build_known_words();
-      convo.turns.forEach(turn => {
+
+      let skipped = false;
+      const skip_btn = document.createElement('button');
+      skip_btn.id = 'ws-dlg-skip';
+      skip_btn.textContent = '▶▶';
+      skip_btn.title = 'skip to end';
+      skip_btn.addEventListener('click', () => { skipped = true; if (window.speechSynthesis) speechSynthesis.cancel(); });
+      close_btn.insertAdjacentElement('beforebegin', skip_btn);
+
+      for (const turn of convo.turns) {
+        if (_convo_play_id !== play_id) { skip_btn.remove(); return; }
+
         const is_right = turn.npc_id !== first_npc;
         const speaker_name = ko ? turn.name_ko : turn.name_en;
         const text = turn.ko;
@@ -361,8 +374,7 @@
           const isDone = partCount
             ? Array.from({length: partCount}, (_,pi) => line_saved[`${wi}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
             : !!(line_saved[wi]?.romaji && line_saved[wi]?.meaning);
-          const _clean_w = word.replace(/[.!?,;:…]+$/, '');
-          if (isDone || _known_convo.has(_clean_w)) span.classList.add('done');
+          if (isDone) span.classList.add('done');
           span.addEventListener('dragstart', ev => { ev.dataTransfer.setData('dlg-word', word); ev.dataTransfer.effectAllowed = 'copy'; });
           span.addEventListener('click', () => {
             jp_row.querySelectorAll('.dlg-word.active').forEach(c => c.classList.remove('active'));
@@ -395,7 +407,17 @@
 
         turn_el.append(speaker_el, row_el);
         body_el.insertBefore(turn_el, thinking);
-      });
+        body_el.scrollTop = body_el.scrollHeight;
+
+        if (!skipped) {
+          const t0 = Date.now();
+          await WorkspacePanel.speak(text);
+          const gap = 500 - (Date.now() - t0);
+          if (!skipped && gap > 0) await new Promise(r => setTimeout(r, gap));
+        }
+      }
+
+      skip_btn.remove();
     }
 
     function open(npc_id) {
@@ -450,6 +472,9 @@
       if (cur_npc_id) delete _pending[cur_npc_id];
       cur_npc_id=null; dlg_el.classList.remove("open", "convo-mode");
       inp.disabled = false;
+      ++_convo_play_id; // cancel any in-progress line-by-line playback
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      const skip = document.getElementById('ws-dlg-skip'); if (skip) skip.remove();
       _koKbdReset();
     }
 

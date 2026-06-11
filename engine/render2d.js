@@ -209,6 +209,17 @@ class Renderer2D {
     }
   }
 
+  // Draw a white brightening overlay on the currently hovered tile/object/sign.
+  _draw_hover_highlight(cam) {
+    const h = this._hover_highlight;
+    if (!h) return;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(h.wx - cam.cx, h.wy - cam.cy, h.ww, h.wh);
+    ctx.restore();
+  }
+
   // Draw a tree sprite at world pixel (wx,wy) — trees are taller than one tile.
   // wx,wy = bottom-center of tree trunk. Sprite drawn upward from that point.
   // ay: display pixels from sprite top to ground contact (bottom of last opaque row).
@@ -249,6 +260,7 @@ class Renderer2D {
     if (room) {
       this._draw_map(room, cam);
       if (room.id === 'street') this._draw_road_markings(room, cam);
+      this._draw_hover_highlight(cam);
       this._draw_objects(room, cam, s);
       this._draw_npcs(room, cam, s);
       this._draw_player(cam, s);
@@ -561,14 +573,14 @@ class Renderer2D {
   // ── NPC sprites ───────────────────────────────────────────────────────────
 
   _draw_npcs(room, cam, s) {
-    if (!room.npcs) return;
     const ctx  = this.ctx;
     const { cx, cy } = cam;
     this._npc_chat_btns = {};
     this._ambient_npc_rects = {};
     this._prop_rects = {};
     let _bubble_shown = false, _sb_shown = false;
-    for (const npc_def of room.npcs) {
+    const all_npcs = [...(room.npcs || []), ...(s.extra_npcs || [])];
+    for (const npc_def of all_npcs) {
       const npc_st = s.npc_states?.[npc_def.npc_id];
       if (npc_st?.activity === 'zipline_ride') continue; // drawn on the cable
       const wx = npc_st ? npc_st.px : (npc_def.col*TS + TS/2);

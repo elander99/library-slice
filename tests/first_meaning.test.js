@@ -4,11 +4,11 @@
 const fs   = require('fs');
 const path = require('path');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const src = fs.readFileSync(path.join(__dirname, '..', 'ui', 'workspace.js'), 'utf8');
 
 function extractFirstMeaning() {
   const start = src.indexOf('function _first_meaning(s)');
-  if (start === -1) throw new Error('_first_meaning not found in index.html');
+  if (start === -1) throw new Error('_first_meaning not found in ui/workspace.js');
   let depth = 0, i = start;
   while (i < src.length) {
     if (src[i] === '{') depth++;

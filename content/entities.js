@@ -286,6 +286,7 @@ const ENTITY_DEFS = {
 // Descriptions for tile types that aren't named objects.
 // Keyed by the tile code used in TILES / room.tiles[][].
 const TILE_DEFS = {
+  // ── Furniture / outdoor structures ───────────────────────────────────────
   TREE:      { label:'木',      label_ko:'나무',   label_en:'Tree',        desc_en:'A tree in the outdoor area.' },
   TREE2:     { label:'木',      label_ko:'나무',   label_en:'Tree',        desc_en:'A tree in the outdoor area.' },
   TREE3:     { label:'木',      label_ko:'나무',   label_en:'Tree',        desc_en:'A tree in the outdoor area.' },
@@ -299,4 +300,43 @@ const TILE_DEFS = {
   SWING:     { label:'ブランコ',label_ko:'그네',   label_en:'Swing',       desc_en:'A playground swing for young children. Adults, please give way.' },
   GATE:      { label:'門',      label_ko:'문',     label_en:'Gate',        desc_en:'A gate at the entrance to the play area.' },
   RECEPTION: { label:'受付',    label_ko:'접수',   label_en:'Counter',     desc_en:'The reception counter. Today the reception is closed.' },
+  BED:       { label:'布団',    label_ko:'이불',   label_en:'Futon',       desc_en:'A soft futon laid out on the floor. Lie down and rest.' },
+  // ── Walls ─────────────────────────────────────────────────────────────────
+  WALL:      { label:'壁',      label_ko:'벽',     label_en:'Wall',        desc_en:'A wall.' },
+  WALL2:     { label:'壁',      label_ko:'벽',     label_en:'Wall',        desc_en:'A wall.' },
+  // ── Street / road ─────────────────────────────────────────────────────────
+  F_STONE:       { label:'道',    label_ko:'거리',   label_en:'Street',      desc_en:'The street. Sidewalks and road surface.' },
+  F_ROAD_CURB_T: { label:'縁石',  label_ko:'연석',   label_en:'Curb',        desc_en:'The road curb — the boundary between sidewalk and road.' },
+  F_ROAD_CURB_B: { label:'縁石',  label_ko:'연석',   label_en:'Curb',        desc_en:'The road curb — the boundary between sidewalk and road.' },
+  F_LIGHT:       { label:'駐車場',label_ko:'주차장', label_en:'Parking Lot', desc_en:'A paved parking area.' },
+  // ── Outdoor ground ────────────────────────────────────────────────────────
+  F_GRASS:   { label:'草地',    label_ko:'잔디',   label_en:'Grass',       desc_en:'A grassy area.' },
+  F_SAND:    { label:'砂道',    label_ko:'모래길', label_en:'Gravel Path', desc_en:'A sandy gravel path.' },
+  // ── Indoor floors ─────────────────────────────────────────────────────────
+  F_WOOD:    { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A wooden floor.' },
+  F_WOOD2:   { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A wooden floor.' },
+  F_LIB:     { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'The library floor.' },
+  F_GRAY:    { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'The lobby floor.' },
+  F_BLUE:    { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A mat floor.' },
+  F_TAN:     { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A wooden floor.' },
+  F_TAN_B:   { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A wooden floor.' },
+  F_TAN_C:   { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'A wooden floor.' },
+  F_SALON:   { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'The salon floor.' },
+  F_SCHOOL:  { label:'床',      label_ko:'바닥',   label_en:'Floor',       desc_en:'The floor.' },
+  // ── Tatami ────────────────────────────────────────────────────────────────
+  F_TATAMI:   { label:'畳',     label_ko:'다다미', label_en:'Tatami',      desc_en:'Traditional Japanese tatami flooring.' },
+  F_TATAMI_B: { label:'畳',     label_ko:'다다미', label_en:'Tatami',      desc_en:'Traditional Japanese tatami flooring.' },
+  F_TATAMI_C: { label:'畳',     label_ko:'다다미', label_en:'Tatami',      desc_en:'Traditional Japanese tatami flooring.' },
 };
+
+// Resolves a map tile code and room default floor to a TILE_DEFS entry.
+// tile_code === '' means the tile is the room's default floor → use room_floor.
+// Returns null for null/undefined input or unrecognized codes.
+function tile_label_for(tile_code, room_floor) {
+  if (tile_code == null) return null;
+  const resolved = tile_code === '' ? room_floor : tile_code;
+  if (!resolved) return null;
+  return TILE_DEFS[resolved] || null;
+}
+
+if (typeof module !== 'undefined') module.exports = { tile_label_for, TILE_DEFS };

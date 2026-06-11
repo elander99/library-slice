@@ -57,6 +57,7 @@ const cases = [
   ['왜',        'why',                      'why',           true],
   ['언제',      'when',                     'when',          true],
   ['어디',      'where',                    'where',         true],
+  ['어디',      'where',                    'here',          false, '"here" is 여기, not 어디'],
   ['누구',      'who',                      'who',           true],
 
   // ── Apologies ─────────────────────────────────────────────────────────────
@@ -121,6 +122,14 @@ const cases = [
   ['한번',      'once / one more time',   'once',          true],
   ['한번',      'once / one more time',   'one more time', true],
   ['잠깐만요',  'just a moment',          'just a moment', true],
+
+  // ── 에서 (location particle — must never match "come" via stale LLM meaning) ──
+  // KO_FALLBACK canonical meaning; "come" must be rejected even if old NPC_VOCAB
+  // entry stored "coming" (which the gerund rule in workspace.js strips to "come").
+  ['에서', 'at / in / from (place marker)', 'at',   true],
+  ['에서', 'at / in / from (place marker)', 'from', true],
+  ['에서', 'at / in / from (place marker)', 'in',   true],
+  ['에서', 'at / in / from (place marker)', 'come', false, 'location particle must not match verb'],
 
   // ── Particles: short form (head noun) must be accepted ───────────────────
   ['은',        'topic particle',          'topic',         true],

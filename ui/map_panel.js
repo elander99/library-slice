@@ -3,10 +3,131 @@
     const content  = document.getElementById('map-content');
     const btn      = document.getElementById('map-btn');
     const close_btn = document.getElementById('map-close');
+    const zoom_btn  = document.getElementById('map-zoom');
     const title_el = document.getElementById('map-title');
+    const minimap_el = document.getElementById('map-minimap');
 
     const ROOM_ORDER = ['street','lobby','play_area','gallery','library','salon','cooking_room','outdoor','house'];
 
+    // ── Minimap ──────────────────────────────────────────────────────────────
+    const MINI_LABELS = {
+      jp: { street:'通り', lobby:'ロビー', play_area:'遊び場', library:'図書館', salon:'サロン', outdoor:'屋外', house:'家', gallery:'画廊', cooking_room:'料理室' },
+      ko: { street:'거리', lobby:'로비', play_area:'놀이터', library:'도서관', salon:'살롱', outdoor:'야외', house:'집', gallery:'갤러리', cooking_room:'요리실' },
+    };
+
+    // Grid positions: col (0–6 left-right), row (0=top, 1=main, 2=bottom)
+    const MINI_LAYOUT = {
+      street:       { col:0, row:1 },
+      lobby:        { col:1, row:1 },
+      play_area:    { col:2, row:1 },
+      library:      { col:3, row:1 },
+      salon:        { col:4, row:1 },
+      outdoor:      { col:5, row:1 },
+      house:        { col:6, row:1 },
+      gallery:      { col:2, row:0 },
+      cooking_room: { col:4, row:2 },
+    };
+
+    const MINI_EDGES = [
+      ['street','lobby'],['lobby','play_area'],['play_area','library'],
+      ['library','salon'],['salon','outdoor'],['outdoor','house'],
+      ['play_area','gallery'],['salon','cooking_room'],
+    ];
+
+    function _warp_to_room(room_id) {
+      const rm = ROOM_MAP_DATA[room_id];
+      const room_signs = rm ? (rm.signs || []) : [];
+      let target_col = null;
+      for (const sr of room_signs) {
+        const sign = SIGN_BY_ID[sr.sign_id];
+        if (!sign) continue;
+        const prog = WORD_PROGRESS.getSign(sr.sign_id);
+        const incomplete = (sign.tokens || []).some((tok, i) => {
+          const r = prog[i] || {};
+          return !r.romaji || !r.meaning;
+        });
+        if (incomplete) { target_col = sr.col; break; }
+      }
+      if (target_col === null && room_signs.length > 0) target_col = room_signs[0].col;
+      const warp_px = ((target_col !== null ? target_col : 10) + 0.5) * TS;
+      sim.warp_to(room_id, warp_px, 7 * TS);
+      close_panel();
+    }
+
+    function _render_minimap() {
+      const ko = LANG.current === 'ko';
+      const labels = ko ? MINI_LABELS.ko : MINI_LABELS.jp;
+      const current = sim.state.room;
+
+      const BW = 52, BH = 36, GX = 12, GY = 42, PAD = 8;
+      const px = col => PAD + col * (BW + GX);
+      const py = row => PAD + row * (BH + GY);
+      const cx = col => px(col) + BW / 2;
+      const cy = row => py(row) + BH / 2;
+
+      const SVG_W = px(6) + BW + PAD;
+      const SVG_H = py(2) + BH + PAD;
+
+      let lines = '';
+      let rooms = '';
+
+      // Connection lines (drawn under room boxes)
+      for (const [a, b] of MINI_EDGES) {
+        const la = MINI_LAYOUT[a], lb = MINI_LAYOUT[b];
+        const ax = cx(la.col), ay = cy(la.row);
+        const bx = cx(lb.col), by = cy(lb.row);
+        lines += `<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="rgba(255,255,255,0.14)" stroke-width="1.5"/>`;
+      }
+
+      // House↔Street loop connection shown as dashed arc below
+      const arc_y = py(1) + BH + 16;
+      lines += `<path d="M${cx(6)} ${py(1) + BH} Q${cx(3)} ${arc_y} ${cx(0)} ${py(1) + BH}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+
+      // Room boxes
+      for (const [id, pos] of Object.entries(MINI_LAYOUT)) {
+        const room = ROOM_MAP_DATA[id];
+        if (!room) continue;
+        const x = px(pos.col), y = py(pos.row);
+        const is_here = id === current;
+        const { done, total } = _sign_progress(id);
+        const pct = total > 0 ? done / total : 0;
+
+        const stroke      = is_here ? '#c49a1a' : 'rgba(255,255,255,0.14)';
+        const stroke_w    = is_here ? 1.5 : 1;
+        const bg          = is_here ? 'rgba(196,154,26,0.15)' : 'rgba(255,255,255,0.04)';
+        const label_color = is_here ? '#c49a1a' : 'rgba(255,255,255,0.55)';
+        const bar_color   = pct >= 1 ? '#2d6a4f' : 'rgba(45,106,79,0.55)';
+
+        rooms += `<g data-room="${id}" style="cursor:pointer">`;
+        rooms += `<rect x="${x}" y="${y}" width="${BW}" height="${BH}" rx="3" fill="${bg}" stroke="${stroke}" stroke-width="${stroke_w}"/>`;
+
+        // Progress bar at bottom of box
+        if (total > 0) {
+          rooms += `<rect x="${x}" y="${y + BH - 4}" width="${BW}" height="4" rx="0" fill="rgba(255,255,255,0.04)"/>`;
+          if (pct > 0) {
+            rooms += `<rect x="${x}" y="${y + BH - 4}" width="${(BW * pct).toFixed(1)}" height="4" rx="0" fill="${bar_color}"/>`;
+          }
+        }
+
+        // Room label
+        rooms += `<text x="${cx(pos.col)}" y="${y + BH / 2 - 2}" text-anchor="middle" dominant-baseline="middle" fill="${label_color}" font-size="9" font-family="'Noto Serif JP',serif" style="pointer-events:none">${labels[id] || id}</text>`;
+
+        // Current-location dot
+        if (is_here) {
+          rooms += `<circle cx="${x + BW - 5}" cy="${y + 5}" r="3" fill="#c49a1a"/>`;
+        }
+
+        rooms += '</g>';
+      }
+
+      minimap_el.innerHTML = `<svg viewBox="0 0 ${SVG_W} ${SVG_H}" style="width:100%;height:auto" xmlns="http://www.w3.org/2000/svg">${lines}${rooms}</svg>`;
+
+      minimap_el.querySelectorAll('[data-room]').forEach(g => {
+        g.addEventListener('click', () => _warp_to_room(g.dataset.room));
+      });
+    }
+
+    // ── Progress helper ───────────────────────────────────────────────────────
     function _sign_progress(room_id) {
       const room = ROOM_MAP_DATA[room_id];
       if (!room) return { done: 0, total: 0 };
@@ -18,7 +139,6 @@
         (sign.tokens || []).forEach((tok, i) => {
           total++;
           if (tok.parts && tok.parts.length) {
-            // Compound token: progress lives on part keys ("0p0", "0p1", …), not the token key
             if (tok.parts.some((_, pi) => { const r = prog[`${i}p${pi}`] || {}; return r.romaji || r.meaning; }))
               done++;
           } else {
@@ -35,6 +155,9 @@
       title_el.textContent = ko ? '진행 상황' : '進捗マップ';
       const current = sim.state.room;
       content.innerHTML = '';
+
+      _render_minimap();
+
       for (const room_id of ROOM_ORDER) {
         const room = ROOM_MAP_DATA[room_id];
         if (!room) continue;
@@ -75,27 +198,7 @@
 
         row.append(hdr, bar);
 
-        row.addEventListener('click', () => {
-          // Find first sign in the room that has any incomplete token
-          const rm = ROOM_MAP_DATA[room_id];
-          const room_signs = rm ? (rm.signs || []) : [];
-          let target_col = null;
-          for (const sr of room_signs) {
-            const sign = SIGN_BY_ID[sr.sign_id];
-            if (!sign) continue;
-            const prog = WORD_PROGRESS.getSign(sr.sign_id);
-            const incomplete = (sign.tokens || []).some((tok, i) => {
-              const r = prog[i] || {};
-              return !r.romaji || !r.meaning;
-            });
-            if (incomplete) { target_col = sr.col; break; }
-          }
-          // Fall back to first sign if all done
-          if (target_col === null && room_signs.length > 0) target_col = room_signs[0].col;
-          const warp_px = ((target_col !== null ? target_col : 10) + 0.5) * TS;
-          sim.warp_to(room_id, warp_px, 7 * TS);
-          close_panel();
-        });
+        row.addEventListener('click', () => _warp_to_room(room_id));
 
         content.appendChild(row);
       }
@@ -126,6 +229,7 @@
     function close_panel() { panel.classList.remove('open'); }
     btn.addEventListener('click', open);
     close_btn.addEventListener('click', close_panel);
+    zoom_btn.addEventListener('click', () => panel.classList.toggle('zoomed'));
     panel.addEventListener('click', e => { if (e.target === panel) close_panel(); });
     return { open, close: close_panel, refresh: _render };
   })();

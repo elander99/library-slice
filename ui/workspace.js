@@ -190,7 +190,7 @@ const WorkspacePanel = (() => {
       if (!res.meaning) {
         const norm=s=>s.replace(/[?!.,]+$/,"");
         const depolite=s=>s.replace(/^(please|to|is)\s+/,'');
-        const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split(/\s*[/,]\s*/).map(p=>depolite(norm(p.trim()))).filter(Boolean);
+        const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split(/\s*[/,]\s*|\s+or\s+/).map(p=>depolite(norm(p.trim()))).filter(Boolean);
         const v=depolite(norm(val)), v_ns=depolite(norm(val_ns));
         if (parts.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return "meaning";
         // Accept base adjective/adverb form of -ly adverbs:
@@ -226,6 +226,22 @@ const WorkspacePanel = (() => {
           const m = p.match(/^(.+)\s+(particle|marker)$/);
           return m && (v === m[1] || v_ns === m[1].replace(/\s+/g,''));
         })) return "meaning";
+        // Synonym matching for grammar/linguistic terms that learners use interchangeably
+        {const SYN={
+          'formal':         ['polite','polite ending','formal ending','honorific'],
+          'polite':         ['formal','polite ending','formal ending'],
+          'polite ending':  ['formal','formal ending'],
+          'formal ending':  ['polite','polite ending'],
+          'honorific':      ['formal','polite','respectful'],
+          'past tense':     ['past'],
+          'past':           ['past tense'],
+          'present tense':  ['present'],
+          'present':        ['present tense'],
+        };
+        const expand=s=>SYN[s]||[];
+        if (parts.some(p=>expand(v).includes(p)||expand(p).includes(v)||
+            expand(v).some(sv=>sv===p.replace(/\s+/g,''))||
+            expand(p).some(sp=>sp===v_ns))) return "meaning";}
         // Accept singular↔plural: strip trailing -s (not -ss, min 4 chars)
         {const depl=s=>s.endsWith('s')&&!s.endsWith('ss')&&s.length>3?s.slice(0,-1):s;
         if (parts.some(p=>depl(v)===depl(p)||depl(v_ns)===depl(p.replace(/\s+/g,'')))) return "meaning";}
@@ -243,17 +259,23 @@ const WorkspacePanel = (() => {
         })) return "meaning";
         // Accept base verb of -ed past participles (depolite already strips "is "):
         //   allowed→allow  prohibited→prohibit  closed→close  related→relate  permitted→permit
+        // Also strips trailing " by": "accompanied by"→"accompanied"; -ied→y: "accompanied"→"accompany"
         if (parts.some(p=>{
-          if (p.endsWith('ed')) {
-            const base=p.slice(0,-2);
+          const core=p.endsWith(' by')?p.slice(0,-3):p;
+          if (core.endsWith('ied')) {
+            const base=core.slice(0,-3)+'y';
+            if (base.length>=3&&(v===base||v_ns===base)) return true;
+          }
+          if (core.endsWith('ed')) {
+            const base=core.slice(0,-2);
             if (base.length>=3&&(v===base||v_ns===base)) return true;
             if (base.length>=2&&base[base.length-1]===base[base.length-2]) {
               const base2=base.slice(0,-1);
               if (base2.length>=3&&(v===base2||v_ns===base2)) return true;
             }
           }
-          if (p.endsWith('d')) {
-            const base=p.slice(0,-1);
+          if (core.endsWith('d')) {
+            const base=core.slice(0,-1);
             if (base.endsWith('e')&&base.length>=4&&(v===base||v_ns===base)) return true;
           }
           return false;
@@ -316,6 +338,7 @@ const WorkspacePanel = (() => {
           rspan.dataset.tokIdx=tok_idx; rspan.dataset.field='romaji';
           if (res.romaji&&(token.romaji||token.furigana)) {
             rspan.textContent=token.romaji||token.furigana;
+            rspan.classList.add("slot-done");
           } else if (tok_idx===cur_word_idx&&cur_part_idx==null&&_active_field==='romaji') {
             rspan.classList.add("slot-active"); _placeInp(rspan);
           } else if (!res.romaji) {
@@ -334,7 +357,7 @@ const WorkspacePanel = (() => {
           const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
           mspan.dataset.tokIdx=tok_idx; mspan.dataset.field='meaning';
           if (res.meaning) {
-            if (token.meaning) { const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning; mspan.textContent=raw.split("/")[0].trim(); }
+            if (token.meaning) { const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning; mspan.textContent=raw.split("/")[0].trim().toLowerCase(); }
             mspan.classList.add("slot-done");
           } else if (tok_idx===cur_word_idx&&cur_part_idx==null&&_active_field==='meaning') {
             mspan.classList.add("slot-active"); _placeInp(mspan);
@@ -382,6 +405,7 @@ const WorkspacePanel = (() => {
             prspan.dataset.tokIdx=tok_idx; prspan.dataset.partIdx=pi; prspan.dataset.field='romaji';
             if (pres.romaji&&(part.romaji||part.furigana)) {
               prspan.textContent=part.romaji||part.furigana||'';
+              prspan.classList.add("slot-done");
             } else if (tok_idx===cur_word_idx&&pi===cur_part_idx&&_active_field==='romaji') {
               prspan.classList.add("slot-active"); _placeInp(prspan);
             } else if (!pres.romaji) {
@@ -400,7 +424,7 @@ const WorkspacePanel = (() => {
             const pmspan=document.createElement("span"); pmspan.className="ws-part-meaning";
             pmspan.dataset.tokIdx=tok_idx; pmspan.dataset.partIdx=pi; pmspan.dataset.field='meaning';
             if (pres.meaning) {
-              if (part.meaning) { const raw=Array.isArray(part.meaning)?part.meaning[0]:part.meaning; pmspan.textContent=raw.split("/")[0].trim(); }
+              if (part.meaning) { const raw=Array.isArray(part.meaning)?part.meaning[0]:part.meaning; pmspan.textContent=raw.split("/")[0].trim().toLowerCase(); }
               pmspan.classList.add("slot-done");
             } else if (tok_idx===cur_word_idx&&pi===cur_part_idx&&_active_field==='meaning') {
               pmspan.classList.add("slot-active"); _placeInp(pmspan);
@@ -417,21 +441,14 @@ const WorkspacePanel = (() => {
           });
           span.appendChild(partsRow);
 
-          // — whole-word meaning slot (below parts row) —
-          const wmspan=document.createElement("span"); wmspan.className="ws-token-meaning";
-          wmspan.dataset.tokIdx=tok_idx; wmspan.dataset.field='meaning'; wmspan.dataset.whole='1';
-          if (allPMeaning) {
-            if (token.meaning) { const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning; wmspan.textContent=raw.split("/")[0].trim(); }
-            wmspan.classList.add("slot-done");
-          } else if (tok_idx===cur_word_idx&&cur_part_idx===-1&&_active_field==='meaning') {
-            wmspan.classList.add("slot-active"); _placeInp(wmspan);
-          } else {
-            wmspan.classList.add("slot-empty");
-            const wmClick=e=>{ e.stopPropagation(); _select(_i,-1,'meaning'); };
-            wmspan.addEventListener("click",wmClick); wmspan._slotClick=wmClick;
+          // — whole-word meaning (auto-revealed once all subpart meanings are done) —
+          if (allPMeaning && token.meaning) {
+            const wmspan=document.createElement("span"); wmspan.className="ws-token-meaning slot-done";
+            wmspan.dataset.tokIdx=tok_idx; wmspan.dataset.field='meaning'; wmspan.dataset.whole='1';
+            const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning;
+            wmspan.textContent=raw.split("/")[0].trim().toLowerCase();
+            span.appendChild(wmspan);
           }
-          if (isDone) { wmspan.draggable=true; wmspan.addEventListener('dragstart',e=>e.preventDefault()); }
-          span.appendChild(wmspan);
         }
 
         // copy badge
@@ -460,7 +477,8 @@ const WorkspacePanel = (() => {
               if (!r.romaji){fi=pi;ff='romaji';break;}
               if (!r.meaning){fi=pi;ff='meaning';break;}
             }
-            _select(_i, fi>=0?fi:0, ff);
+            // All done: select whole compound for review; otherwise select first undone part
+            _select(_i, fi>=0?fi:-1, fi>=0?ff:null);
           } else {
             const r=word_results[_i]||{};
             _select(_i, null, !r.romaji?'romaji':'meaning');
@@ -554,9 +572,10 @@ const WorkspacePanel = (() => {
       '도와줄게요': {reading:'dowajulgeyo',     meaning:"I'll help you"},
       '오늘':      {reading:'oneul',            meaning:'today'},
       '놀러':      {reading:'nolleo',           meaning:'play / visit / hang out'},
-      '오셨어요':  {reading:'osyeosseoyo',      meaning:'did you come?'},
-      '재미있게':  {reading:'jaemiitge',        meaning:'enjoyably / have fun'},
+      '오셨어요':  {reading:'osyeosseoyo',      meaning:'did you come?',   parts:[{text:'오',furigana:'오',romaji:'o',meaning:'come'},{text:'셨',furigana:'셨',romaji:'syeoss',meaning:'honorific past'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '재미있게':  {reading:'jaemiitge',         meaning:'enjoyably / have fun', parts:[{text:'재미',furigana:'재미',romaji:'jaemi',meaning:'fun / interest'},{text:'있',furigana:'있',romaji:'it',meaning:'to have'},{text:'게',furigana:'게',romaji:'ge',meaning:'in a ~ way'}]},
       '놀아요':    {reading:'norayo',           meaning:'play / have fun'},
+      '계신가요':  {reading:'gyesingayo',       meaning:'are you here? / is [someone] here? (honorific)', parts:[{text:'계신',furigana:'계신',romaji:'gyesin',meaning:'honorific present (be / exist)'},{text:'가요',furigana:'가요',romaji:'gayo',meaning:'polite question ending'}]},
       '오신':      {reading:'osin',             meaning:'(who) came (honorific)'},
       '것':        {reading:'geot',             meaning:'thing / fact / it (bound noun)'},
       '것을':      {reading:'geoseul',          meaning:'thing (object)'},
@@ -603,7 +622,8 @@ const WorkspacePanel = (() => {
       '좋아요':    {reading:'joayo',            meaning:'good / I like it'},
       '좋겠다':    {reading:'jokkeda',          meaning:'sounds nice / that\'s nice / how nice / nice'},
       '있어요':    {reading:'isseoyo',          meaning:'there is / is / are / exist / exists / have / has / I have'},
-      '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have"},
+      '있는지':    {reading:'innenji',          meaning:'whether there is / where it is'},
+      '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have / no"},
       '그래요':    {reading:'geuraeyo',         meaning:"I see / that's right"},
       '맞아요':    {reading:'majayo',           meaning:"that's right / correct"},
       '여기':      {reading:'yeogi',            meaning:'here'},
@@ -621,6 +641,7 @@ const WorkspacePanel = (() => {
       '누구':      {reading:'nugu',             meaning:'who'},
       '저는':      {reading:'jeoneun',          meaning:'I'},
       '놀이공간':  {reading:'noligonggan',      meaning:'play area'},
+      '놀이':      {reading:'nori',             meaning:'play / game'},
       '가시고':    {reading:'gasigo',           meaning:'go (honorific)'},
       // ── rules / instructions ──────────────────────────────────────────────
       '지켜':      {reading:'jikyeo',           meaning:'protect / keep / follow (rules)'},
@@ -659,6 +680,7 @@ const WorkspacePanel = (() => {
       '열람실':    {reading:'yeollamsil',       meaning:'reading room'},
       '자료':      {reading:'jaryo',            meaning:'material / resource / data'},
       '검색':      {reading:'geomsaek',         meaning:'search / look up'},
+      '카탈로그':  {reading:'katallogu',        meaning:'catalogue/catalog'},
       '사서':      {reading:'saseo',            meaning:'librarian'},
       '책장':      {reading:'chaekjang',        meaning:'bookshelf'},
       '서가':      {reading:'seoga',            meaning:'bookshelf / stacks'},
@@ -797,6 +819,7 @@ const WorkspacePanel = (() => {
       '무슨':      {reading:'museun',          meaning:'what / which (before a noun)'},
       '어느':      {reading:'eoneu',           meaning:'which'},
       '알다':      {reading:'alda',            meaning:'know / understand'},
+      '알아':      {reading:'ara',             meaning:'know (informal)'},
       '알아요':    {reading:'arayo',           meaning:'I know (polite)'},
       '모르다':    {reading:'moreuda',         meaning:'not know / don\'t know'},
       '몰라요':    {reading:'mollayo',         meaning:'I don\'t know (polite)'},
@@ -890,6 +913,9 @@ const WorkspacePanel = (() => {
       '배고파요':  {reading:'baegopayo',      meaning:'hungry'},
       '피곤해요':  {reading:'pigonhaeyo',     meaning:'tired'},
       '바빠요':    {reading:'bappayo',        meaning:'busy'},
+      // ── game HUD terms ───────────────────────────────────────────────────
+      '충실감':    {reading:'chungsilgam',    meaning:'fulfillment / wellbeing'},
+      '充実感':    {reading:'juujitsukan',    meaning:'fulfillment / wellbeing'},
       // ── emotions ─────────────────────────────────────────────────────────
       '기분':      {reading:'gibun',          meaning:'feeling / mood'},
       '행복해요':  {reading:'haengbokhaeyo',  meaning:'happy'},
@@ -1225,6 +1251,7 @@ const WorkspacePanel = (() => {
       '자다':      {reading:'jada',           meaning:'sleep'},
       '일어나다':  {reading:'ireonada',       meaning:'wake up / get up'},
       '만들다':    {reading:'mandeulda',      meaning:'make'},
+      '만드는지':  {reading:'mandeunenji',    meaning:'what is being made / what is making'},
       '주다':      {reading:'juda',           meaning:'give'},
       '열다':      {reading:'yeolda',         meaning:'open'},
       '닫다':      {reading:'datda',          meaning:'close'},
@@ -1383,7 +1410,7 @@ const WorkspacePanel = (() => {
     // Compound verb endings listed longest-first so the greedy match works correctly
     const _KO_PARTICLES = [
       '하시려면','하려면','하시겠어요','하겠습니다','하겠어요','했습니다','했어요',
-      '하십시오','하시면','하세요','합니까','합니다','해요','해서','하면','하다','하고',
+      '하십시오','하시면','하세요','합니까','합니다','해봐요','해봐','해요','해서','하면','하다','하고',
       '시려면','겠습니다','겠어요','습니다','었어요','았어요','이에요','으면','려면',
       // Compound postpositions — must come before their embedded short particles
       '밖에서','밖에도','밖에','밖으로',
@@ -1433,7 +1460,7 @@ const WorkspacePanel = (() => {
           } else {
             out_words.push(w);
             const _fb = _KO_FALLBACK?.[clean];
-            const _def = defs ? (defs[i] || {text:w, reading:romanizeKo(clean), meaning:''}) : {text:w, reading:romanizeKo(clean), meaning:''};
+            const _def = defs ? (defs[i] || {text:w, reading:romanizeKo(clean), meaning:''}) : {text:w, reading:romanizeKo(clean), meaning:_fb?.meaning||''};
             if (_fb?.parts) _def.parts = _fb.parts;
             out_defs.push(_def);
           }
@@ -1480,7 +1507,7 @@ const WorkspacePanel = (() => {
         let p=null; try{p=JSON.parse(raw);}catch{}
         if (!p){const m=raw.match(/\{[\s\S]*\}/);if(m)try{p=JSON.parse(m[0]);}catch{}}
         const reading=LANG.current==='ko' ? romanizeKo(clean) : (p?.reading||p?.romanization||p?.pronunciation||'').toLowerCase();
-        const meaning=_first_meaning(p?.meaning||p?.translation||p?.english||'');
+        const meaning=(_first_meaning(p?.meaning||p?.translation||p?.english||'')||'').toLowerCase();
         if (reading||meaning){const def={reading,meaning};_npc_defs[clean]=def;return def;}
       } catch { if(pulse)clearInterval(pulse); }
       return null;
@@ -1520,7 +1547,7 @@ const WorkspacePanel = (() => {
 
     const _NATIVE_HOUR_KO = [null,'한','두','세','네','다섯','여섯','일곱','여덟','아홉','열','열한','열두','열세','열네','열다섯','열여섯','열일곱','열여덟','열아홉','스무','스물한','스물두','스물세','스물네'];
     function _speak(text) {
-      if (!window.speechSynthesis) return;
+      if (!window.speechSynthesis) return Promise.resolve();
       speechSynthesis.cancel();
       if (LANG.current === 'ko') text = text.replace(/(\d+)시/g, (_,n) => { const h=_NATIVE_HOUR_KO[+n]; return (h||n)+'시'; });
       const u = new SpeechSynthesisUtterance(text);
@@ -1533,7 +1560,7 @@ const WorkspacePanel = (() => {
       } else {
         u.lang = 'ja-JP';
       }
-      speechSynthesis.speak(u);
+      return new Promise(resolve => { u.onend = resolve; u.onerror = resolve; speechSynthesis.speak(u); });
     }
 
     function _select(idx, part_idx=null, field=null) {
@@ -1590,9 +1617,9 @@ const WorkspacePanel = (() => {
       open('__npc__');
       const _ct=tokens[clicked_idx];
       if (_ct?.parts?.length) {
-        let fi=0,ff='romaji';
+        let fi=-1,ff=null;
         for (let pi=0;pi<_ct.parts.length;pi++){const r=word_results[`${clicked_idx}p${pi}`]||{};if(!r.romaji){fi=pi;ff='romaji';break;}if(!r.meaning){fi=pi;ff='meaning';break;}}
-        _select(clicked_idx,fi,ff);
+        _select(clicked_idx,fi>=0?fi:0,fi>=0?ff:null);
       } else { _select(clicked_idx); }
     }
 
@@ -1630,15 +1657,15 @@ const WorkspacePanel = (() => {
             tok.parts.forEach((part,pi)=>{
               const e=vocab.find(v=>v.text===part.text);
               if (e) {
-                if (e.romaji&&e.reading)          { part.romaji=e.reading; part.furigana=e.reading; }
-                if (e.meaning_unlocked&&e.meaning) { part.meaning=e.meaning; }
+                if (e.romaji&&e.reading)                                        { part.romaji=e.reading; part.furigana=e.reading; }
+                if (e.meaning_unlocked&&e.meaning&&!_KO_FALLBACK?.[part.text]) { part.meaning=e.meaning; }
               }
             });
           } else {
             const e=vocab.find(v=>v.text===tok.text);
             if (e) {
-              if (e.romaji&&e.reading)          { tok.romaji=e.reading; tok.furigana=e.reading; }
-              if (e.meaning_unlocked&&e.meaning) { tok.meaning=e.meaning; }
+              if (e.romaji&&e.reading)                                       { tok.romaji=e.reading; tok.furigana=e.reading; }
+              if (e.meaning_unlocked&&e.meaning&&!_KO_FALLBACK?.[tok.text]) { tok.meaning=e.meaning; }
             }
           }
         });
@@ -1797,18 +1824,22 @@ const WorkspacePanel = (() => {
             active.meaning=def.meaning;
             if (!active.romaji) { active.romaji=def.reading; active.furigana=def.reading; }
           } else {
-            // No definition found; treat the player's typed answer as the canonical meaning
-            active.meaning=raw.trim();
+            // No definition found — can't verify; reject this attempt
+            inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); return;
           }
           const m2=_checkWhat(active,raw,res);
           if (m2) { inp.value=""; _accept(active,m2,res); return; }
-          if (!active.meaning) { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); return; }
         }
-        _checking=true; fb.textContent="checking…"; fb.style.color="#b8860b";
-        const ok=await _llama_judge_meaning(active,raw.trim(), msg=>{ fb.textContent=msg; fb.style.color="#b8860b"; });
-        _checking=false;
-        if (ok){ inp.value=""; _accept(active,"meaning",res); }
-        else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
+        // Korean fallback-dict words have canonical meanings — LLM judgment adds false positives
+        if (LANG.current==='ko' && _KO_FALLBACK?.[active.text]) {
+          inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus();
+        } else {
+          _checking=true; fb.textContent="checking…"; fb.style.color="#b8860b";
+          const ok=await _llama_judge_meaning(active,raw.trim(), msg=>{ fb.textContent=msg; fb.style.color="#b8860b"; });
+          _checking=false;
+          if (ok){ inp.value=""; _accept(active,"meaning",res); }
+          else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); inp.focus(); }
+        }
       } else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); }
     });
 
@@ -1840,7 +1871,7 @@ const WorkspacePanel = (() => {
       const res_key=(cur_part_idx!=null&&cur_part_idx>=0)?`${cur_word_idx}p${cur_part_idx}`:cur_word_idx;
       word_results[res_key]=word_results[res_key]||{};
       const res=word_results[res_key];
-      if (res.romaji&&res.meaning) return;
+      const _alreadyDone=res.romaji&&res.meaning;
       if (sim.state.phone.lookup_cooldown>0) return;
       if (cur_sign_id==='__npc__') {
         if ((!active.romaji&&!active.furigana)||!active.meaning) {
@@ -1850,23 +1881,23 @@ const WorkspacePanel = (() => {
           if (def) { if(!active.romaji)active.romaji=def.reading; if(!active.furigana)active.furigana=def.reading; if(!active.meaning)active.meaning=def.meaning; }
         }
         const reading=active.romaji||active.furigana;
-        const meaning=(active.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
+        const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'').toLowerCase();
         fb.textContent=''; fb.style.color='';
         if (!reading&&!meaning) { fb.textContent='not found'; fb.style.color='#888'; _update_lkp(); return; }
         const _hr=_fmt_read(active.furigana||reading,reading);
         _hint_by_key[res_key]={reading:_hr, meaning};
         _show_hint(_hr, meaning);
-        sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer();
+        if (!_alreadyDone) { sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); }
         if (inp.parentElement!==panel_el) inp.focus();
         return;
       }
       // non-NPC: show reading+meaning as hint only — player must still type to get credit
       const reading=active.romaji||active.furigana;
-      const meaning=(active.meaning||'').split(/\s*[/,]\s*/)[0].trim().replace(/^to\s+/i,'');
+      const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'').toLowerCase();
       const _hr2=_fmt_read(active.furigana,reading);
       _hint_by_key[res_key]={reading:_hr2, meaning};
       _show_hint(_hr2, meaning);
-      sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer();
+      if (!_alreadyDone) { sim.perform("use_phone_lookup"); _update_lkp(); _start_lkp_timer(); }
       if (inp.parentElement!==panel_el) inp.focus();
     });
 

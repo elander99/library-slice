@@ -24,6 +24,28 @@ class Input2D {
       this._update_cursor(p.x, p.y);
     });
     canvas.addEventListener('click', e => this._on_click(e));
+
+    // Drag canvas HUD elements (room name → obj-label for meaning slots)
+    this._drag_down = null;
+    canvas.addEventListener('mousedown', e => {
+      const p = this._pos(e);
+      this._drag_down = p;
+    });
+    canvas.draggable = true;
+    canvas.addEventListener('dragstart', e => {
+      const p = this._drag_down;
+      const R = renderer;
+      if (p && R._hud_room_btn && R._pt_in(R._hud_room_btn, p.x, p.y)) {
+        e.dataTransfer.setData('obj-label', R._hud_room_btn.en);
+        if (LANG.current === 'ko') {
+          e.dataTransfer.setData('dlg-word', R._hud_room_btn.text);
+        }
+        e.dataTransfer.effectAllowed = 'copy';
+      } else {
+        e.preventDefault();
+      }
+      this._drag_down = null;
+    });
     canvas.addEventListener('touchstart', e => {
       e.preventDefault();
       const t = e.touches[0];
@@ -165,7 +187,8 @@ class Input2D {
     // HUD room name (clickable to look up)
     if (R._hud_room_btn && R._pt_in(R._hud_room_btn, x, y)) {
       const {text, en} = R._hud_room_btn;
-      WorkspacePanel.open_npc_sentence(text, [text], 0, '', null, en);
+      const words = text.split(/\s+/).filter(Boolean);
+      WorkspacePanel.open_npc_sentence(text, words, 0, '', null, en);
       return;
     }
 
@@ -259,13 +282,14 @@ class Input2D {
       return;
     }
 
-    // Check tile descriptions
+    // Check tile descriptions — empty '' means room's default floor
     if (typeof TILE_DEFS !== 'undefined' && typeof TILES !== 'undefined') {
       const tc = Math.floor(wx / TS), tr = Math.floor(wy / TS);
       const tile_code = room.tiles[tr]?.[tc];
-      if (tile_code && TILE_DEFS[tile_code]) {
-        if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(tile_code, sx, sy);
-        if (TILES[tile_code]?.solid) return; // solid tile — don't try to walk into it
+      const resolved  = tile_code || room.floor;
+      if (resolved && TILE_DEFS[resolved]) {
+        if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(resolved, sx, sy);
+        if (TILES[resolved]?.solid) return; // solid tile — don't try to walk into it
       }
     }
 
@@ -403,6 +427,7 @@ class Input2D {
     }
 
     // Only check world-space interactables if click is in viewport
+    R._hover_highlight = null;
     if (y >= R.VP_Y && y <= R.VP_Y + R.VP_H) {
       const cam = R._camera(S.state);
       const wx = x + cam.cx;
@@ -415,7 +440,11 @@ class Input2D {
           const sign_rects = R._sign_world_rects || {};
           for (const sg of (room.signs || [])) {
             const r = sign_rects[sg.sign_id];
-            if (r && wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h) { cursor = 'pointer'; break; }
+            if (r && wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h) {
+              cursor = 'pointer';
+              R._hover_highlight = { wx: r.x, wy: r.y, ww: r.w, wh: r.h };
+              break;
+            }
           }
         }
 
@@ -423,23 +452,18 @@ class Input2D {
         if (cursor === 'default' && R._ambient_npc_rects) {
           for (const rect of Object.values(R._ambient_npc_rects)) {
             const nx = rect.col * TS, ny = (rect.row - 1) * TS;
-            if (wx >= nx && wx <= nx + TS && wy >= ny && wy <= ny + TS * 2) { cursor = 'pointer'; break; }
+            if (wx >= nx && wx <= nx + TS && wy >= ny && wy <= ny + TS * 2) {
+              cursor = 'pointer';
+              R._hover_highlight = { wx: nx, wy: ny, ww: TS, wh: TS * 2 };
+              break;
+            }
           }
         }
 
-        // Objects — use tile_rect if declared
+        // Objects and tiles — use hover_highlight_rect for both
         if (cursor === 'default') {
-          const htc = Math.floor(wx / TS), htr = Math.floor(wy / TS);
-          for (const obj of (room.objects || [])) {
-            if (obj_tile_hit(obj, htc, htr)) { cursor = 'pointer'; break; }
-          }
-        }
-
-        // Tiles with descriptions
-        if (cursor === 'default' && typeof TILE_DEFS !== 'undefined') {
-          const tc = Math.floor(wx / TS), tr = Math.floor(wy / TS);
-          const tile_code = room.tiles[tr]?.[tc];
-          if (tile_code && TILE_DEFS[tile_code]) cursor = 'pointer';
+          const hr = hover_highlight_rect(wx, wy, room);
+          if (hr) { cursor = 'pointer'; R._hover_highlight = hr; }
         }
       }
     }
@@ -484,4 +508,63 @@ function obj_tile_hit(obj, tc, tr) {
   return tc === obj.col && tr === obj.row;
 }
 
-if (typeof module !== 'undefined') module.exports = { obj_tile_hit, _advance_convo };
+// BFS bounding box for a connected block of same-code solid tiles at (tc, tr).
+// Returns null for floor tiles, walls, empty/unknown codes.
+function tile_cluster_rect(room, tc, tr) {
+  const code = room.tiles[tr]?.[tc];
+  if (!code) return null;
+  const def = typeof TILES !== 'undefined' && TILES[code];
+  if (!def || !def.solid) return null;
+  if (code === 'WALL' || code === 'WALL2') return null;
+
+  const visited = new Set();
+  const queue   = [[tc, tr]];
+  let minC = tc, maxC = tc, minR = tr, maxR = tr;
+
+  while (queue.length) {
+    const [c, r] = queue.shift();
+    const key = `${c},${r}`;
+    if (visited.has(key)) continue;
+    if (r < 0 || r >= room.rows || c < 0 || c >= room.cols) continue;
+    if (room.tiles[r]?.[c] !== code) continue;
+    visited.add(key);
+    minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+    minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+    queue.push([c-1, r], [c+1, r], [c, r-1], [c, r+1]);
+  }
+
+  return { wx: minC*TS, wy: minR*TS, ww: (maxC-minC+1)*TS, wh: (maxR-minR+1)*TS };
+}
+
+// Returns the world-space rect {wx, wy, ww, wh} to brighten on hover, or null.
+// Priority: named objects (tile_rect) > tile cluster > single tile.
+// Empty tile codes resolve to room.floor for TILE_DEF lookup; clusters only apply
+// to explicit (non-empty) tile codes.
+function hover_highlight_rect(wx, wy, room) {
+  if (!room) return null;
+  const tc = Math.floor(wx / TS), tr = Math.floor(wy / TS);
+
+  for (const obj of (room.objects || [])) {
+    if (obj_tile_hit(obj, tc, tr)) {
+      if (obj.tile_rect) {
+        const [c1, r1, c2, r2] = obj.tile_rect;
+        return { wx: c1*TS, wy: r1*TS, ww: (c2-c1+1)*TS, wh: (r2-r1+1)*TS };
+      }
+      return { wx: obj.col*TS, wy: obj.row*TS, ww: TS, wh: TS };
+    }
+  }
+
+  const tile_code = room.tiles[tr]?.[tc];
+  const resolved  = tile_code || room.floor;
+  if (resolved && typeof TILE_DEFS !== 'undefined' && TILE_DEFS[resolved]) {
+    if (tile_code) {
+      const cluster = tile_cluster_rect(room, tc, tr);
+      if (cluster) return cluster;
+    }
+    return { wx: tc*TS, wy: tr*TS, ww: TS, wh: TS };
+  }
+
+  return null;
+}
+
+if (typeof module !== 'undefined') module.exports = { obj_tile_hit, _advance_convo, hover_highlight_rect, tile_cluster_rect };

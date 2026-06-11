@@ -4,8 +4,7 @@
     const content  = document.getElementById("vocab-content");
     const btn      = document.getElementById("vocab-btn");
     const closeBtn = document.getElementById("vocab-close");
-    const clearBtn = document.getElementById("vocab-clear-btn");
-    const sortBtn  = document.getElementById("vocab-sort-btn");
+const sortBtn  = document.getElementById("vocab-sort-btn");
     const searchInput = document.getElementById("vocab-search");
     const titleEl  = document.getElementById("vocab-title");
     const dlg_inp  = document.getElementById("ws-dlg-input");
@@ -25,17 +24,17 @@
       const signs = ko ? [...SIGNS_KO, ...WORLD_SIGNS_KO] : [...SIGNS, ...WORLD_SIGNS];
       for (const sign of signs) {
         for (const tok of (sign.tokens || [])) {
-          const check = (t) => t.text === text ? { text, reading: t.romaji || t.furigana || '', meaning: t.meaning ? t.meaning.split('/')[0].trim() : '' } : null;
+          const check = (t) => t.text === text ? { text, reading: t.romaji || t.furigana || '', meaning: t.meaning ? t.meaning.split('/')[0].trim().toLowerCase() : '' } : null;
           const found = check(tok) || (tok.parts || []).reduce((a, p) => a || check(p), null);
           if (found) return found;
         }
       }
       if (ko && _KO_FALLBACK[text]) {
         const def = _KO_FALLBACK[text];
-        return { text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim() : '' };
+        return { text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim().toLowerCase() : '' };
       }
       const npe = NPC_VOCAB.getAll().find(e => e.text === text);
-      if (npe) return { text, reading: npe.reading || '', meaning: npe.meaning ? npe.meaning.split('/')[0].trim() : '' };
+      if (npe) return { text, reading: npe.reading || '', meaning: npe.meaning ? npe.meaning.split('/')[0].trim().toLowerCase() : '' };
       return { text, reading: '', meaning: '' };
     }
 
@@ -83,8 +82,7 @@
       } else if (counterEl) {
         counterEl.style.display = 'none';
       }
-      clearBtn.style.display = _words.length ? '' : 'none';
-      sortBtn.style.display  = _words.length ? '' : 'none';
+sortBtn.style.display  = _words.length ? '' : 'none';
       content.innerHTML = '';
 
       if (!_words.length) {
@@ -193,6 +191,16 @@
         const meaning = document.createElement('span');
         meaning.className = 'vocab-meaning' + (w.meaning ? '' : ' locked');
         meaning.textContent = w.meaning || '—';
+        if (w.meaning) {
+          meaning.draggable = true;
+          meaning.addEventListener('dragstart', e => {
+            meaning.classList.add('drag-src');
+            e.dataTransfer.setData('obj-label', w.meaning);
+            e.dataTransfer.effectAllowed = 'copy';
+            e.stopPropagation();
+          });
+          meaning.addEventListener('dragend', () => meaning.classList.remove('drag-src'));
+        }
 
         const rm = document.createElement('button');
         rm.className = 'vocab-remove-btn'; rm.textContent = '×'; rm.title = 'Remove';
@@ -272,7 +280,7 @@
       try {
         const def = await WorkspacePanel.lookup(text);
         if (def && (def.reading || def.meaning)) {
-          _words.push({ text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim() : '' });
+          _words.push({ text, reading: def.reading || '', meaning: def.meaning ? def.meaning.split('/')[0].trim().toLowerCase() : '' });
           _play_add_sound(); _save(); _render();
           searchInput.value = ''; _set_status('added: ' + (def.meaning || def.reading), '#2d6a4f');
         } else {
@@ -283,8 +291,7 @@
 
     searchInput.addEventListener('input', _render);
     sortBtn.addEventListener('click', () => { _sort(); _save(); _render(); });
-    clearBtn.addEventListener('click', () => { _words = []; _save(); _render(); });
-    btn.addEventListener('click', open);
+btn.addEventListener('click', open);
     closeBtn.addEventListener('click', close_panel);
     panel.addEventListener('click', e => { if (e.target === panel) close_panel(); });
 

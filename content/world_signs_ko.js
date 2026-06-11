@@ -301,7 +301,7 @@ const WORLD_SIGNS_KO = [
           { text: "밖에",       furigana: "밖에",       romaji: "bakke",      meaning: "only / nothing but" },
         ]
       },
-      { text: "없어요", furigana: "없어요", romaji: "eopseoyo", meaning: "there isn't / none" },
+      { text: "없어요", furigana: "없어요", romaji: "eopseoyo", meaning: "there isn't / none / no" },
     ]
   },
 

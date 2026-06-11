@@ -362,4 +362,70 @@ const CONVERSATIONS = {
     ]
   },
 
+  outdoor_nature_chat: {
+    title_ko: '야외 이야기',
+    title_en: 'Outdoor Chat',
+    turns: [
+      {
+        npc_id: 'nana', name_ko: '나나', name_en: 'Nana',
+        ko: '여기 공원 정말 넓다! 어디까지 달려갈 수 있을까?',
+        en: "This park is huge! I wonder how far I can run?"
+      },
+      {
+        npc_id: 'riku', name_ko: '리쿠', name_en: 'Riku',
+        ko: '저 짚라인 탄 적 있어? 되게 빠르다더라!',
+        en: "Have you tried the zipline? I heard it's really fast!"
+      },
+      {
+        npc_id: 'nana', name_ko: '나나', name_en: 'Nana',
+        ko: '아직! 근데 꼭 타볼 거야. 오늘 같이 가줄래?',
+        en: "Not yet! But I definitely want to. Will you come with me today?"
+      },
+    ]
+  },
+
+  play_area_kids_chat: {
+    title_ko: '놀이터 이야기',
+    title_en: 'Playground Chat',
+    turns: [
+      {
+        npc_id: 'yuki', name_ko: '유키', name_en: 'Yuki',
+        ko: '그네 자리 비어 있어! 빨리 가자!',
+        en: "The swing is free! Let's go!"
+      },
+      {
+        npc_id: 'haruto', name_ko: '하루토', name_en: 'Haruto',
+        ko: '나 그네 제일 높이 탈 수 있어. 한번 볼래?',
+        en: "I can swing the highest. Want to see?"
+      },
+      {
+        npc_id: 'yuki', name_ko: '유키', name_en: 'Yuki',
+        ko: '좋아! 나도 질 수 없지. 같이 해보자!',
+        en: "You're on! I'm not going to lose. Let's go!"
+      },
+    ]
+  },
+
+  salon_craft_chat: {
+    title_ko: '살롱 이야기',
+    title_en: 'Salon Chat',
+    turns: [
+      {
+        npc_id: 'sora', name_ko: '소라', name_en: 'Sora',
+        ko: '오늘은 뭐 만들 거야? 나는 작은 상자 만들어볼까 해.',
+        en: "What are you making today? I'm thinking of making a little box."
+      },
+      {
+        npc_id: 'riku', name_ko: '리쿠', name_en: 'Riku',
+        ko: '상자? 멋지다! 나는 카드 만들까 해. 생일 선물로.',
+        en: "A box? Nice! I'm going to make a card — as a birthday gift."
+      },
+      {
+        npc_id: 'sora', name_ko: '소라', name_en: 'Sora',
+        ko: '그럼 상자에 카드 같이 넣어서 주면 더 멋지겠다!',
+        en: "Then put the card in the box — that would make an even better gift!"
+      },
+    ]
+  },
+
 };

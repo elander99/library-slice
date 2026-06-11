@@ -17,6 +17,7 @@ class Sim2D {
     const py_ok = saved.py > 0 && saved.py < room_def.rows * TS;
     this.state = {
       npc_states: {},  // keyed by npc_id — dynamic position/goal state for roaming NPCs
+      extra_npcs: [],  // scheduled NPC instance objects active in the current room
       room:        room_id,
       px:          (px_ok && py_ok) ? saved.px : 10 * TS,
       py:          (px_ok && py_ok) ? saved.py : 7  * TS,
@@ -65,16 +66,83 @@ class Sim2D {
   _init_npc_states(room_id) {
     const s = this.state;
     s.npc_states = {};
+    s.extra_npcs = [];
     const room = ROOM_MAP_DATA[room_id];
-    if (!room?.npcs) return;
-    for (const n of room.npcs) {
-      if (!n.goals?.length) continue;
-      const gi = n.start_goal || 0;
-      const g0 = n.goals[gi];
+    if (room?.npcs) {
+      for (const n of room.npcs) {
+        if (!n.goals?.length) continue;
+        const gi = n.start_goal || 0;
+        const g0 = n.goals[gi];
+        s.npc_states[n.npc_id] = {
+          px: g0.col * TS + TS / 2,
+          py: g0.row * TS + TS,
+          goal_idx: gi,
+          pause_timer: (g0.pause_ms || 0) / 1000,
+          activity: g0.activity || null,
+          say_ko: g0.say_ko || null,
+          say_en: g0.say_en || null,
+          zipline_t: 0,
+          facing_left: false,
+        };
+      }
+    }
+    for (const n of this._scheduled_npcs_for_room(room_id)) {
+      if (!n.goals?.length || s.npc_states[n.npc_id]) continue;
+      s.extra_npcs.push(n);
+      const g0 = n.goals[0];
       s.npc_states[n.npc_id] = {
-        px: g0.col * TS + TS / 2,
-        py: g0.row * TS + TS,
-        goal_idx: gi,
+        px: (n.col ?? g0.col) * TS + TS / 2,
+        py: (n.row ?? g0.row) * TS + TS,
+        goal_idx: 0,
+        pause_timer: (g0.pause_ms || 0) / 1000,
+        activity: g0.activity || null,
+        say_ko: g0.say_ko || null,
+        say_en: g0.say_en || null,
+        zipline_t: 0,
+        facing_left: false,
+      };
+    }
+  }
+
+  _scheduled_npcs_for_room(room_id) {
+    if (typeof NPC_SCHEDULES === 'undefined') return [];
+    const gt = this.state.game_time;
+    const dow = new Date(gt.year, gt.month - 1, gt.day).getDay();
+    const t = gt.hour + gt.minute / 60;
+    const result = [];
+    for (const [npc_id, blocks] of Object.entries(NPC_SCHEDULES)) {
+      const block = blocks.find(b =>
+        b.room === room_id &&
+        b.days.includes(dow) &&
+        t >= b.hour_start &&
+        t < b.hour_end
+      );
+      if (block) result.push({ ...block, npc_id });
+    }
+    return result;
+  }
+
+  _check_scheduled_npcs() {
+    const s = this.state;
+    const current = this._scheduled_npcs_for_room(s.room);
+    const current_ids = new Set(current.map(n => n.npc_id));
+    const extra_ids   = new Set(s.extra_npcs.map(n => n.npc_id));
+
+    // Remove NPCs whose schedule block ended
+    s.extra_npcs = s.extra_npcs.filter(n => {
+      if (!current_ids.has(n.npc_id)) { delete s.npc_states[n.npc_id]; return false; }
+      return true;
+    });
+
+    // Add NPCs whose schedule block just started
+    for (const n of current) {
+      if (extra_ids.has(n.npc_id) || s.npc_states[n.npc_id]) continue;
+      s.extra_npcs.push(n);
+      const g0 = n.goals[0];
+      s.npc_states[n.npc_id] = {
+        px: (n.col ?? g0.col) * TS + TS / 2,
+        py: (n.row ?? g0.row) * TS + TS,
+        goal_idx: 0,
         pause_timer: (g0.pause_ms || 0) / 1000,
         activity: g0.activity || null,
         say_ko: g0.say_ko || null,
@@ -90,12 +158,12 @@ class Sim2D {
     const s = this.state;
     if (!s.session_active || s.transition) return;
     const room = ROOM_MAP_DATA[s.room];
-    if (!room?.npcs) return;
 
     const SPEED  = 45; // px/s walking speed
     const RIDE_S = 6;  // seconds for zipline ride
 
-    for (const n of room.npcs) {
+    const all_npcs = [...(room?.npcs || []), ...(s.extra_npcs || [])];
+    for (const n of all_npcs) {
       if (!n.goals?.length) continue;
       const st = s.npc_states?.[n.npc_id];
       if (!st) continue;
@@ -562,6 +630,7 @@ class Sim2D {
     }
 
     this._check_room_hours();
+    this._check_scheduled_npcs();
     this._notify();
   }
 

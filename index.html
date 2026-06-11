@@ -110,10 +110,12 @@
 <div id="map-panel">
   <div id="map-header">
     <h2 id="map-title">진행 상황</h2>
+    <button id="map-zoom">⤢ zoom</button>
     <button id="map-close">✕ close</button>
   </div>
   <div id="map-inner">
-    <div id="map-content"></div>
+    <div id="map-minimap"></div>
+    <div id="map-list"><div id="map-content"></div></div>
   </div>
 </div>
 <div id="settings-panel">
@@ -146,8 +148,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="vocab-sort-btn">A→Z</button>
-      <button id="vocab-clear-btn" style="display:none">clear all</button>
-      <button id="vocab-close">✕ close</button>
+<button id="vocab-close">✕ close</button>
     </div>
   </div>
   <div id="vocab-search-wrap">
@@ -186,6 +187,7 @@
 <script src="engine/tiles.js"></script>
 <script src="engine/tiles-labeler.js" onerror="void 0"></script>
 <script src="engine/maps.js"></script>
+<script src="content/npc_schedules.js"></script>
 <script src="engine/sim2d.js"></script>
 <script src="engine/render2d.js"></script>
 <script src="engine/input2d.js"></script>

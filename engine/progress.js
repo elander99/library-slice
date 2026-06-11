@@ -48,7 +48,7 @@ const NPC_LINE_PROGRESS = (() => {
 
 const NPC_VOCAB = (() => {
   const KEY = 'library-slice-npc-vocab-v1';
-  const _norm = s => s ? s.split(/\s*[/,]\s*/)[0].trim() : s;
+  const _norm = s => s ? s.split(/\s*[/,]\s*|\s+or\s+/)[0].trim() : s;
   let _entries = [];
   try { _entries = JSON.parse(localStorage.getItem(KEY) || '[]'); } catch {}
   _entries.forEach(e => { if (e.meaning) e.meaning = _norm(e.meaning); });

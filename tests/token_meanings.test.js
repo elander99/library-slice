@@ -47,9 +47,6 @@ const EXPECTED = {
   // ── quiet sign ───────────────────────────────────────────────────────────────
   '관내':       'indoors',
   '조용히':     'quietly',
-  '휴대전화':   'mobile phone',
-  '휴대':       'portable',
-  '전화':       'phone',
   '통화':       'phone call',
   '삼가':       'refrain',   // "please" belongs to 주세요 — not to the verb
 

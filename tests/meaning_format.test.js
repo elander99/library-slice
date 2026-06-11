@@ -7,6 +7,8 @@
 //      A comma is allowed only inside a fixed phrase ending in "?" (e.g. "nice, right?").
 //   3. "-ly" adverbs also accept their base adjective form.
 //      "quietly" → player may type "quiet"; "slowly" → "slow"; etc.
+//   4. " or " between top-level alternatives is treated as a separator.
+//      LLM sometimes returns "catalogue or catalog"; both must be accepted.
 
 const fs   = require('fs');
 const path = require('path');
@@ -18,7 +20,7 @@ function matchesMeaning(playerInput, meaning) {
   const parts = meaning
     .replace(/\(.*?\)/g, '')
     .toLowerCase()
-    .split(/\s*[/,]\s*/)
+    .split(/\s*[/,]\s*|\s+or\s+/)
     .map(p => depolite(norm(p.trim())))
     .filter(Boolean);
   const v    = depolite(norm(playerInput.toLowerCase()));
@@ -56,9 +58,16 @@ function matchesMeaning(playerInput, meaning) {
   // Accept base verb of -ed past participles (depolite already strips "is "):
   //   allowed→allow  prohibited→prohibit  (strip "ed", base ≥ 3)
   //   closed→close  related→relate        (strip "d" when result ends in "e", base ≥ 4)
-  return parts.some(p => {
-    if (p.endsWith('ed')) {
-      const base = p.slice(0, -2);
+  // Also strips trailing " by" (passive marker): "accompanied by" → "accompanied"
+  // -ied stem change (y→i): "accompanied"→"accompany", "applied"→"apply"
+  let result = parts.some(p => {
+    const core = p.endsWith(' by') ? p.slice(0, -3) : p;
+    if (core.endsWith('ied')) {
+      const base = core.slice(0, -3) + 'y';
+      if (base.length >= 3 && (v === base || v_ns === base)) return true;
+    }
+    if (core.endsWith('ed')) {
+      const base = core.slice(0, -2);
       if (base.length >= 3 && (v === base || v_ns === base)) return true;
       // Doubled consonant (permitted→permit): strip the extra consonant too
       if (base.length >= 2 && base[base.length - 1] === base[base.length - 2]) {
@@ -66,12 +75,31 @@ function matchesMeaning(playerInput, meaning) {
         if (base2.length >= 3 && (v === base2 || v_ns === base2)) return true;
       }
     }
-    if (p.endsWith('d')) {
-      const base = p.slice(0, -1);
+    if (core.endsWith('d')) {
+      const base = core.slice(0, -1);
       if (base.endsWith('e') && base.length >= 4 && (v === base || v_ns === base)) return true;
     }
     return false;
   });
+  // Synonym matching for grammar/linguistic terms learners use interchangeably
+  if (!result) {
+    const SYN = {
+      'formal':         ['polite', 'polite ending', 'formal ending', 'honorific'],
+      'polite':         ['formal', 'polite ending', 'formal ending'],
+      'polite ending':  ['formal', 'formal ending'],
+      'formal ending':  ['polite', 'polite ending'],
+      'honorific':      ['formal', 'polite', 'respectful'],
+      'past tense':     ['past'],
+      'past':           ['past tense'],
+      'present tense':  ['present'],
+      'present':        ['present tense'],
+    };
+    const expand = s => SYN[s] || [];
+    result = parts.some(p => expand(v).includes(p) || expand(p).includes(v) ||
+        expand(v).some(sv => sv === p.replace(/\s+/g, '')) ||
+        expand(p).some(sp => sp === v_ns));
+  }
+  return result;
 }
 
 // ── static meaning extraction ────────────────────────────────────────────────
@@ -176,6 +204,24 @@ describe('-ed past-participle base-verb matching', () => {
   test('"go" does NOT match "good"  (not an -ed word)',      () => expect(matchesMeaning('go',   'good')).toBe(false));
 });
 
+// ── -ied verb (y→i stem change) + passive "by" stripping ────────────────────
+// "accompanied by" → strip " by" → "accompanied" → strip "ied" + "y" → "accompany"
+// Also handles plain -ied without "by": applied→apply, carried→carry
+describe('-ied verb (y→i) and passive "by" matching', () => {
+  // 동반: the triggering case
+  test('"accompany" matches "accompanied by"',         () => expect(matchesMeaning('accompany', 'accompanied by')).toBe(true));
+  // Other plain -ied forms
+  test('"apply"     matches "applied"',                () => expect(matchesMeaning('apply',     'applied')).toBe(true));
+  test('"carry"     matches "carried"',                () => expect(matchesMeaning('carry',     'carried')).toBe(true));
+  test('"deny"      matches "denied"',                 () => expect(matchesMeaning('deny',      'denied')).toBe(true));
+  // " by" strips for other -ed forms too (existing rules still apply)
+  test('"require"   matches "required by"',            () => expect(matchesMeaning('require',   'required by')).toBe(true));
+  test('"allow"     matches "allowed by"',             () => expect(matchesMeaning('allow',     'allowed by')).toBe(true));
+  // False-positive guards
+  test('"accompan"  does NOT match "accompanied by"',  () => expect(matchesMeaning('accompan',  'accompanied by')).toBe(false));
+  test('"accompany" does NOT match "accompanied with"',() => expect(matchesMeaning('accompany', 'accompanied with')).toBe(false));
+});
+
 // ── -ment nominalization base-verb matching ──────────────────────────────────
 // Strip "-ment" to accept the base verb: replenishment → replenish, etc.
 describe('-ment nominalization base-verb matching', () => {
@@ -184,6 +230,20 @@ describe('-ment nominalization base-verb matching', () => {
   // False-positive guards — short -ment words must NOT strip
   test('"mo"     does NOT match "moment"',  () => expect(matchesMeaning('mo',  'moment')).toBe(false));
   test('"ce"     does NOT match "cement"',  () => expect(matchesMeaning('ce',  'cement')).toBe(false));
+});
+
+// ── grammar synonym matching ─────────────────────────────────────────────────
+// "formal" and "polite" are interchangeable for Korean 어요/아요 endings.
+describe('grammar synonym matching', () => {
+  test('"formal" matches "polite ending"',  () => expect(matchesMeaning('formal', 'polite ending')).toBe(true));
+  test('"formal" matches "polite"',         () => expect(matchesMeaning('formal', 'polite')).toBe(true));
+  test('"polite" matches "formal ending"',  () => expect(matchesMeaning('polite', 'formal ending')).toBe(true));
+  test('"polite" matches "formal"',         () => expect(matchesMeaning('polite', 'formal')).toBe(true));
+  test('"past"   matches "past tense"',     () => expect(matchesMeaning('past',   'past tense')).toBe(true));
+  test('"past tense" matches "past"',       () => expect(matchesMeaning('past tense', 'past')).toBe(true));
+  // Must not over-match unrelated words
+  test('"formal" does NOT match "informal"', () => expect(matchesMeaning('formal', 'informal')).toBe(false));
+  test('"form"   does NOT match "formal"',   () => expect(matchesMeaning('form',   'formal')).toBe(false));
 });
 
 // ── empty / blank input is always wrong ──────────────────────────────────────
@@ -210,6 +270,28 @@ describe('KO_FALLBACK meaning format', () => {
       .map(m => `${m} → bad alts: [${toVerbAlt(m).join(', ')}]`);
     expect(violations).toEqual([]);
   });
+});
+
+// ── " or " separator matching (Rule 4) ──────────────────────────────────────
+// LLM lookup sometimes returns "X or Y" instead of "X/Y". Both alternatives
+// must be accepted. The matcher now splits on " or " at the top level, matching
+// the behaviour of _first_meaning. This prevents the class of bug where the
+// player looks up 카탈로그, the LLM returns "catalogue or catalog", and typing
+// "catalogue" is wrongly rejected.
+describe('" or " separator matching', () => {
+  // The triggering case
+  test('"catalogue" matches "catalogue or catalog"', () =>
+    expect(matchesMeaning('catalogue', 'catalogue or catalog')).toBe(true));
+  test('"catalog"   matches "catalogue or catalog"', () =>
+    expect(matchesMeaning('catalog',   'catalogue or catalog')).toBe(true));
+  // Works inside a slash-separated list too
+  test('"catalog" matches "directory/catalogue or catalog"', () =>
+    expect(matchesMeaning('catalog', 'directory/catalogue or catalog')).toBe(true));
+  // False-positive guards — "or" within a fixed phrase must NOT split it
+  test('"warm"   does NOT match "warmth or heat"', () =>
+    expect(matchesMeaning('warm',   'warmth or heat')).toBe(false));
+  test('"over"   does NOT match "and over"',       () =>
+    expect(matchesMeaning('over',   'and over')).toBe(false));
 });
 
 // ── no comma-separated alternatives (Rule 2) ─────────────────────────────────
