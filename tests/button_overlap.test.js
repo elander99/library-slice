@@ -5,21 +5,21 @@
 const fs   = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
 
 // Extract the first `bottom: <N>px` value from the primary CSS rule block for a selector.
 // Uses the `s` (dotAll) flag so the block can span multiple lines.
 function getBottomPx(selector) {
   const escaped = selector.replace(/[#.[\]]/g, '\\$&');
   const re = new RegExp(escaped + '\\s*\\{[^}]*?bottom\\s*:\\s*(\\d+)px', 's');
-  const m = html.match(re);
+  const m = css.match(re);
   return m ? parseInt(m[1], 10) : null;
 }
 
 function getHeightPx(selector) {
   const escaped = selector.replace(/[#.[\]]/g, '\\$&');
   const re = new RegExp(escaped + '\\s*\\{[^}]*?height\\s*:\\s*(\\d+)px', 's');
-  const m = html.match(re);
+  const m = css.match(re);
   return m ? parseInt(m[1], 10) : null;
 }
 

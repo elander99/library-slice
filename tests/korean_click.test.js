@@ -9,14 +9,22 @@
 const fs   = require('fs');
 const path = require('path');
 
-const html    = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const input2d = fs.readFileSync(path.join(__dirname, '..', 'engine', 'input2d.js'), 'utf8');
+const dialogueSrc    = fs.readFileSync(path.join(__dirname, '..', 'ui', 'dialogue_panel.js'), 'utf8');
+const speechBubbleSrc = fs.readFileSync(path.join(__dirname, '..', 'ui', 'speech_bubble.js'), 'utf8');
+const input2d        = fs.readFileSync(path.join(__dirname, '..', 'engine', 'input2d.js'), 'utf8');
 
-// Split HTML into named sections so regex patterns stay local.
-// Conversation word rendering lives in DialoguePanel.openConvo (ConvoPanel
-// is a thin wrapper that delegates to DialoguePanel.openConvo).
-const openConvoSrc    = html.slice(html.indexOf('function openConvo'), html.indexOf('function open(npc_id)'));
-const speechBubbleSrc = html.slice(html.indexOf('const SpeechBubble'), html.indexOf('const ConvoPanel'));
+// Extract source of openConvo function from dialogue_panel.js
+const openConvoStart = dialogueSrc.indexOf('function openConvo');
+const openConvoEnd   = (() => {
+  let depth = 0, i = openConvoStart;
+  while (i < dialogueSrc.length) {
+    if (dialogueSrc[i] === '{') depth++;
+    else if (dialogueSrc[i] === '}') { depth--; if (depth === 0) return i + 1; }
+    i++;
+  }
+  return dialogueSrc.length;
+})();
+const openConvoSrc = openConvoStart === -1 ? '' : dialogueSrc.slice(openConvoStart, openConvoEnd);
 
 // ── 1. openConvo word rendering ──────────────────────────────────────────────
 // DialoguePanel.openConvo() renders each Korean turn with individually

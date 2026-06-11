@@ -19,22 +19,23 @@
 const fs   = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const css         = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+const workspaceSrc = fs.readFileSync(path.join(__dirname, '..', 'ui', 'workspace.js'), 'utf8');
 
 function getCSSProp(selector, prop) {
   const esc = selector.replace(/[#.()\[\]:]/g, '\\$&');
   const re  = new RegExp(esc + '\\s*\\{[^}]*?\\b' + prop + '\\s*:\\s*([^;\\n}]+)', 's');
-  const m   = html.match(re);
+  const m   = css.match(re);
   return m ? m[1].trim() : null;
 }
 
 function extractFnBody(header) {
-  const start = html.indexOf(header);
+  const start = workspaceSrc.indexOf(header);
   if (start === -1) return null;
   let depth = 0, i = start, body = '';
-  while (i < html.length) {
-    if (html[i] === '{') depth++;
-    else if (html[i] === '}') { depth--; if (depth === 0) { body = html.slice(start, i + 1); break; } }
+  while (i < workspaceSrc.length) {
+    if (workspaceSrc[i] === '{') depth++;
+    else if (workspaceSrc[i] === '}') { depth--; if (depth === 0) { body = workspaceSrc.slice(start, i + 1); break; } }
     i++;
   }
   return body;

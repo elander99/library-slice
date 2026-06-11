@@ -408,6 +408,7 @@ canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; 
 #ws-dialogue.convo-mode #ws-dlg-copy-all { display:none; }
 .dlg-convo-speaker { font-family:'DM Mono',monospace; font-size:11px; color:#666; letter-spacing:0.04em; margin-bottom:2px; }
 .dlg-convo-en { display:none; }
+.dlg-turn-npc.complete .dlg-convo-en { display:block; }
 .dlg-convo-row { display:flex; gap:8px; align-items:flex-start; }
 .dlg-convo-portrait { image-rendering:pixelated; flex-shrink:0; border-radius:3px; width:32px; height:64px; }
 .dlg-turn-convo-right { display:flex; flex-direction:column; align-items:flex-end; }
