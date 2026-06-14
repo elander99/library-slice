@@ -100,8 +100,7 @@ const LIBRARY_OBJECTS = [
   { id:'outlet',   col:50, row:10 },
 ];
 const LIBRARY_NPCS  = [
-  { npc_id:'librarian', col:35, row:20 },
-  { npc_id:'student_a', col:25, row:17, ambient:true, convo:'library_study_chat',
+  { npc_id:'student_a', col:25, row:17, ambient:true, convo:'library_study_chat', hour_start:9, hour_end:20,
     goals: [
       { col:25, row:16, pause_ms:12000, say_ko:'지금 공부 중이에요.',          say_en:'Studying right now.'              },
       { col:51, row:5,  pause_ms:4000,  say_ko:'책 찾고 있어요.',              say_en:'Looking for a book.'              },
@@ -109,28 +108,13 @@ const LIBRARY_NPCS  = [
       { col:25, row:16, pause_ms:9000,  say_ko:'자리로 돌아가는 중이에요.',     say_en:'Heading back to my seat.'         },
     ],
   },
-  { npc_id:'student_b', col:29, row:17, ambient:true, convo:'library_study_chat',
+  { npc_id:'student_b', col:29, row:17, ambient:true, convo:'library_study_chat', hour_start:9, hour_end:18,
     start_goal: 2,
     goals: [
       { col:29, row:16, pause_ms:14000, say_ko:'리포트 쓰고 있어요.',           say_en:'Writing a report.'                },
       { col:51, row:12, pause_ms:3000,  say_ko:'참고 자료 찾는 중이에요.',      say_en:'Looking for reference materials.' },
       { col:29, row:16, pause_ms:10000, say_ko:'다시 공부해야겠어요.',           say_en:'Time to study again.'             },
       { col:18, row:12, pause_ms:2000,  say_ko:'잠깐 스트레칭하고 있어요.',     say_en:'Taking a little stretch.'         },
-    ],
-  },
-  { npc_id:'visitor_a', col:44, row:11, ambient:true, convo:'library_outlet_chat',
-    goals: [
-      { col:44, row:11, pause_ms:10000, say_ko:'노트북으로 작업하고 있어요.',    say_en:'Working on my laptop.'            },
-      { col:51, row:8,  pause_ms:3000,  say_ko:'책 좀 보고 있어요.',            say_en:'Just browsing the books.'         },
-      { col:44, row:11, pause_ms:8000,  say_ko:'다시 작업하러 가요.',           say_en:'Going back to work.'              },
-    ],
-  },
-  { npc_id:'visitor_b', col:48, row:11, ambient:true, convo:'library_outlet_chat',
-    start_goal: 2,
-    goals: [
-      { col:48, row:11, pause_ms:12000, say_ko:'집중해서 일하는 중이에요.',      say_en:'Working, trying to focus.'        },
-      { col:51, row:20, pause_ms:3000,  say_ko:'아래쪽 책 보고 있어요.',        say_en:'Looking at the lower shelves.'    },
-      { col:48, row:11, pause_ms:7000,  say_ko:'자리로 돌아가요.',              say_en:'Heading back to my seat.'         },
     ],
   },
 ];
@@ -177,7 +161,7 @@ const PLAY_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(55, 20, 57, 22, _T2),
   ]
 );
-const PLAY_NPCS  = [{ npc_id:'play_staff', col:40, row:10 }];
+const PLAY_NPCS  = [];
 const PLAY_SIGNS = [
   { sign_id:'play_shoes',       col:5,  row:1 },
   { sign_id:'play_supervision', col:25, row:1 },
@@ -187,9 +171,13 @@ const PLAY_SIGNS = [
 // ── Street (60×27) ───────────────────────────────────────────────────────────
 // Two-lane road with pavement sidewalks on each side. Floor: F_GRASS (perimeter rows).
 // Sidewalk bands (rows 1-8 and 18-25) overlaid with F_STONE.
+// Road lanes (rows 10-16) explicitly F_ROAD so click-label says "Road" not "Grass".
 const STREET_MAP = make_map(_COLS, _ROWS, _T,
-  [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX }],
+  [{ dir:'left', rows:_EX }, { dir:'right', rows:_EX },
+   { dir:'up', cols:[8, 9] }, { dir:'up', cols:[27, 28] }, { dir:'up', cols:[47, 48] }],
   [
+    // ── Road lanes — asphalt surface ──────────────────────────────────────
+    ...rect(1, 10, 58, 16, 'F_ROAD'),
     // ── Sidewalk bands — concrete pavement over road floor ─────────────────
     ...rect(1,  1, 58,  8, _FS),
     ...rect(1, 18, 58, 25, _FS),
@@ -210,9 +198,31 @@ const STREET_MAP = make_map(_COLS, _ROWS, _T,
     ...rect(41, 18, 57, 25, 'F_LIGHT'),
     // Driveway curb cut at parking lot exit (col 46-51, row 17)
     46, 17, _FS, 47, 17, _FS, 48, 17, _FS, 49, 17, _FS, 50, 17, _FS, 51, 17, _FS,
+    // ── House exteriors — enterable buildings on upper sidewalk ───────────
+    // Each building: left/right walls (rows 1-7), top inner jambs + walkable exit gap
+    // (at the house's exit cols), front jambs + door gap (at row 7), interior floor.
+    // Player walks: sidewalk → door gap (row 7) → interior → exit gap (row 1) → row 0 transition.
+    // House A (exit cols 8-9)
+    ...rect(5, 1, 5, 7, _W),   // left wall
+    ...rect(12, 1, 12, 7, _W), // right wall
+    6, 1, _W,  7, 1, _W,  8, 1, _FT,  9, 1, _FT,  10, 1, _W,  11, 1, _W,
+    6, 7, _W,  7, 7, _W,  8, 7, _W,  9, 7, _W,  10, 7, _W,  11, 7, _W,
+    ...rect(6, 2, 11, 6, _FT),
+    // House B (door cols 27-28)
+    ...rect(24, 1, 24, 7, _W),
+    ...rect(31, 1, 31, 7, _W),
+    25, 1, _W,  26, 1, _W,  27, 1, _FT,  28, 1, _FT,  29, 1, _W,  30, 1, _W,
+    25, 7, _W,  26, 7, _W,  27, 7, _W,  28, 7, _W,  29, 7, _W,  30, 7, _W,
+    ...rect(25, 2, 30, 6, _FT),
+    // House C (door cols 47-48)
+    ...rect(44, 1, 44, 7, _W),
+    ...rect(51, 1, 51, 7, _W),
+    45, 1, _W,  46, 1, _W,  47, 1, _FT,  48, 1, _FT,  49, 1, _W,  50, 1, _W,
+    45, 7, _W,  46, 7, _W,  47, 7, _W,  48, 7, _W,  49, 7, _W,  50, 7, _W,
+    ...rect(45, 2, 50, 6, _FT),
     // ── Benches on the pavement ───────────────────────────────────────────
     15,  5, _B,
-    45,  5, _B,
+    36,  5, _B,  // between house B and house C (col 45 is now inside house C)
     15, 21, _B,
   ]
 );
@@ -224,6 +234,15 @@ const STREET_SIGNS   = [
   { sign_id: 'street_discovery', col: 43, row: 1 },
 ];
 const STREET_OBJECTS = [
+  // House facade sprites — rendered after player (depth-sorted like trees).
+  // col/row = left door-post col and last-sidewalk row; renderer uses (col+1)*TS, (row+1)*TS as anchor.
+  { id:'house_facade', sprite:'house_a', col: 8, row:8 },
+  { id:'house_facade', sprite:'house_b', col:27, row:8 },
+  { id:'house_facade', sprite:'house_a', col:47, row:8 },
+  // Door interactables — press E or click to enter house; tile_rect covers the 2-tile door gap
+  { id:'door', door_to:'house_a', residents:['yuki','haruto','mei','nana'], enter_row:24, col:8,  row:7, tile_rect:[8, 7, 9, 7] },
+  { id:'door', door_to:'house_b', residents:['aiko','riku','sora'],        enter_row:24, col:27, row:7, tile_rect:[27,7,28,7] },
+  { id:'door', door_to:'house_c', residents:['takeshi','kenji','hana'],    enter_row:24, col:47, row:7, tile_rect:[47,7,48,7] },
   // Streetlights on the upper kerb edge, facing the road
   { id:'streetlight', col: 8,  row: 9 },
   { id:'streetlight', col:22,  row: 9 },
@@ -231,7 +250,7 @@ const STREET_OBJECTS = [
   { id:'streetlight', col:53,  row: 9 },
   // Benches on the upper pavement
   { id:'bench', col:15, row: 5 },
-  { id:'bench', col:45, row: 5 },
+  { id:'bench', col:36, row: 5 },
   // Benches on the lower pavement
   { id:'bench', col:15, row:21 },
   { id:'bench', col:45, row:21 },
@@ -255,26 +274,7 @@ const LOBBY_MAP = make_map(_COLS, _ROWS, _W,
     ...rect( 2, 22, 57, 22, _FS),
   ]
 );
-const LOBBY_NPCS    = [
-  { npc_id:'receptionist', col:40, row:10 },
-  { npc_id:'visitor_a', col:8, row:17, ambient:true, convo:'lobby_visitor_chat',
-    goals: [
-      { col:8,  row:17, pause_ms:8000,  say_ko:'로비에서 기다리고 있어요.',       say_en:'Waiting in the lobby.'           },
-      { col:30, row:17, pause_ms:5000,  say_ko:'안내 데스크 쪽으로 가요.',         say_en:'Heading toward the front desk.'  },
-      { col:3,  row:8,  pause_ms:6000,  say_ko:'벤치에서 잠깐 쉬어요.',            say_en:'Taking a quick rest on the bench.' },
-      { col:8,  row:17, pause_ms:4000,  say_ko:'다시 돌아다니고 있어요.',          say_en:'Walking around again.'           },
-    ],
-  },
-  { npc_id:'visitor_b', col:50, row:17, ambient:true, convo:'lobby_visitor_chat',
-    start_goal: 2,
-    goals: [
-      { col:50, row:17, pause_ms:9000,  say_ko:'로비 오른쪽에 있어요.',            say_en:'Over on the right side of the lobby.' },
-      { col:30, row:15, pause_ms:4000,  say_ko:'안내판 보고 있어요.',               say_en:'Looking at the directory board.'      },
-      { col:57, row:8,  pause_ms:7000,  say_ko:'저쪽 벤치에 앉아요.',              say_en:'Sitting on that bench.'               },
-      { col:50, row:17, pause_ms:3000,  say_ko:'다시 돌아가요.',                   say_en:'Heading back.'                        },
-    ],
-  },
-];
+const LOBBY_NPCS    = [];
 const LOBBY_SIGNS   = [
   { sign_id:'lobby_directory', col:5,  row:1 },
   { sign_id:'lobby_reception', col:30, row:1 },
@@ -316,24 +316,7 @@ const SALON_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(42, 17, 48, 19, _C),
   ]
 );
-const SALON_NPCS    = [
-  { npc_id:'salon_staff', col:50, row:20 },
-  { npc_id:'visitor_a', col:34, row:13, ambient:true, prop:'🍱', convo:'salon_food_chat',
-    goals: [
-      { col:34, row:13, pause_ms:10000, say_ko:'점심 먹고 있어요!',             say_en:'Having lunch!'                    },
-      { col:20, row:20, pause_ms:3000,  say_ko:'재료 구경하고 있어요.',          say_en:'Looking at the supplies.'         },
-      { col:34, row:13, pause_ms:8000,  say_ko:'자리로 돌아가요.',              say_en:'Heading back to my seat.'         },
-    ],
-  },
-  { npc_id:'visitor_b', col:44, row:13, ambient:true, prop:'🥤', convo:'salon_food_chat',
-    start_goal: 2,
-    goals: [
-      { col:44, row:13, pause_ms:12000, say_ko:'음료 마시면서 쉬고 있어요.',     say_en:'Relaxing with a drink.'           },
-      { col:10, row:20, pause_ms:4000,  say_ko:'왼쪽 재료 확인하고 있어요.',     say_en:'Checking the supplies over here.' },
-      { col:44, row:13, pause_ms:9000,  say_ko:'다시 돌아가요.',                say_en:'Going back.'                      },
-    ],
-  },
-];
+const SALON_NPCS    = [];
 const SALON_SIGNS   = [
   { sign_id:'salon_share', col:5,  row:1 },
   { sign_id:'salon_food',  col:30, row:1 },
@@ -404,8 +387,7 @@ const OUTDOOR_MAP = make_map(_COLS, _ROWS, _T,
   ]
 );
 const OUTDOOR_NPCS    = [
-  { npc_id:'outdoor_guide', col:30, row:18 },
-  { npc_id:'child_a', col:11, row:8, ambient:true, convo:'outdoor_zipline_chat',
+  { npc_id:'child_a', col:11, row:8, ambient:true, convo:'outdoor_zipline_chat', hour_start:9, hour_end:18,
     goals: [
       { col:10, row:7,  pause_ms:2000,                        say_ko:'짚라인 차례 기다리고 있어요!', say_en:'Waiting for my turn on the zipline!' },
       { col:8,  row:5,  pause_ms:0, activity:'zipline_ride',  say_ko:'으아아— 짚라인 타고 있어요!',  say_en:'Wheee— riding the zipline!'         },
@@ -414,7 +396,7 @@ const OUTDOOR_NPCS    = [
       { col:10, row:7,  pause_ms:1500,                        say_ko:'또 타러 왔어요!',              say_en:'Back to ride again!'                },
     ],
   },
-  { npc_id:'child_b', col:50, row:17, ambient:true, convo:'outdoor_zipline_chat',
+  { npc_id:'child_b', col:50, row:17, ambient:true, convo:'outdoor_zipline_chat', hour_start:9, hour_end:18,
     start_goal: 3,
     goals: [
       { col:10, row:7,  pause_ms:4000,                        say_ko:'순서 기다리는 중이에요.',        say_en:'Waiting my turn.'                   },
@@ -485,31 +467,6 @@ const HOUSE_MAP = make_map(_COLS, _ROWS, _W,
 );
 const HOUSE_NPCS    = [
   { npc_id:'house_resident', col:36, row:20 },
-  { npc_id:'visitor_a', col:14, row:17, ambient:true, convo:'house_welcome_chat',
-    goals: [
-      { col:7,  row:9,  pause_ms:6000,  say_ko:'여기 신발장인가요? 신발 여기 둘게요.', say_en:'Is this the shoe cabinet? I\'ll put my shoes here.' },
-      { col:18, row:9,  pause_ms:4000,  say_ko:'와, 다다미 냄새가 좋아요!',           say_en:'Oh, the smell of tatami is so nice!'               },
-      { col:25, row:12, pause_ms:7000,  say_ko:'코타츠 너무 따뜻해요. 잠깐 앉을게요.', say_en:'The kotatsu is so warm. I\'ll sit for a moment.'     },
-      { col:16, row:6,  pause_ms:5000,  say_ko:'이불이 엄청 푹신해 보여요.',          say_en:'The futon looks really fluffy.'                    },
-      { col:47, row:7,  pause_ms:6000,  say_ko:'카레 냄새가 정말 좋아요! 도와드릴게요.', say_en:'The curry smells amazing! Let me help.'            },
-      { col:47, row:20, pause_ms:5000,  say_ko:'밥상 차리는 것 도와드릴게요.',        say_en:'Let me help set the table.'                        },
-      { col:25, row:14, pause_ms:4000,  say_ko:'잠깐 쉬었다 가요.',                   say_en:'I\'ll rest here a moment.'                         },
-      { col:14, row:17, pause_ms:5000,  say_ko:'슬슬 신발 찾아야겠어요.',             say_en:'I should go find my shoes.'                        },
-    ],
-  },
-  { npc_id:'visitor_b', col:17, row:17, ambient:true, convo:'house_activity_chat',
-    start_goal: 2,
-    goals: [
-      { col:17, row:17, pause_ms:8000,  say_ko:'드디어 도착! 오늘 뭐 먹어요?',        say_en:'Finally here! What are we eating today?'          },
-      { col:7,  row:9,  pause_ms:4000,  say_ko:'신발 어디 둬요? 여기요?',             say_en:'Where do I put my shoes? Here?'                   },
-      { col:30, row:12, pause_ms:10000, say_ko:'코타츠에서 쉬고 있어요. 너무 좋아요.', say_en:'Resting at the kotatsu. This is the best.'         },
-      { col:47, row:13, pause_ms:5000,  say_ko:'뭘 만들고 있어요? 맛있겠다!',          say_en:'What are you making? Smells amazing!'             },
-      { col:47, row:20, pause_ms:7000,  say_ko:'밥 기다리고 있어요. 배고파요!',        say_en:'Waiting for food. I\'m so hungry!'                },
-      { col:45, row:15, pause_ms:5000,  say_ko:'저도 좀 도와드릴까요?',               say_en:'Should I help out a little too?'                   },
-      { col:16, row:6,  pause_ms:4000,  say_ko:'이 이불에서 자면 좋겠다.',            say_en:'I\'d love to sleep in that futon.'                 },
-      { col:30, row:12, pause_ms:8000,  say_ko:'역시 코타츠가 제일 좋아요.',           say_en:'The kotatsu really is the best.'                  },
-    ],
-  },
 ];
 const HOUSE_SIGNS   = [
   { sign_id:'house_entrance',   col:4,  row:1 },
@@ -550,7 +507,6 @@ const GALLERY_MAP = make_map(_COLS, _ROWS, _W,
   ]
 );
 const GALLERY_NPCS = [
-  { npc_id:'gallery_curator', col:30, row:20 },
   { npc_id:'child_a', col:13, row:20, ambient:true, convo:'gallery_explore_chat',
     goals: [
       { col:13, row:20, pause_ms:7000,  say_ko:'입구 근처 전시품 보고 있어요.',   say_en:'Looking at the displays near the entrance.' },
@@ -615,24 +571,7 @@ const COOKING_MAP = make_map(_COLS, _ROWS, _W,
     ...rect(40, 17, 52, 19, _C2),
   ]
 );
-const COOKING_NPCS = [
-  { npc_id:'cook', col:30, row:14 },
-  { npc_id:'visitor_a', col:14, row:22, ambient:true, convo:'cooking_lesson_chat',
-    goals: [
-      { col:14, row:22, pause_ms:9000,  say_ko:'자리에서 요리 구경하고 있어요.',   say_en:'Watching the cooking from my seat.' },
-      { col:20, row:14, pause_ms:4000,  say_ko:'좀 더 가까이서 보고 있어요.',      say_en:'Getting a closer look.'             },
-      { col:14, row:22, pause_ms:6000,  say_ko:'자리로 돌아가요.',                say_en:'Going back to my seat.'             },
-    ],
-  },
-  { npc_id:'visitor_b', col:17, row:22, ambient:true, convo:'cooking_lesson_chat',
-    start_goal: 2,
-    goals: [
-      { col:17, row:22, pause_ms:10000, say_ko:'자리에 앉아서 기다리고 있어요.',   say_en:'Sitting and waiting.'               },
-      { col:25, row:14, pause_ms:5000,  say_ko:'카운터 쪽으로 가고 있어요.',       say_en:'Moving closer to the counter.'      },
-      { col:17, row:22, pause_ms:7000,  say_ko:'다시 앉을게요.',                  say_en:'Going back to sit down.'            },
-    ],
-  },
-];
+const COOKING_NPCS = [];
 const COOKING_SIGNS = [
   { sign_id:'cooking_welcome',  col: 5, row:1 },
   { sign_id:'cooking_safety',   col:20, row:1 },
@@ -645,14 +584,123 @@ const COOKING_OBJECTS = [
   { id:'menu_board',  col:50, row:3  },
 ];
 
+// ── NPC Neighborhood Houses (60×27) ──────────────────────────────────────────
+// Three houses north of the street, accessed via up-exits from the upper sidewalk.
+// All use tatami floor with a genkan at the bottom (entry from street below).
+
+// ── House A — family house (Yuki, Haruto, Mei, Nana) ─────────────────────────
+// Exit down at cols [8,9] → street row 2. Four futons at top-left, kotatsu centre-right.
+const HOUSE_A_MAP = make_map(_COLS, _ROWS, _W,
+  [{ dir:'down', cols:[8, 9] }],
+  [
+    ...rect(2, 1, 58, 1, _S2),           // top shelf
+    ...rect( 3, 2,  6, 5, _BED),         // futon: Yuki
+    ...rect(10, 2, 13, 5, _BED),         // futon: Haruto
+    ...rect(17, 2, 20, 5, _BED),         // futon: Mei
+    ...rect(24, 2, 27, 5, _BED),         // futon: Nana
+    ...rect(1, 2, 1, 18, _S2),           // left wall shelves
+    ...rect(35, 9, 40, 11, _D),          // kotatsu
+    33, 10, _B,  41, 10, _B,
+    ...rect(42, 2, 58, 24, _FW),         // kitchen floor
+    ...rect(44, 4, 57, 7, _R),           // counter
+    ...rect(57, 2, 57, 11, _S2),         // right cabinet (upper)
+    ...rect(57, 15, 57, 24, _S2),        // right cabinet (lower)
+    ...rect(45, 16, 53, 18, _D),         // dining table
+    43, 17, _B,  54, 17, _B,
+    ...rect(2, 20, 14, 25, _FW2),        // genkan (entry)
+    12, 20, _B,                          // shoe bench
+    ...rect(2, 25, 7, 25, _S2),          // bottom shelf flanking exit
+    ...rect(11, 25, 42, 25, _S2),
+  ]
+);
+const HOUSE_A_NPCS    = [];
+const HOUSE_A_SIGNS   = [];
+const HOUSE_A_OBJECTS = [
+  { id:'kotatsu',         col:37, row:10, tile_rect:[33, 9,41,11] },
+  { id:'kitchen_counter', col:49, row: 5, tile_rect:[44, 4,57, 7] },
+  { id:'dining_table',    col:48, row:17, tile_rect:[43,16,54,18] },
+  { id:'genkan',          col: 7, row:22, tile_rect:[ 2,20,14,25] },
+];
+
+// ── House B — student house (Aiko, Riku, Sora) ───────────────────────────────
+// Exit down at cols [27,28] → street row 2. Three futons, study desks, kotatsu.
+const HOUSE_B_MAP = make_map(_COLS, _ROWS, _W,
+  [{ dir:'down', cols:[27, 28] }],
+  [
+    ...rect(2, 1, 58, 1, _S),            // top bookshelf
+    ...rect(1, 2, 1, 18, _S),            // left wall bookshelf
+    ...rect( 3, 2,  6, 5, _BED),         // futon: Aiko
+    ...rect(10, 2, 13, 5, _BED),         // futon: Riku
+    ...rect(17, 2, 20, 5, _BED),         // futon: Sora
+    ...rect(24, 8, 27, 10, _D),          // study desk 1
+    ...rect(31, 8, 34, 10, _D),          // study desk 2
+    ...rect(38, 8, 41, 10, _D),          // study desk 3
+    26, 11, _B,  33, 11, _B,  40, 11, _B, // desk chairs
+    ...rect(2, 14, 2, 20, _S2),          // extra bookshelf
+    ...rect(44, 4, 49, 6, _D),           // kotatsu
+    42, 5, _B,  50, 5, _B,
+    ...rect(44, 14, 58, 24, _FW),        // kitchen floor
+    ...rect(51, 14, 57, 17, _R),         // counter
+    ...rect(57, 14, 57, 24, _S2),        // right cabinet
+    ...rect(45, 20, 51, 22, _D),         // dining table
+    43, 21, _B,  52, 21, _B,
+    ...rect(22, 20, 34, 25, _FW2),       // genkan (entry)
+    25, 19, _B,                          // shoe bench
+    ...rect(2, 25, 24, 25, _S2),         // bottom shelf flanking exit
+    ...rect(31, 25, 44, 25, _S2),
+  ]
+);
+const HOUSE_B_NPCS    = [];
+const HOUSE_B_SIGNS   = [];
+const HOUSE_B_OBJECTS = [
+  { id:'kotatsu',         col:46, row: 5, tile_rect:[42, 4,50, 6] },
+  { id:'kitchen_counter', col:54, row:15, tile_rect:[51,14,57,17] },
+  { id:'dining_table',    col:47, row:21, tile_rect:[43,20,52,22] },
+  { id:'genkan',          col:27, row:22, tile_rect:[22,20,34,25] },
+];
+
+// ── House C — adult house (Takeshi, Kenji, Hana) ─────────────────────────────
+// Exit down at cols [47,48] → street row 2. Three futons, kotatsu, large kitchen.
+const HOUSE_C_MAP = make_map(_COLS, _ROWS, _W,
+  [{ dir:'down', cols:[47, 48] }],
+  [
+    ...rect(2, 1, 58, 1, _S2),           // top shelf
+    ...rect( 3, 2,  6, 5, _BED),         // futon: Takeshi
+    ...rect(10, 2, 13, 5, _BED),         // futon: Kenji
+    ...rect(17, 2, 20, 5, _BED),         // futon: Hana
+    ...rect(1, 2, 1, 18, _S2),           // left wall shelves
+    ...rect(25, 9, 30, 11, _D),          // kotatsu
+    23, 10, _B,  31, 10, _B,
+    ...rect(38, 2, 58, 24, _FW),         // kitchen floor
+    ...rect(40, 2, 55, 5, _R),           // counter along top of kitchen
+    ...rect(57, 2, 57, 11, _S2),         // right cabinet (upper)
+    ...rect(57, 15, 57, 24, _S2),        // right cabinet (lower)
+    ...rect(41, 14, 53, 17, _D),         // dining table
+    39, 15, _B,  54, 15, _B,
+    39, 16, _B,  54, 16, _B,
+    ...rect(42, 20, 54, 25, _FW2),       // genkan (entry)
+    55, 20, _B,                          // shoe bench
+    ...rect(2, 25, 44, 25, _S2),         // bottom shelf flanking exit
+    ...rect(51, 25, 58, 25, _S2),
+  ]
+);
+const HOUSE_C_NPCS    = [];
+const HOUSE_C_SIGNS   = [];
+const HOUSE_C_OBJECTS = [
+  { id:'kotatsu',         col:27, row:10, tile_rect:[23, 9,31,11] },
+  { id:'kitchen_counter', col:47, row: 3, tile_rect:[40, 2,55, 5] },
+  { id:'dining_table',    col:46, row:15, tile_rect:[39,14,54,17] },
+  { id:'genkan',          col:47, row:22, tile_rect:[42,20,54,25] },
+];
+
 // ── Room registry ────────────────────────────────────────────────────────────
 const ROOM_MAP_DATA = {
   street: {
     id: 'street', floor: 'F_GRASS', cols: _COLS, rows: _ROWS,
     tiles: STREET_MAP, npcs: STREET_NPCS, objects: STREET_OBJECTS, signs: STREET_SIGNS,
     exits: [
-      { dir:'left',  room:'house', my_col:0,  my_rows:_EX, enter_col:58 },
-      { dir:'right', room:'lobby', my_col:59, my_rows:_EX, enter_col:1  },
+      { dir:'left',  room:'house',   my_col:0,  my_rows:_EX,    enter_col:58 },
+      { dir:'right', room:'lobby',   my_col:59, my_rows:_EX,    enter_col:1  },
     ],
     name_jp: '通り', name_ko: '거리', name_en: 'Street',
     // no hours — always accessible
@@ -744,5 +792,32 @@ const ROOM_MAP_DATA = {
     ],
     name_jp: '料理室', name_ko: '요리실', name_en: 'Cooking Room',
     opens: 10, closes: 17, kick_to: 'street', host_npc: 'cook',
+  },
+  house_a: {
+    id: 'house_a', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
+    wall_patch: 'stone_border',
+    tiles: HOUSE_A_MAP, npcs: HOUSE_A_NPCS, objects: HOUSE_A_OBJECTS, signs: HOUSE_A_SIGNS,
+    exits: [
+      { dir:'down', room:'street', my_cols:[8, 9], enter_row:8 },
+    ],
+    name_jp: '子供の家', name_ko: '아이들의 집', name_en: 'Family House',
+  },
+  house_b: {
+    id: 'house_b', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
+    wall_patch: 'stone_border',
+    tiles: HOUSE_B_MAP, npcs: HOUSE_B_NPCS, objects: HOUSE_B_OBJECTS, signs: HOUSE_B_SIGNS,
+    exits: [
+      { dir:'down', room:'street', my_cols:[27, 28], enter_row:8 },
+    ],
+    name_jp: '学生の家', name_ko: '학생의 집', name_en: 'Student House',
+  },
+  house_c: {
+    id: 'house_c', floor: 'F_TATAMI', cols: _COLS, rows: _ROWS,
+    wall_patch: 'stone_border',
+    tiles: HOUSE_C_MAP, npcs: HOUSE_C_NPCS, objects: HOUSE_C_OBJECTS, signs: HOUSE_C_SIGNS,
+    exits: [
+      { dir:'down', room:'street', my_cols:[47, 48], enter_row:8 },
+    ],
+    name_jp: '近所の家', name_ko: '이웃집', name_en: "Neighbor's House",
   },
 };

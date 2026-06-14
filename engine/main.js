@@ -9,6 +9,7 @@
     document.getElementById("start-screen").style.display = "none";
     document.getElementById("map-btn").style.display = "block";
     document.getElementById("vocab-btn").style.display = "block";
+    document.getElementById("journal-btn").style.display = "block";
     document.getElementById("settings-btn").style.display = "block";
     sim.start();
   });

@@ -11,6 +11,9 @@ function matchesMeaning(meaningStr, input) {
   const parts = meaningStr.replace(/\(.*?\)/g, "").toLowerCase().split("/").map(p => norm(p.trim())).filter(Boolean);
   const v = norm(val), v_ns = norm(val_ns);
   if (parts.some(p => v === p || v_ns === p.replace(/\s+/g, ""))) return true;
+  // Accept content inside parentheses: "name (subject)" → also accept "subject"
+  {const pp=[...meaningStr.matchAll(/\(([^)]+)\)/g)].map(m=>norm(m[1].trim().toLowerCase())).filter(Boolean);
+  if (pp.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return true;}
   // Accept head noun of "X particle" / "X marker": "topic particle" → "topic"
   if (parts.some(p => {
     const m = p.match(/^(.+)\s+(particle|marker)$/);
@@ -19,10 +22,22 @@ function matchesMeaning(meaningStr, input) {
   // Accept singular↔plural
   if (parts.some(p => depl(v) === depl(p) || depl(v_ns) === depl(p.replace(/\s+/g, "")))) return true;
   // Accept base form of -es verb conjugations: does→do, goes→go, watches→watch
-  return parts.some(p => {
+  if (parts.some(p => {
     if (!p.endsWith('es') || p.length <= 3) return false;
     const base = p.slice(0, -2);
     return base.length >= 2 && (v === base || v_ns === base);
+  })) return true;
+  // Accept -ate verb of -ation/-ations nominalizations: celebration→celebrate
+  return parts.some(p => {
+    if (p.endsWith('ations') && p.length >= 9) {
+      const base = p.slice(0, -6) + 'ate';
+      return base.length >= 4 && (v === base || v_ns === base);
+    }
+    if (p.endsWith('ation') && p.length >= 8) {
+      const base = p.slice(0, -5) + 'ate';
+      return base.length >= 4 && (v === base || v_ns === base);
+    }
+    return false;
   });
 }
 
@@ -51,8 +66,12 @@ const cases = [
   // ── Questions ─────────────────────────────────────────────────────────────
   ['무엇을',    'what (object)',            'what',          true],
   ['무엇이',    'what (subject)',           'what',          true],
-  ['도와드릴까요','shall I help you?',      'shall I help you', true],
-  ['도와드릴까요','shall I help you?',      'help',          false, 'debatable — too short?'],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'shall I help you', true],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'can I help you',   true],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'can I help',       true],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'may I help you',   false, 'not in data'],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'help you',         false, 'incomplete — no subject'],
+  ['도와드릴까요','shall I help you? / can I help you? / can I help?', 'help',             false, 'too short'],
   ['어떻게',    'how',                      'how',           true],
   ['왜',        'why',                      'why',           true],
   ['언제',      'when',                     'when',          true],
@@ -131,6 +150,13 @@ const cases = [
   ['에서', 'at / in / from (place marker)', 'in',   true],
   ['에서', 'at / in / from (place marker)', 'come', false, 'location particle must not match verb'],
 
+  // ── Parenthetical role tag: player may type the tag alone ───────────────
+  // 이름이 = name + subject particle 이; typing "subject" should be accepted.
+  ['이름이',    'name (subject)',          'subject',       true,  'parenthetical role → accepted'],
+  ['이름이',    'name (subject)',          'name',          true,  'base meaning still accepted'],
+  ['이름을',    'name (object)',           'object',        true,  'parenthetical role → accepted'],
+  ['이름은',    'name (topic)',            'topic',         true,  'parenthetical role → accepted'],
+
   // ── Particles: short form (head noun) must be accepted ───────────────────
   ['은',        'topic particle',          'topic',         true],
   ['는',        'topic particle',          'topic',         true],
@@ -143,6 +169,8 @@ const cases = [
   ['을',        'object marker',           'marker',        false, 'bare "marker" too vague'],
 
   // ── Honorific/grammar words ───────────────────────────────────────────────
+  ['에릭님',    'Erik (honorific)',        'Erik',          true],
+  ['에릭님',    'Erik (honorific)',        'erik',          true, 'case-insensitive'],
   ['오신',      '(who) came (honorific)',  'came',          true],
   ['것을',      'thing (object)',          'thing',         true],
   ['환영해요',  'welcome',                 'welcome',       true],
@@ -173,7 +201,9 @@ const cases = [
   ['어린이',    'child / children',      'children',      true],
   ['살롱에',    'at the salon',          'at the salon',  true],
   ['오셨어요',  'did you come?',         'did you come?', true],
-  ['도와줄까요','shall I help you?',     'shall I help you', true],
+  ['도와줄까요','shall I help you? / can I help you? / can I help?', 'shall I help you', true],
+  ['도와줄까요','shall I help you? / can I help you? / can I help?', 'can I help you',   true],
+  ['도와줄까요','shall I help you? / can I help you? / can I help?', 'can I help',       true],
 
   // ── 가시고 (to be visible / to appear) ───────────────────────────────────
   ['가시고', 'to be visible / to appear / visible / appear', 'appear',        true],
@@ -356,6 +386,12 @@ const cases = [
   // Data must use lean "gallery"; verbose form must NOT secretly match.
   ['갤러리', 'gallery', 'gallery',                        true],
   ['갤러리', 'Art gallery or exhibition space', 'gallery', false, 'verbose Llama output — keep data lean'],
+
+  // ── -ation/-ations → -ate verb (celebration→celebrate, etc.) ─────────────
+  ['축하', 'celebration / congratulations', 'celebrate',    true,  '-ation→verb: strip ation, add ate'],
+  ['축하', 'celebration / congratulations', 'congratulate', true,  '-ations→verb: plural form stripped'],
+  ['축하', 'celebration / congratulations', 'celebratory',  false, 'adjectival form — not the verb'],
+  ['섭취', 'consumption',                   'consume',      false, '-ption ending: not covered by -ation rule'],
 
   // ── outdoor tokens (world_signs_ko.js: outdoor_zipline / outdoor_yield) ──
   ['짚라인',     'zipline',          'zipline',        true],

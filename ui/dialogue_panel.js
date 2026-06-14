@@ -5,7 +5,28 @@
     const inp=document.getElementById("ws-dlg-input"), send_btn=document.getElementById("ws-dlg-send");
     const close_btn=document.getElementById("ws-dlg-close");
     const copy_all_btn=document.getElementById("ws-dlg-copy-all");
+    const tail_el=document.getElementById("ws-dlg-tail");
     const _lookup_cache = {};
+
+    function _position_bubble(ax, ay) {
+      const w = dlg_el.offsetWidth || 320, h = dlg_el.offsetHeight || 120;
+      const margin = 10, HUD_H = 64, WS_H = 200, tail_h = 10;
+      if (ax == null) {
+        dlg_el.style.left = Math.round((window.innerWidth - w) / 2) + 'px';
+        dlg_el.style.top = '64px';
+        tail_el.style.display = 'none';
+        return;
+      }
+      let x = ax - w / 2;
+      let y = ay - h - tail_h;
+      x = Math.min(Math.max(x, margin), window.innerWidth  - w - margin);
+      y = Math.min(Math.max(y, HUD_H),  window.innerHeight - h - WS_H);
+      dlg_el.style.left = x + 'px'; dlg_el.style.top = y + 'px';
+      const tx = Math.min(Math.max(ax, x + 14), x + w - 14);
+      tail_el.style.display = 'block';
+      tail_el.style.left = (tx - 10) + 'px';
+      tail_el.style.top  = (y + h) + 'px';
+    }
 
     let _copy_all_flash = null;
     copy_all_btn.addEventListener('click', () => {
@@ -90,17 +111,18 @@
     function _refresh_dlg_word_colors() {
       const inConvo = dlg_el.classList.contains('convo-mode');
       const known = inConvo ? null : _build_known_words();
-      body_el.querySelectorAll('.dlg-word').forEach(span => {
+      body_el.querySelectorAll('.dlg-word, .dlg-player-word').forEach(span => {
         const turn = span.closest('[data-line-id]');
         if (!turn) return;
         const saved = NPC_LINE_PROGRESS.get(turn.dataset.lineId);
         const i = +span.dataset.wordIdx;
+        if (isNaN(i)) return;
         const partCount = +span.dataset.partCount || 0;
         const done = partCount
           ? Array.from({length: partCount}, (_,pi) => saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
           : !!(saved[i]?.romaji && saved[i]?.meaning);
         const clean = span.textContent.replace(/[.!?,;:…]+$/, '');
-        span.classList.toggle('done', done || (!inConvo && known.has(clean)));
+        span.classList.toggle('done', done || (!inConvo && known && known.has(clean)));
       });
     }
 
@@ -121,7 +143,8 @@
       }
       if (!tokens) WorkspacePanel.prefetch(all_words);
       const line_saved = NPC_LINE_PROGRESS.get(jp);
-      const _known_npc = _build_known_words();
+      const inConvo = dlg_el.classList.contains('convo-mode');
+      const _known_npc = inConvo ? null : _build_known_words();
       all_words.forEach((word, i) => {
         const span = document.createElement('span');
         span.className = 'dlg-word'; span.textContent = word; span.draggable = true;
@@ -132,7 +155,7 @@
           ? Array.from({length: partCount}, (_,pi) => line_saved[`${i}p${pi}`]||{}).every(r=>r.romaji&&r.meaning)
           : !!(line_saved[i]?.romaji && line_saved[i]?.meaning);
         const _clean = word.replace(/[.!?,;:…]+$/, '');
-        if (isDone || _known_npc.has(_clean)) span.classList.add('done');
+        if (isDone || (_known_npc && _known_npc.has(_clean))) span.classList.add('done');
         span.addEventListener('dragstart', ev => {
           span.classList.add('drag-src');
           ev.dataTransfer.setData('dlg-word', word);
@@ -150,11 +173,11 @@
 
       const copy_btn = document.createElement('button');
       copy_btn.className = 'dlg-copy-btn';
-      copy_btn.textContent = 'copy';
+      copy_btn.textContent = '⎘';
       copy_btn.addEventListener('click', () => {
         navigator.clipboard.writeText(jp).then(() => {
           copy_btn.textContent = '✓';
-          setTimeout(() => { copy_btn.textContent = 'copy'; }, 1200);
+          setTimeout(() => { copy_btn.textContent = '⎘'; }, 1200);
         });
       });
       turn.appendChild(copy_btn);
@@ -181,6 +204,7 @@
     function _append_player_turn(text) {
       const turn = document.createElement('div');
       turn.className = 'dlg-turn dlg-turn-player';
+      turn.dataset.lineId = text;
       const bubble = document.createElement('span');
       bubble.className = 'dlg-turn-player-text';
       let all_words = _tokenize(text);
@@ -190,10 +214,14 @@
         all_words = split.words; _pdefs = split.defs;
       }
       const label = LANG.current === 'ko' ? '나' : '私';
+      const _player_known = _build_known_words();
       all_words.forEach((word, i) => {
         if (i > 0) bubble.appendChild(document.createTextNode(' '));
         const span = document.createElement('span');
         span.className = 'dlg-player-word'; span.textContent = word;
+        span.dataset.wordIdx = i;
+        const _clean = word.replace(/[.!?,;:…]+$/, '');
+        if (_player_known && _player_known.has(_clean)) span.classList.add('done');
         span.addEventListener('click', () => {
           bubble.querySelectorAll('.dlg-player-word.active').forEach(c => c.classList.remove('active'));
           span.classList.add('active');
@@ -243,7 +271,7 @@
       const script_rule = ko ? '\n- Write the Korean response entirely in Hangul — do not use any Latin/English characters in the Korean field' : '';
       const act = _npc_current_activity(npc_id);
       const act_line = act ? `\n- Right now you are: ${act.en}` : '';
-      return `You are ${npc_name} (${npc.name_en}). A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}${act_line}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: ${format}${token_instruction}${script_rule}\n- CRITICAL: never invent or confirm the existence of specific books, items, rooms, services, or locations that are not explicitly listed in "What you know" above — say you don't know instead\n- If asked about something not covered above, say politely that you don't know or cannot confirm\n- Do not include any text outside the JSON`;
+      return `You are the ${npc_name} (${npc.name_en}) at this facility. A visitor is speaking to you in ${lang}.\n\nWhat you know:\n${facts}${act_line}\n\nInstructions:\n- Stay in character as a polite ${lang} staff member using ${style}\n- Keep your response to 1–2 sentences maximum\n- Reply ONLY with valid JSON: ${format}${token_instruction}${script_rule}\n- CRITICAL: never invent or confirm the existence of specific books, items, rooms, services, or locations that are not explicitly listed in "What you know" above — say you don't know instead\n- If asked about something not covered above, say politely that you don't know or cannot confirm\n- Do not volunteer your personal name — only say it if the player directly asks what your name is\n- Do not include any text outside the JSON`;
     }
 
     const _hk = (npc_id) => `${npc_id}_${LANG.current}`;
@@ -272,14 +300,20 @@
         console.error('[NPC] failed — error:', err?.message, '| type:', err?.name, '| npc:', npc_id, '| url:', OLLAMA_URL);
         const intent_id=npc_fallback_classify(npc_id,text);
         const intent=NPC_DEFS[npc_id]?.intents[intent_id];
-        if (intent) return {jp:(LANG.current==='ko'&&intent.ko?intent.ko:intent.jp),en:intent.en,tokens:null};
-        if (LANG.current==='ko') return {jp:'죄송해요, 잘 이해하지 못했어요. 다시 한번 말씀해 주시겠어요?', en:"Sorry, I didn't quite understand. Could you say that again?", tokens:null};
+        const _save_fallback=(jp,en)=>{
+          const fallback_raw=JSON.stringify({jp,en});
+          _histories[_hk(npc_id)]=[...history,{role:"user",content:text},{role:"assistant",content:fallback_raw}];
+          _save_dlg(npc_id);
+        };
+        if (intent) { const jp=(LANG.current==='ko'&&intent.ko?intent.ko:intent.jp),en=intent.en; _save_fallback(jp,en); return {jp,en,tokens:null}; }
+        if (LANG.current==='ko') { const jp='죄송해요, 잘 이해하지 못했어요. 다시 한번 말씀해 주시겠어요?',en="Sorry, I didn't quite understand. Could you say that again?"; _save_fallback(jp,en); return {jp,en,tokens:null}; }
         return null;
       }
     }
 
     async function _send() {
       if (!cur_npc_id) return;
+      if (typeof NPC_DEFS === 'undefined' || !NPC_DEFS[cur_npc_id]) return;
       const text=inp.value.trim(); if (!text) return;
       inp.value=""; inp.disabled=true; send_btn.disabled=true;
       _append_player_turn(text);
@@ -310,21 +344,23 @@
       send_btn.disabled=false; inp.disabled=false; inp.focus();
     }
 
-    async function openConvo(convo_id) {
+    async function openConvo(convo_id, ax, ay) {
       const convo = (typeof CONVERSATIONS !== 'undefined') && CONVERSATIONS[convo_id];
       if (!convo) return;
+      ENCOUNTER_PROGRESS.mark_convo(convo_id);
       const play_id = ++_convo_play_id;
       if (window.speechSynthesis) speechSynthesis.cancel();
       cur_npc_id = convo_id;
       const ko = LANG.current === 'ko';
       document.getElementById("ws-panel").classList.remove("open");
-      dlg_el.style.transform=''; dlg_el.style.left=''; dlg_el.style.top='';
       dlg_el.classList.add("open", "convo-mode");
       avatar.style.background='';
       name_el.textContent = ko ? convo.title_ko : convo.title_en;
       body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
       thinking.classList.remove("visible");
       inp.disabled = true;
+      // Defer positioning until after first content render so height is accurate
+      requestAnimationFrame(() => _position_bubble(ax, ay));
 
       const first_npc = convo.turns[0]?.npc_id;
 
@@ -340,7 +376,8 @@
         if (_convo_play_id !== play_id) { skip_btn.remove(); return; }
 
         const is_right = turn.npc_id !== first_npc;
-        const speaker_name = ko ? turn.name_ko : turn.name_en;
+        const _speaker_known = !turn.npc_id || (typeof JOURNAL_PROGRESS !== 'undefined' && JOURNAL_PROGRESS.get(turn.npc_id).met);
+        const speaker_name = _speaker_known ? (ko ? turn.name_ko : turn.name_en) : '？？？';
         const text = turn.ko;
         const raw_words = text.split(/\s+/);
         const _split = WorkspacePanel.split_ko_words(raw_words, null);
@@ -420,23 +457,22 @@
       skip_btn.remove();
     }
 
-    function open(npc_id) {
+    function open(npc_id, ax, ay) {
       const npc=NPC_DEFS[npc_id]; if (!npc) return;
       cur_npc_id=npc_id;
+      if (typeof JOURNAL_PROGRESS !== 'undefined') JOURNAL_PROGRESS.mark_seen(npc_id, NPC_DEFS[npc_id]?.room);
       const _gt = sim.state.game_time;
       const _isBirthday = npc.birthday && _gt && npc.birthday.month === _gt.month && npc.birthday.day === _gt.day;
       const greeting = _isBirthday && npc.greeting_birthday
         ? (LANG.current==='ko' && npc.greeting_birthday_ko ? npc.greeting_birthday_ko : npc.greeting_birthday)
         : (LANG.current==='ko' && npc.greeting_ko ? npc.greeting_ko : npc.greeting);
       document.getElementById("ws-panel").classList.remove("open");
-      // Reset to default centered position
-      dlg_el.style.transform=''; dlg_el.style.left=''; dlg_el.style.top='';
       dlg_el.classList.remove("convo-mode");
       dlg_el.classList.add("open");
       inp.disabled = false;
       avatar.style.background=npc.color; name_el.textContent='';
       body_el.querySelectorAll('.dlg-turn').forEach(el => el.remove());
-      if (greeting.follow_up) _pending[npc_id]={intent_id:greeting.follow_up};
+      if (greeting?.follow_up) _pending[npc_id]={intent_id:greeting.follow_up};
       const saved=_dlg_store[_hk(npc_id)];
       // "established" = player has formally opened this dialogue before (greeting was sent)
       const established=saved?.some(m=>m.greeting||m.role==='user');
@@ -458,19 +494,25 @@
           let p=null; try{p=JSON.parse(msg.content);}catch{}
           if (p?.jp) _append_npc_turn(p.jp, p.en, null, false);
         }
-        const greeting_msg={role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en}),greeting:true};
-        _histories[_hk(npc_id)]=[...ambient,greeting_msg];
-        _append_npc_turn(greeting.jp, greeting.en, null);
-        _save_dlg(npc_id);
+        if (greeting) {
+          const greeting_msg={role:"assistant",content:JSON.stringify({jp:greeting.jp,en:greeting.en}),greeting:true};
+          _histories[_hk(npc_id)]=[...ambient,greeting_msg];
+          _append_npc_turn(greeting.jp, greeting.en, null);
+          _save_dlg(npc_id);
+        } else {
+          _histories[_hk(npc_id)]=ambient;
+        }
       }
       inp.placeholder = '';
       thinking.classList.remove("visible"); inp.value=""; inp.disabled=false; send_btn.disabled=false; inp.focus();
       _koKbdShow();
+      _position_bubble(ax, ay); // call after content so offsetHeight is accurate
     }
 
     function close() {
       if (cur_npc_id) delete _pending[cur_npc_id];
       cur_npc_id=null; dlg_el.classList.remove("open", "convo-mode");
+      tail_el.style.display = 'none';
       inp.disabled = false;
       ++_convo_play_id; // cancel any in-progress line-by-line playback
       if (window.speechSynthesis) speechSynthesis.cancel();
@@ -553,6 +595,31 @@
     inp.addEventListener('focus', _koKbdShow);
     inp.addEventListener('input', ()=>{ if (!inp.value) _ims=null; });
 
+    // ── Speech recognition ────────────────────────────────────────────────────
+    const mic_btn = document.getElementById('ws-dlg-mic');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      mic_btn.style.display = 'none';
+    } else {
+      let _sr = null;
+      let _listening = false;
+      mic_btn.addEventListener('click', () => {
+        if (_listening) { _sr?.stop(); return; }
+        _sr = new SR();
+        _sr.lang = LANG.current === 'ko' ? 'ko-KR' : 'ja-JP';
+        _sr.interimResults = false;
+        _sr.maxAlternatives = 1;
+        _sr.onstart  = () => { _listening = true;  mic_btn.classList.add('listening'); };
+        _sr.onend    = () => { _listening = false; mic_btn.classList.remove('listening'); };
+        _sr.onerror  = () => { _listening = false; mic_btn.classList.remove('listening'); };
+        _sr.onresult = e => {
+          const transcript = e.results[0][0].transcript.trim();
+          if (transcript) { inp.value = transcript; _send(); }
+        };
+        _sr.start();
+      });
+    }
+
     function _reveal_translation(jp_text) {
       body_el.querySelectorAll('.dlg-turn-npc').forEach(turn => {
         if (turn.dataset.jp === jp_text) turn.classList.add('complete');
@@ -567,9 +634,9 @@
       if (e.target.closest('button')) return;
       e.preventDefault();
       const rect = dlg_el.getBoundingClientRect();
-      dlg_el.style.transform = 'none';
       dlg_el.style.top  = rect.top  + 'px';
       dlg_el.style.left = rect.left + 'px';
+      tail_el.style.display = 'none';
       _dlg_drag = { ox: e.clientX - rect.left, oy: e.clientY - rect.top };
       dlg_header.setPointerCapture(e.pointerId);
       dlg_header.classList.add('dragging');

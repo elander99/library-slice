@@ -65,6 +65,64 @@ const NPC_VOCAB = (() => {
       if (key === 'meaning' && e.meaning) e.meaning_unlocked = true;
       _flush();
       if (isNew) SoundFX.vocab();
+      if (key === 'meaning' && e.meaning && typeof VocabPanel !== 'undefined') VocabPanel.refresh(e.text);
     }
+  };
+})();
+
+const JOURNAL_PROGRESS = (() => {
+  const KEY = 'library-slice-journal-v1';
+  let _data = {};
+  try { _data = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
+  function _flush() { try { localStorage.setItem(KEY, JSON.stringify(_data)); } catch {} }
+
+  function _get(npc_id) {
+    if (!_data[npc_id]) _data[npc_id] = {};
+    return _data[npc_id];
+  }
+
+  return {
+    mark_seen(npc_id, room_id) {
+      const e = _get(npc_id);
+      e.seen = true;
+      if (room_id) { e.rooms = e.rooms || []; if (!e.rooms.includes(room_id)) e.rooms.push(room_id); }
+      _flush();
+      if (typeof JournalPanel !== 'undefined') JournalPanel.refresh();
+    },
+    mark_met(npc_id) {
+      const e = _get(npc_id);
+      e.seen = true; e.met = true;
+      if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_id]?.room) {
+        e.rooms = e.rooms || [];
+        if (!e.rooms.includes(NPC_DEFS[npc_id].room)) e.rooms.push(NPC_DEFS[npc_id].room);
+      }
+      _flush();
+      if (typeof JournalPanel !== 'undefined') JournalPanel.refresh();
+    },
+    confirm_jp(npc_id) {
+      _get(npc_id).jp_confirmed = true; _flush();
+      if (typeof JournalPanel !== 'undefined') JournalPanel.refresh();
+    },
+    confirm_birthday(npc_id) {
+      _get(npc_id).birthday_confirmed = true; _flush();
+      if (typeof JournalPanel !== 'undefined') JournalPanel.refresh();
+    },
+    set_notes(npc_id, text) { _get(npc_id).notes = text; _flush(); },
+    get(npc_id) { return _data[npc_id] || {}; },
+  };
+})();
+
+const ENCOUNTER_PROGRESS = (() => {
+  const KEY = 'library-slice-encounters-v1';
+  let _data = { signs: [], convos: [] };
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d) _data = d; } catch {}
+  if (!Array.isArray(_data.signs))  _data.signs  = [];
+  if (!Array.isArray(_data.convos)) _data.convos = [];
+  function _flush() { try { localStorage.setItem(KEY, JSON.stringify(_data)); } catch {} }
+  return {
+    mark_sign(sign_id)   { if (!_data.signs.includes(sign_id))   { _data.signs.push(sign_id);   _flush(); } },
+    mark_convo(convo_id) { if (!_data.convos.includes(convo_id)) { _data.convos.push(convo_id); _flush(); } },
+    get_signs()  { return _data.signs.slice(); },
+    get_convos() { return _data.convos.slice(); },
   };
 })();

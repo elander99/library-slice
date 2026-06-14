@@ -1,14 +1,19 @@
   const VocabPanel = (() => {
     const STORE_KEY = 'vocab-list-v1';
-    const panel    = document.getElementById("vocab-panel");
-    const content  = document.getElementById("vocab-content");
-    const btn      = document.getElementById("vocab-btn");
-    const closeBtn = document.getElementById("vocab-close");
-const sortBtn  = document.getElementById("vocab-sort-btn");
+    const panel      = document.getElementById("vocab-panel");
+    const content    = document.getElementById("vocab-content");
+    const logContent = document.getElementById("vocab-log-content");
+    const btn        = document.getElementById("vocab-btn");
+    const closeBtn   = document.getElementById("vocab-close");
+    const sortBtn    = document.getElementById("vocab-sort-btn");
     const searchInput = document.getElementById("vocab-search");
-    const titleEl  = document.getElementById("vocab-title");
+    const titleEl    = document.getElementById("vocab-title");
+    const tabWords   = document.getElementById("vocab-tab-words");
+    const tabLog     = document.getElementById("vocab-tab-log");
     const dlg_inp  = document.getElementById("ws-dlg-input");
     const dlg_open = () => document.getElementById("ws-dialogue").classList.contains("open");
+
+    let _cur_tab = 'words';
 
     let _words = []; // [{ text, reading, meaning }]
 
@@ -67,6 +72,16 @@ const sortBtn  = document.getElementById("vocab-sort-btn");
     function _remove(text) {
       _words = _words.filter(w => w.text !== text);
       _save(); _render();
+    }
+    function _refresh(text) {
+      _load();
+      const entry = _words.find(w => w.text === text);
+      if (!entry || (entry.reading && entry.meaning)) return;
+      const fresh = _lookup(text);
+      let changed = false;
+      if (!entry.reading && fresh.reading) { entry.reading = fresh.reading; changed = true; }
+      if (!entry.meaning && fresh.meaning) { entry.meaning = fresh.meaning; changed = true; }
+      if (changed) { _save(); _render(); }
     }
 
     function _render() {
@@ -218,6 +233,114 @@ sortBtn.style.display  = _words.length ? '' : 'none';
       }
     }
 
+    function _render_log() {
+      logContent.innerHTML = '';
+      const q = searchInput.value.trim().toLowerCase();
+      const sign_ids  = ENCOUNTER_PROGRESS.get_signs();
+      const convo_ids = ENCOUNTER_PROGRESS.get_convos();
+
+      if (!sign_ids.length && !convo_ids.length) {
+        const empty = document.createElement('div');
+        empty.className = 'vocab-log-empty';
+        empty.textContent = 'Interact with signs and witness\nconversations to build your log.';
+        logContent.appendChild(empty);
+        return;
+      }
+
+      function _sign_text(s) {
+        return [(s.label_en || s.label || ''), (s.japanese || '').replace(/\n/g, ' '), (s.translation || '')].join(' ').toLowerCase();
+      }
+      function _convo_text(c) {
+        return [(c.title_en || ''), (c.title_ko || '')].join(' ').toLowerCase();
+      }
+
+      const vis_signs  = q ? sign_ids.filter(id  => { const s = SIGN_BY_ID[id];  return s && _sign_text(s).includes(q);  }) : sign_ids;
+      const vis_convos = q ? convo_ids.filter(id => { const c = (typeof CONVERSATIONS !== 'undefined') && CONVERSATIONS[id]; return c && _convo_text(c).includes(q); }) : convo_ids;
+
+      if (vis_signs.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'vocab-log-section-header';
+        hdr.textContent = `Signs (${vis_signs.length})`;
+        logContent.appendChild(hdr);
+
+        vis_signs.forEach(id => {
+          const s = SIGN_BY_ID[id]; if (!s) return;
+          const label = s.label_en || s.label || id;
+          const jp    = (s.japanese || '').split('\n')[0];
+
+          const row = document.createElement('div');
+          row.className = 'vocab-log-entry';
+          const labelEl = document.createElement('span');
+          labelEl.className = 'vocab-log-label';
+          labelEl.textContent = label;
+          const jpEl = document.createElement('span');
+          jpEl.className = 'vocab-log-jp';
+          jpEl.textContent = jp;
+          row.append(labelEl, jpEl);
+          row.addEventListener('click', () => {
+            close_panel();
+            if (typeof WorkspacePanel !== 'undefined') WorkspacePanel.open(id);
+          });
+          logContent.appendChild(row);
+        });
+      }
+
+      if (vis_convos.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'vocab-log-section-header';
+        hdr.textContent = `Conversations (${vis_convos.length})`;
+        logContent.appendChild(hdr);
+
+        vis_convos.forEach(id => {
+          const c = (typeof CONVERSATIONS !== 'undefined') && CONVERSATIONS[id]; if (!c) return;
+          const ko    = typeof LANG !== 'undefined' && LANG.current === 'ko';
+          const title = ko ? (c.title_ko || c.title_en || id) : (c.title_en || c.title_ko || id);
+
+          const row = document.createElement('div');
+          row.className = 'vocab-log-entry';
+          const labelEl = document.createElement('span');
+          labelEl.className = 'vocab-log-label';
+          labelEl.textContent = title;
+          const countEl = document.createElement('span');
+          countEl.className = 'vocab-log-jp';
+          countEl.textContent = `${c.turns.length} lines`;
+          row.append(labelEl, countEl);
+          row.addEventListener('click', () => {
+            close_panel();
+            if (typeof DialoguePanel !== 'undefined') DialoguePanel.openConvo(id);
+          });
+          logContent.appendChild(row);
+        });
+      }
+
+      if (q && !vis_signs.length && !vis_convos.length) {
+        const nm = document.createElement('p');
+        nm.style.cssText = 'font-size:12px;color:#444;text-align:center;margin-top:40px;';
+        nm.textContent = 'No matches.';
+        logContent.appendChild(nm);
+      }
+    }
+
+    function _switch_tab(tab) {
+      _cur_tab = tab;
+      tabWords.classList.toggle('vocab-tab-active', tab === 'words');
+      tabLog.classList.toggle('vocab-tab-active', tab === 'log');
+      content.style.display    = tab === 'words' ? '' : 'none';
+      logContent.style.display = tab === 'log'   ? '' : 'none';
+      if (tab === 'words') {
+        searchInput.placeholder = 'filter or type Korean + Enter to add…';
+        sortBtn.style.display = _words.length ? '' : 'none';
+        _render();
+      } else {
+        searchInput.placeholder = 'filter signs and conversations…';
+        sortBtn.style.display = 'none';
+        _render_log();
+      }
+    }
+
+    tabWords.addEventListener('click', () => _switch_tab('words'));
+    tabLog.addEventListener('click',   () => _switch_tab('log'));
+
     // Drop words onto the panel
     panel.addEventListener('dragover', e => {
       if (e.dataTransfer.types.includes('dlg-word')) { e.preventDefault(); panel.classList.add('drop-active'); }
@@ -267,6 +390,7 @@ sortBtn.style.display  = _words.length ? '' : 'none';
 
     searchInput.addEventListener('keydown', async e => {
       if (e.key !== 'Enter') return;
+      if (_cur_tab !== 'words') return;
       const text = searchInput.value.trim();
       if (!text || !_isKorean(text)) return;
       e.preventDefault();
@@ -289,13 +413,32 @@ sortBtn.style.display  = _words.length ? '' : 'none';
       } catch { _set_status('not found', '#c0392b'); }
     });
 
-    searchInput.addEventListener('input', _render);
+    searchInput.addEventListener('dragover', e => {
+      if (e.dataTransfer.types.includes('dlg-word')) { e.preventDefault(); searchInput.classList.add('drag-over'); }
+    });
+    searchInput.addEventListener('dragleave', () => searchInput.classList.remove('drag-over'));
+    searchInput.addEventListener('drop', e => {
+      const word = e.dataTransfer.getData('dlg-word');
+      if (!word) return;
+      e.preventDefault(); e.stopPropagation();
+      searchInput.classList.remove('drag-over');
+      searchInput.value = word;
+      searchInput.dispatchEvent(new Event('input'));
+      searchInput.focus();
+    });
+    searchInput.addEventListener('input', () => { if (_cur_tab === 'words') _render(); else _render_log(); });
     sortBtn.addEventListener('click', () => { _sort(); _save(); _render(); });
-btn.addEventListener('click', open);
+    btn.addEventListener('click', open);
     closeBtn.addEventListener('click', close_panel);
     panel.addEventListener('click', e => { if (e.target === panel) close_panel(); });
 
-    function open() { _load(); searchInput.value = ''; _render(); panel.classList.add('open'); }
+    function open() {
+      _load();
+      searchInput.value = '';
+      if (_cur_tab === 'words') { sortBtn.style.display = _words.length ? '' : 'none'; _render(); }
+      else _render_log();
+      panel.classList.add('open');
+    }
     function close_panel() { panel.classList.remove('open'); }
-    return { open, close: close_panel, add: _add };
+    return { open, close: close_panel, add: _add, refresh: _refresh };
   })();

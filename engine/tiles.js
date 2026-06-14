@@ -49,10 +49,12 @@ const TILES = {
   F_TAN_C:   T('interior', 2, 6, false, '#8E7850'),  // tan floor variant C
   // Library wood-plank floor — interior (4,3) alternating dark/light hardwood planks
   F_LIB:     T('interior', 4, 3, false, '#8B4A20'),
-  // Grass floor — 8 variants confirmed by pixel analysis (cols 2-4, rows 0-2 of terrain.png)
-  F_GRASS:   T('terrain',  2, 0, false, '#536C2A'),
-  F_STONE:   T('terrain',  3, 3, false, '#737373'),  // gray stone/concrete
-  F_LIGHT:   T('terrain',  6, 1, false, '#EEEEEE'),  // near-white paved
+  // Grass floor — 8 variants set by tiles-labeler.js (T16 terrain cols 4-5, rows 0-3)
+  F_GRASS:   T16('terrain', 4, 0, false, '#536C2A'),
+  // Road surface — same green tile used as road in street scene (labeled correctly here)
+  F_ROAD:    T16('terrain', 4, 0, false, '#536C2A'),
+  F_STONE:   T('terrain',  3, 3, false, '#737373'),  // gray stone/concrete sidewalk
+  F_LIGHT:   T16('terrain', 14, 2, false, '#EEEEEE'), // near-white paved (flat rgb 238, parking lot)
   F_SAND:    T16('terrain', 8, 8, false, '#CEC284'),  // sandy path — 16px native art
   // Road kerb edges — white strip faces the sidewalk, gray faces the road
   // infra3 col 0, row 2: 2px white top strip then flat gray asphalt (verified by pixel analysis)
@@ -129,6 +131,14 @@ const TREE_SPRITES = {
   leafy_xl: { img:'trees', sx:123, sy:0, sw:25, sh:88, dw:25*_TS, dh:88*_TS, ay:84*_TS },
   pine:     { img:'trees', sx:160, sy:2, sw:48, sh:88, dw:48*_TS, dh:88*_TS, ay:83*_TS },
   shrub:    { img:'trees', sx:216, sy:1, sw:31, sh:88, dw:31*_TS, dh:88*_TS },
+};
+
+// ── House facade sprites (tileset_houses.png, bottom section rows 90-251) ────
+// Two perspective-drawn house facades; displayed at 2× scale (212×324px).
+// Anchor: bottom-center of sprite aligns with the ground tile at the door.
+const HOUSE_SPRITES = {
+  house_a: { img:'houses', sx:11,  sy:90, sw:106, sh:162, dw:212, dh:324, ay:324 },
+  house_b: { img:'houses', sx:146, sy:90, sw:106, sh:162, dw:212, dh:324, ay:324 },
 };
 
 // ── Library bookshelf strip (measured: y=127-175, full 256px wide) ───────────

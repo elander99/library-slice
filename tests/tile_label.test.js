@@ -13,20 +13,20 @@
 
 const { tile_label_for, TILE_DEFS } = require('../content/entities.js');
 
-// ── Street room (floor = F_STONE) ────────────────────────────────────────────
+// ── Street room (floor = F_GRASS, road lanes = F_ROAD, sidewalk = F_STONE) ──────
 
 describe('tile_label_for: street room tiles', () => {
-  test('road surface (empty tile in F_STONE room) returns Street label', () => {
-    const def = tile_label_for('', 'F_STONE');
+  test('F_ROAD tile returns Road label', () => {
+    const def = tile_label_for('F_ROAD', 'F_GRASS');
     expect(def).not.toBeNull();
-    expect(def.label_en.toLowerCase()).toContain('street');
+    expect(def.label_en.toLowerCase()).toContain('road');
     expect(def.label_ko).toBeTruthy();
   });
 
-  test('F_STONE tile directly returns Street label regardless of room_floor', () => {
+  test('F_STONE tile returns Sidewalk label', () => {
     const def = tile_label_for('F_STONE', 'F_GRASS');
     expect(def).not.toBeNull();
-    expect(def.label_en.toLowerCase()).toContain('street');
+    expect(def.label_en.toLowerCase()).toContain('sidewalk');
   });
 
   test('road curb top has a label', () => {

@@ -207,8 +207,14 @@ class Sim {
       s.juujitsukan = Math.max(0, s.juujitsukan - 0.5);
     }
 
-    // Phone lookup cooldown
-    if (s.phone.lookup_cooldown > 0) s.phone.lookup_cooldown--;
+    // Phone battery recharge: +1 charge every 90 ticks, max 5
+    if (s.phone.charges < 5) {
+      s.phone.recharge_timer++;
+      if (s.phone.recharge_timer >= 90) {
+        s.phone.charges++;
+        s.phone.recharge_timer = 0;
+      }
+    }
 
     // Game clock: 1 real second = 1 game minute
     this._advance_game_time();
@@ -321,7 +327,7 @@ class Sim {
         break;
 
       case "use_phone_lookup":
-        if (s.phone.lookup_cooldown <= 0) s.phone.lookup_cooldown = 60;
+        if (s.phone.charges > 0) s.phone.charges--;
         break;
 
       case "set_player_target":

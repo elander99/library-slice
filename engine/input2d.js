@@ -66,6 +66,15 @@ class Input2D {
     };
   }
 
+  // Convert canvas-space coords to CSS client coords for HTML overlay positioning.
+  _c2s(cx, cy) {
+    const rect = this.canvas.getBoundingClientRect();
+    return {
+      x: cx * (rect.width  / this.renderer.W) + rect.left,
+      y: cy * (rect.height / this.renderer.H) + rect.top,
+    };
+  }
+
   _input_focused() {
     const t = document.activeElement;
     return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
@@ -222,7 +231,10 @@ class Input2D {
       for (const [npc_id, btn] of Object.entries(R._npc_chat_btns)) {
         if (R._pt_in(btn, x, y)) {
           if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_id, sx, sy);
-          DialoguePanel.open(npc_id);
+          const a = this._c2s(btn.x + btn.w / 2, btn.y);
+          const npc_def = [...(room.npcs || []), ...(S.state.extra_npcs || [])].find(n => n.npc_id === npc_id);
+          if (npc_def?.convo) DialoguePanel.openConvo(npc_def.convo, a.x, a.y);
+          else DialoguePanel.open(npc_id, a.x, a.y);
           return;
         }
       }
@@ -243,14 +255,27 @@ class Input2D {
     for (const [npc_id, rect] of Object.entries(ambient_rects)) {
       const nx = rect.col*TS, ny = (rect.row-1)*TS;
       if (wx >= nx && wx <= nx+TS && wy >= ny && wy <= ny+TS*2) {
+        const extra_block = (S.state.extra_npcs || []).find(n => n.npc_id === npc_id);
+        if (sx != null && typeof ObjectDescPopup !== 'undefined') {
+          if (extra_block && !extra_block.convo)
+            ObjectDescPopup.show('사람', 'person', sx, sy, 'Resting.');
+          else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_id])
+            ObjectDescPopup.show_for(npc_id, sx, sy);
+        }
         const player_near = Math.abs(S.state.px - rect.wx) < TS*2.5 &&
                             Math.abs(S.state.py - rect.wy) < TS*2.5;
         if (player_near) {
+          if (extra_block && !extra_block.convo) {
+            return;
+          }
+          if (typeof JOURNAL_PROGRESS !== 'undefined') JOURNAL_PROGRESS.mark_seen(npc_id, S.state.room);
           _advance_convo(S, room, npc_id);
           const npc_def = (room.npcs || []).find(n => n.npc_id === npc_id);
           if (typeof DialoguePanel !== 'undefined') {
-            if (npc_def?.convo) DialoguePanel.openConvo(npc_def.convo);
-            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_id]) DialoguePanel.open(npc_id);
+            const a = this._c2s(rect.sx + rect.sw / 2, rect.sy);
+            const open_convo = npc_def?.convo || extra_block?.convo;
+            if (open_convo) DialoguePanel.openConvo(open_convo, a.x, a.y);
+            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_id]) DialoguePanel.open(npc_id, a.x, a.y);
           }
         } else {
           S.set_walk_target(rect.wx, rect.wy);
@@ -259,8 +284,30 @@ class Input2D {
       }
     }
 
-    // Check object clicks — hit area is obj.tile_rect if declared, else single anchor tile
+    // Check door clicks — walk to door or enter if already adjacent
     const clicked_tc = Math.floor(wx / TS), clicked_tr = Math.floor(wy / TS);
+    for (const obj of (room.objects||[])) {
+      if (!obj.door_to) continue;
+      if (obj_tile_hit(obj, clicked_tc, clicked_tr)) {
+        const ox = obj.col*TS + TS/2, oy = obj.row*TS + TS;
+        const player_near = Math.abs(S.state.px - ox) < TS*2.5 && Math.abs(S.state.py - oy) < TS*2.5;
+        if (player_near) {
+          if (obj.residents && typeof JOURNAL_PROGRESS !== 'undefined' &&
+              !obj.residents.some(id => JOURNAL_PROGRESS.get(id).seen)) {
+            const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
+            const msg = ko ? '아직 이 집 주민을 모르세요.' : "You don't know anyone who lives here yet.";
+            this.renderer.notifications.push({ text: msg, type: 'violation', ttl: 180 });
+            return;
+          }
+          S._begin_transition({ room: obj.door_to, dir: 'up', enter_row: obj.enter_row ?? 24 });
+        } else {
+          S.set_walk_target(ox, oy);
+        }
+        return;
+      }
+    }
+
+    // Check object clicks — hit area is obj.tile_rect if declared, else single anchor tile
     let best_obj = null, best_dist = Infinity;
     for (const obj of (room.objects||[])) {
       if (obj_tile_hit(obj, clicked_tc, clicked_tr)) {
@@ -271,10 +318,10 @@ class Input2D {
     if (best_obj) {
       const obj = best_obj;
       const ox = obj.col*TS, oy = obj.row*TS;
+      if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, sx, sy);
       const player_near = Math.abs(S.state.px - (ox+TS/2)) < TS*2.5 &&
                           Math.abs(S.state.py - (oy+TS)) < TS*2.5;
       if (player_near) {
-        if (sx != null && typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(obj.id, sx, sy);
         this._open_obj_menu(obj.id, x, y);
       } else {
         S.set_walk_target(ox+TS/2, oy+TS);
@@ -299,25 +346,48 @@ class Input2D {
 
   _try_interact() {
     const S = this.sim;
+    const R = this.renderer;
     const s = S.state;
     const room = ROOM_MAP_DATA[s.room];
     if (!room) return;
 
     const _popup_cx = this.renderer.W / 2, _popup_cy = this.renderer.VP_Y + 80;
 
+    // Door interaction
+    for (const obj of (room.objects||[])) {
+      if (!obj.door_to) continue;
+      const ox = obj.col*TS + TS/2, oy = obj.row*TS + TS;
+      if (Math.abs(s.px-ox) < TS*2 && Math.abs(s.py-oy) < TS*2) {
+        if (obj.residents && typeof JOURNAL_PROGRESS !== 'undefined' &&
+            !obj.residents.some(id => JOURNAL_PROGRESS.get(id).seen)) {
+          const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
+          const msg = ko ? '아직 이 집 주민을 모르세요.' : "You don't know anyone who lives here yet.";
+          this.renderer.notifications.push({ text: msg, type: 'violation', ttl: 180 });
+          return;
+        }
+        S._begin_transition({ room: obj.door_to, dir: 'up', enter_row: obj.enter_row ?? 24 });
+        return;
+      }
+    }
+
     // NPC interaction
     for (const npc_def of (room.npcs||[])) {
       const nx=npc_def.col*TS+TS/2, ny=npc_def.row*TS+TS;
       if (Math.abs(s.px-nx)<TS*1.5 && Math.abs(s.py-ny)<TS*2) {
         if (npc_def.ambient) {
+          if (typeof JOURNAL_PROGRESS !== 'undefined') JOURNAL_PROGRESS.mark_seen(npc_def.npc_id, s.room);
           _advance_convo(S, room, npc_def.npc_id);
           if (typeof DialoguePanel !== 'undefined') {
-            if (npc_def.convo) DialoguePanel.openConvo(npc_def.convo);
-            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_def.npc_id]) DialoguePanel.open(npc_def.npc_id);
+            const arect = R._ambient_npc_rects?.[npc_def.npc_id];
+            const a = arect ? this._c2s(arect.sx + arect.sw / 2, arect.sy) : { x: null, y: null };
+            if (npc_def.convo) DialoguePanel.openConvo(npc_def.convo, a.x, a.y);
+            else if (typeof NPC_DEFS !== 'undefined' && NPC_DEFS[npc_def.npc_id]) DialoguePanel.open(npc_def.npc_id, a.x, a.y);
           }
         } else {
           if (typeof ObjectDescPopup !== 'undefined') ObjectDescPopup.show_for(npc_def.npc_id, _popup_cx, _popup_cy);
-          DialoguePanel.open(npc_def.npc_id);
+          const btn = R._npc_chat_btns?.[npc_def.npc_id];
+          const a = btn ? this._c2s(btn.x + btn.w / 2, btn.y) : { x: null, y: null };
+          DialoguePanel.open(npc_def.npc_id, a.x, a.y);
         }
         return;
       }

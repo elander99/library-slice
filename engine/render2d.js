@@ -59,6 +59,7 @@ class Renderer2D {
       infra3:    'art/tileset_infrastructure_3.png',
       toys:      'art/tileset_toys.png',
       buildings: 'art/tileset_buildings.png',
+      houses:    'art/tileset_houses.png',
       signs:     'art/tileset_signs.png',
       signs2:    'art/tileset_signs_2.png',
       signs3:    'art/tileset_signs_3.png',
@@ -350,9 +351,10 @@ class Renderer2D {
     // Sort by wy so southerly trees draw on top
     this._tree_draws.sort((a, b) => a.wy - b.wy);
 
-    // Tree sprites (shadows are baked into the sprite art)
-    for (const { spr, wx, wy } of this._tree_draws) {
-      this._draw_tree(spr, wx, wy, cam);
+    // Tree sprites and deferred objects (streetlights, etc.)
+    for (const item of this._tree_draws) {
+      if (item.draw_fn) item.draw_fn();
+      else this._draw_tree(item.spr, item.wx, item.wy, cam);
     }
     this._tree_draws = [];
   }
@@ -371,7 +373,22 @@ class Renderer2D {
         continue;
       }
       if (obj.id === 'streetlight') {
-        this._draw_streetlight(obj, cx, cy, ctx, s.game_time);
+        // Defer alongside houses so depth-sorting places lamp in front of house facades.
+        const _obj = obj, _cx = cx, _cy = cy, _gt = s.game_time;
+        this._tree_draws.push({
+          wy: (obj.row + 1) * TS,
+          wx: obj.col * TS + TS / 2,
+          draw_fn: () => this._draw_streetlight(_obj, _cx, _cy, ctx, _gt),
+        });
+        continue;
+      }
+      if (obj.id === 'house_facade') {
+        const spr = HOUSE_SPRITES[obj.sprite];
+        if (spr) {
+          const wx = (obj.col + 1) * TS;
+          const wy = (obj.row + 1) * TS;
+          this._tree_draws.push({ spr, wx, wy });
+        }
         continue;
       }
       const dx = obj.col*TS - cx, dy = obj.row*TS - cy;
@@ -583,6 +600,7 @@ class Renderer2D {
     for (const npc_def of all_npcs) {
       const npc_st = s.npc_states?.[npc_def.npc_id];
       if (npc_st?.activity === 'zipline_ride') continue; // drawn on the cable
+      if (s.absent_room_npcs?.has(npc_def.npc_id)) continue;
       const wx = npc_st ? npc_st.px : (npc_def.col*TS + TS/2);
       const wy = npc_st ? npc_st.py : (npc_def.row*TS + TS);
       const dx = wx - cx, dy = wy - cy;

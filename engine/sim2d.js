@@ -16,8 +16,9 @@ class Sim2D {
     const px_ok = saved.px > 0 && saved.px < room_def.cols * TS;
     const py_ok = saved.py > 0 && saved.py < room_def.rows * TS;
     this.state = {
-      npc_states: {},  // keyed by npc_id — dynamic position/goal state for roaming NPCs
-      extra_npcs: [],  // scheduled NPC instance objects active in the current room
+      npc_states: {},        // keyed by npc_id — dynamic position/goal state for roaming NPCs
+      extra_npcs: [],        // scheduled NPC instance objects active in the current room
+      absent_room_npcs: new Set(), // room.npcs entries hidden due to hour_start/hour_end
       room:        room_id,
       px:          (px_ok && py_ok) ? saved.px : 10 * TS,
       py:          (px_ok && py_ok) ? saved.py : 7  * TS,
@@ -33,7 +34,7 @@ class Sim2D {
       laptop:   { on:false, battery:80, plugged_in:false, task:null },
       outlet:   { in_use:false },
       textbook: { in_hand:false, progress:0 },
-      phone:    { on_call:false, lookup_cooldown:0 },
+      phone:    { on_call:false, charges:5, recharge_timer:0 },
       snack:    { eaten:false },
       bed:      { sleeping:false },
       librarian:{ mood:'neutral', alert:null },
@@ -59,6 +60,7 @@ class Sim2D {
     if (!this.can_move_to(this.state.px, this.state.py)) {
       this.state.px = 10 * TS;
       this.state.py = 7  * TS;
+      this._nudge_out_of_solid(); // handles rooms where the default spawn is also blocked
     }
     this._init_npc_states(room_id);
   }
@@ -67,10 +69,15 @@ class Sim2D {
     const s = this.state;
     s.npc_states = {};
     s.extra_npcs = [];
+    s.absent_room_npcs = new Set();
     const room = ROOM_MAP_DATA[room_id];
     if (room?.npcs) {
       for (const n of room.npcs) {
         if (!n.goals?.length) continue;
+        if (n.hour_start !== undefined) {
+          const t = s.game_time.hour + s.game_time.minute / 60;
+          if (t < n.hour_start || t >= n.hour_end) { s.absent_room_npcs.add(n.npc_id); continue; }
+        }
         const gi = n.start_goal || 0;
         const g0 = n.goals[gi];
         s.npc_states[n.npc_id] = {
@@ -111,12 +118,13 @@ class Sim2D {
     const t = gt.hour + gt.minute / 60;
     const result = [];
     for (const [npc_id, blocks] of Object.entries(NPC_SCHEDULES)) {
-      const block = blocks.find(b =>
-        b.room === room_id &&
-        b.days.includes(dow) &&
-        t >= b.hour_start &&
-        t < b.hour_end
-      );
+      const block = blocks.find(b => {
+        if (b.room !== room_id || !b.days.includes(dow)) return false;
+        // Overnight block (e.g. hour_start:21, hour_end:9) wraps through midnight
+        return b.hour_start > b.hour_end
+          ? (t >= b.hour_start || t < b.hour_end)
+          : (t >= b.hour_start && t < b.hour_end);
+      });
       if (block) result.push({ ...block, npc_id });
     }
     return result;
@@ -136,12 +144,13 @@ class Sim2D {
 
     // Add NPCs whose schedule block just started
     for (const n of current) {
-      if (extra_ids.has(n.npc_id) || s.npc_states[n.npc_id]) continue;
+      if (extra_ids.has(n.npc_id)) continue;
+      const existing = s.npc_states[n.npc_id];
       s.extra_npcs.push(n);
       const g0 = n.goals[0];
       s.npc_states[n.npc_id] = {
-        px: (n.col ?? g0.col) * TS + TS / 2,
-        py: (n.row ?? g0.row) * TS + TS,
+        px: existing?.px ?? (n.col ?? g0.col) * TS + TS / 2,
+        py: existing?.py ?? (n.row ?? g0.row) * TS + TS,
         goal_idx: 0,
         pause_timer: (g0.pause_ms || 0) / 1000,
         activity: g0.activity || null,
@@ -150,6 +159,36 @@ class Sim2D {
         zipline_t: 0,
         facing_left: false,
       };
+    }
+
+    // Show/hide time-gated room.npcs entries
+    const room = ROOM_MAP_DATA[s.room];
+    if (room?.npcs) {
+      const t = s.game_time.hour + s.game_time.minute / 60;
+      for (const n of room.npcs) {
+        if (n.hour_start === undefined || !n.goals?.length) continue;
+        const active = t >= n.hour_start && t < n.hour_end;
+        if (active && s.absent_room_npcs.has(n.npc_id)) {
+          s.absent_room_npcs.delete(n.npc_id);
+          const g0 = n.goals[0];
+          s.npc_states[n.npc_id] = {
+            px: g0.col * TS + TS / 2,
+            py: g0.row * TS + TS,
+            goal_idx: 0,
+            pause_timer: (g0.pause_ms || 0) / 1000,
+            activity: g0.activity || null,
+            say_ko: g0.say_ko || null,
+            say_en: g0.say_en || null,
+            zipline_t: 0,
+            facing_left: false,
+          };
+        } else if (!active && !s.absent_room_npcs.has(n.npc_id)) {
+          s.absent_room_npcs.add(n.npc_id);
+          if (!s.extra_npcs.some(e => e.npc_id === n.npc_id)) {
+            delete s.npc_states[n.npc_id];
+          }
+        }
+      }
     }
   }
 
@@ -240,9 +279,30 @@ class Sim2D {
   reset_position() {
     this.state.px = 10 * TS;
     this.state.py = 7  * TS;
+    this._nudge_out_of_solid();
     this._walk_target = null;
     this._save();
     this._notify();
+  }
+
+  _nudge_out_of_solid() {
+    const s = this.state;
+    if (this.can_move_to(s.px, s.py)) return;
+    const room = ROOM_MAP_DATA[s.room];
+    const mid_x = room ? room.cols * TS / 2 : 30 * TS;
+    const mid_y = room ? room.rows * TS / 2 : 13 * TS;
+    const dir_x = s.px < mid_x ? 1 : -1;
+    const dir_y = s.py < mid_y ? 1 : -1;
+    let found = false;
+    for (let d = TS / 4; d <= 10 * TS && !found; d += TS / 4) {
+      if (this.can_move_to(s.px + d * dir_x, s.py)) { s.px += d * dir_x; found = true; }
+      else if (this.can_move_to(s.px - d * dir_x, s.py)) { s.px -= d * dir_x; found = true; }
+    }
+    if (!found) {
+      for (let d = TS / 4; d <= 10 * TS; d += TS / 4) {
+        if (this.can_move_to(s.px, s.py + d * dir_y)) { s.py += d * dir_y; break; }
+      }
+    }
   }
 
   _load_save() {
@@ -528,17 +588,20 @@ class Sim2D {
         if(!s.snack.eaten){s.snack.eaten=true; s.juujitsukan=Math.max(0,s.juujitsukan-10); s.librarian.mood='annoyed'; s.librarian.alert={key:'food_notice',timer:8}; this._push_reaction('violation','no_food_drink');}
         break;
       case 'talk_to_librarian': if(!s.librarian.alert) s.librarian.alert={key:'librarian_greeting',timer:5}; break;
-      case 'use_phone_lookup':  if(s.phone.lookup_cooldown<=0) s.phone.lookup_cooldown=60; break;
+      case 'use_phone_lookup':  if(s.phone.charges>0) s.phone.charges--; break;
       case 'go_to_sleep':
-        if(!s.bed.sleeping){ s.bed.sleeping=true; s.current_activity='sleeping'; this._push_reaction('info','go_to_sleep'); }
+        if(!s.bed.sleeping){
+          s.bed.sleeping=true; s.current_activity='sleeping';
+          // Advance time to the next 7:00 AM immediately
+          const gt=s.game_time;
+          if(gt.hour>=7){ gt.day++; const dim=new Date(gt.year,gt.month,0).getDate(); if(gt.day>dim){gt.day=1;gt.month++;} if(gt.month>12){gt.month=1;gt.year++;} }
+          gt.hour=7; gt.minute=0;
+          this._push_reaction('info','go_to_sleep');
+        }
         break;
       case 'wake_up':
         if(s.bed.sleeping){
           s.bed.sleeping=false; s.current_activity=null; s.juujitsukan=Math.min(100,s.juujitsukan+25);
-          // Advance to next 7:00 AM
-          const gt=s.game_time;
-          if(gt.hour>=7){ gt.day++; const dim=new Date(gt.year,gt.month,0).getDate(); if(gt.day>dim){gt.day=1;gt.month++;} if(gt.month>12){gt.month=1;gt.year++;} }
-          gt.hour=7; gt.minute=0;
           this._push_reaction('info','wake_up');
         }
         break;
@@ -615,7 +678,7 @@ class Sim2D {
       if (!s.violation_flags.outlet) { s.violation_flags.outlet=true; s.librarian.mood='annoyed'; s.librarian.alert={key:'outlet_notice',timer:7}; this._push_reaction('violation','outlet_requires_library_task'); }
     } else if (s.violation_flags.outlet) { s.violation_flags.outlet=false; if(!s.phone.on_call) s.librarian.mood='neutral'; }
     if (s.phone.on_call) s.juujitsukan=Math.max(0,s.juujitsukan-0.5);
-    if (s.phone.lookup_cooldown>0) s.phone.lookup_cooldown--;
+    if (s.phone.charges<5) { s.phone.recharge_timer++; if(s.phone.recharge_timer>=90){s.phone.charges++;s.phone.recharge_timer=0;} }
     if (s.librarian.alert) { s.librarian.alert.timer--; if(s.librarian.alert.timer<=0) s.librarian.alert=null; }
     if (s.room_alert)      { s.room_alert.timer--;      if(s.room_alert.timer<=0)      s.room_alert=null; }
 

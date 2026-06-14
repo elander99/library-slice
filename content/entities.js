@@ -33,7 +33,7 @@ const ENTITY_DEFS = {
     label_en: "Phone",
     icon: "📱",
     desc_en: "Your mobile phone. Making a phone call indoors is not allowed — refrain from calling.",
-    initial: { on_call: false, lookup_cooldown: 0 }
+    initial: { on_call: false, charges: 5, recharge_timer: 0 }
   },
   snack: {
     label: "お菓子",
@@ -305,7 +305,8 @@ const TILE_DEFS = {
   WALL:      { label:'壁',      label_ko:'벽',     label_en:'Wall',        desc_en:'A wall.' },
   WALL2:     { label:'壁',      label_ko:'벽',     label_en:'Wall',        desc_en:'A wall.' },
   // ── Street / road ─────────────────────────────────────────────────────────
-  F_STONE:       { label:'道',    label_ko:'거리',   label_en:'Street',      desc_en:'The street. Sidewalks and road surface.' },
+  F_ROAD:        { label:'道路',  label_ko:'도로',   label_en:'Road',        desc_en:'The road surface.' },
+  F_STONE:       { label:'歩道',  label_ko:'인도',   label_en:'Sidewalk',    desc_en:'The sidewalk.' },
   F_ROAD_CURB_T: { label:'縁石',  label_ko:'연석',   label_en:'Curb',        desc_en:'The road curb — the boundary between sidewalk and road.' },
   F_ROAD_CURB_B: { label:'縁石',  label_ko:'연석',   label_en:'Curb',        desc_en:'The road curb — the boundary between sidewalk and road.' },
   F_LIGHT:       { label:'駐車場',label_ko:'주차장', label_en:'Parking Lot', desc_en:'A paved parking area.' },

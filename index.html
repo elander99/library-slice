@@ -6,7 +6,7 @@
   <title>Library Slice — Japanese Sim</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=DM+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Space+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,6 +32,7 @@
   </div>
   <div id="ws-dlg-input-row">
     <input id="ws-dlg-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="">
+    <button id="ws-dlg-mic" title="Speak">🎤</button>
     <button id="ws-dlg-send">→</button>
   </div>
   <div id="ko-kbd">
@@ -74,6 +75,7 @@
     </div>
   </div>
 </div>
+<div id="ws-dlg-tail"></div>
 <div id="speech-bubble">
   <button id="speech-bubble-close">×</button>
   <div id="speech-bubble-text"></div>
@@ -88,7 +90,7 @@
   <div id="ws-panel">
     <div id="ws-chips-row">
       <button id="ws-speak-all" style="display:none">🔊</button>
-      <span id="ws-sign-label"></span>
+      <div id="ws-chips-inner"><span id="ws-sign-label"></span></div>
       <button id="ws-copy-sentence">⎘</button>
     </div>
     <div id="ws-translation"></div>
@@ -105,7 +107,20 @@
 </div>
 <button id="map-btn">🗺 map</button>
 <button id="vocab-btn">📓 vocab</button>
+<button id="journal-btn">📋 기록</button>
 <button id="settings-btn">⚙ settings</button>
+
+<div id="journal-panel">
+  <div id="journal-header">
+    <div id="journal-title-block">
+      <span id="journal-title">주민 기록</span>
+      <span id="journal-subtitle">Resident Record</span>
+    </div>
+    <span id="journal-progress-indicator"></span>
+    <button id="journal-close">✕ close</button>
+  </div>
+  <div id="journal-content"></div>
+</div>
 
 <div id="map-panel">
   <div id="map-header">
@@ -144,12 +159,16 @@
   <div id="vocab-header">
     <div style="display:flex;flex-direction:column;gap:2px">
       <h2 id="vocab-title">単語帳 — Word List</h2>
-      <span id="vocab-counter" style="display:none;font-size:0.72em;color:#888;font-family:'DM Mono',monospace;letter-spacing:0.03em"></span>
+      <span id="vocab-counter" style="display:none;font-size:12px;color:#888;font-family:'DM Mono',monospace;letter-spacing:0.03em"></span>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <button id="vocab-sort-btn">A→Z</button>
 <button id="vocab-close">✕ close</button>
     </div>
+  </div>
+  <div id="vocab-tabs">
+    <button id="vocab-tab-words" class="vocab-tab vocab-tab-active">Words</button>
+    <button id="vocab-tab-log" class="vocab-tab">Log</button>
   </div>
   <div id="vocab-search-wrap">
     <input id="vocab-search" type="text" placeholder="filter or type Korean + Enter to add…" autocomplete="off" spellcheck="false">
@@ -157,6 +176,7 @@
   </div>
   <div id="vocab-inner">
     <div id="vocab-content"></div>
+    <div id="vocab-log-content" style="display:none"></div>
   </div>
 </div>
 
@@ -202,6 +222,7 @@
 <script src="ui/convo_panel.js"></script>
 <script src="ui/map_panel.js"></script>
 <script src="ui/settings_panel.js"></script>
+<script src="ui/journal_panel.js"></script>
 <script src="ui/dialogue_panel.js"></script>
 
 <script src="engine/main.js"></script>

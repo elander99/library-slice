@@ -35,11 +35,29 @@ Object.assign(CHARS, {
 // days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
 // col/row: NPC spawn position for this block.
 // Goals use the same format as maps.js NPC goals arrays.
+//
+// House assignments (sleeping):
+//   house_a (Family House):  Yuki, Haruto, Mei, Nana   — exit at street cols [8,9]
+//   house_b (Student House): Aiko, Riku, Sora           — exit at street cols [27,28]
+//   house_c (Adult House):   Takeshi, Kenji, Hana       — exit at street cols [47,48]
+//   house   (Player's Home): visitor_a, visitor_b       — unchanged
 
 const NPC_SCHEDULES = {
 
   // ── Yuki ─── elementary student, studious weekdays, playful weekends ──────
   yuki: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:4, row:7, ambient:true,
+      goals:[ { col:4, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:4, row:7, ambient:true,
+      goals:[
+        { col:4,  row:7,  pause_ms:8000, say_ko:'잘 잤어요!',          say_en:'Slept well!'          },
+        { col:8,  row:22, pause_ms:4000, say_ko:'세수하러 갔다 왔어요.', say_en:'Back from washing up.' },
+        { col:4,  row:7,  pause_ms:6000, say_ko:'오늘도 준비 완료!',    say_en:'Ready for the day!'   },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 15,
       room: 'library', col: 25, row: 12, ambient: true, convo: 'library_study_chat',
@@ -83,6 +101,18 @@ const NPC_SCHEDULES = {
 
   // ── Haruto ─── middle schooler, library mornings, cooking afternoons ──────
   haruto: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:11, row:7, ambient:true,
+      goals:[ { col:11, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:11, row:7, ambient:true,
+      goals:[
+        { col:11, row:7,  pause_ms:8000, say_ko:'일어났어요!',          say_en:'Up and at it!'        },
+        { col:8,  row:22, pause_ms:4000, say_ko:'아침 준비 중이에요.',   say_en:'Getting ready.'       },
+        { col:11, row:7,  pause_ms:6000, say_ko:'오늘도 열심히!',       say_en:'Let\'s work hard today!' },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 12,
       room: 'library', col: 40, row: 12, ambient: true, convo: 'library_study_chat',
@@ -125,6 +155,18 @@ const NPC_SCHEDULES = {
 
   // ── Mei ─── young child, mostly play area all week ───────────────────────
   mei: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:18, row:7, ambient:true,
+      goals:[ { col:18, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:18, row:7, ambient:true,
+      goals:[
+        { col:18, row:7,  pause_ms:8000, say_ko:'일어났어요!',          say_en:'I\'m up!'           },
+        { col:8,  row:22, pause_ms:4000, say_ko:'세수하고 왔어요.',      say_en:'Washed my face!'    },
+        { col:18, row:7,  pause_ms:6000, say_ko:'얼른 놀고 싶어요!',    say_en:'I want to play soon!' },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 10,
       room: 'lobby', col: 30, row: 17, ambient: true, convo: 'lobby_visitor_chat',
@@ -167,6 +209,18 @@ const NPC_SCHEDULES = {
 
   // ── Takeshi ─── parent, weekday drop-off/pickup pattern ──────────────────
   takeshi: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:4, row:7, ambient:true,
+      goals:[ { col:4, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_c', col:4, row:7, ambient:true,
+      goals:[
+        { col:4,  row:7,  pause_ms:8000, say_ko:'좋은 아침이에요.',        say_en:'Good morning.'              },
+        { col:47, row:22, pause_ms:4000, say_ko:'아침 준비 중이에요.',      say_en:'Getting ready for the day.' },
+        { col:4,  row:7,  pause_ms:6000, say_ko:'오늘도 좋은 하루!',       say_en:'Have a good day today!'     },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 10,
       room: 'lobby', col: 15, row: 20, ambient: true, convo: 'lobby_visitor_chat',
@@ -197,11 +251,11 @@ const NPC_SCHEDULES = {
     },
     {
       days: [0,6], hour_start: 9, hour_end: 11,
-      room: 'house', col: 35, row: 14, ambient: true,
+      room: 'house_c', col: 27, row: 13, ambient: true,
       goals: [
-        { col:35, row:14, pause_ms: 9000, say_ko:'주말 아침은 집에서 느긋하게.',    say_en:'Relaxing at home on weekend morning.' },
-        { col:47, row:14, pause_ms: 7000, say_ko:'아침밥 준비할게요.',             say_en:'Getting breakfast ready.'       },
-        { col:25, row:14, pause_ms: 8000, say_ko:'코타츠에서 신문 읽어요.',         say_en:'Reading the paper at the kotatsu.' },
+        { col:27, row:13, pause_ms: 9000, say_ko:'주말 아침은 집에서 느긋하게.',    say_en:'Relaxing at home on weekend morning.' },
+        { col:47, row:18, pause_ms: 7000, say_ko:'아침밥 준비할게요.',             say_en:'Getting breakfast ready.'       },
+        { col:27, row:13, pause_ms: 8000, say_ko:'코타츠에서 신문 읽어요.',         say_en:'Reading the paper at the kotatsu.' },
       ],
     },
     {
@@ -226,6 +280,18 @@ const NPC_SCHEDULES = {
 
   // ── Sora ─── craft teen, salon weekdays; gallery weekends ────────────────
   sora: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:18, row:7, ambient:true,
+      goals:[ { col:18, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:18, row:7, ambient:true,
+      goals:[
+        { col:18, row:7,  pause_ms:8000, say_ko:'일어났어요.',            say_en:'Woke up.'             },
+        { col:27, row:22, pause_ms:4000, say_ko:'준비하고 있어요.',        say_en:'Getting ready.'       },
+        { col:18, row:7,  pause_ms:6000, say_ko:'오늘도 뭔가 만들어봐야지!', say_en:'Time to make something today!' },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 10, hour_end: 18,
       room: 'salon', col: 35, row: 13, ambient: true, convo: 'salon_craft_chat',
@@ -261,6 +327,18 @@ const NPC_SCHEDULES = {
 
   // ── Aiko ─── dedicated student, long library hours ────────────────────────
   aiko: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:4, row:7, ambient:true,
+      goals:[ { col:4, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:4, row:7, ambient:true,
+      goals:[
+        { col:4,  row:7,  pause_ms:9000, say_ko:'아침이에요. 공부해야죠.',        say_en:'Morning. Time to study.'        },
+        { col:27, row:22, pause_ms:4000, say_ko:'얼굴 씻고 왔어요.',             say_en:'Back from washing up.'          },
+        { col:4,  row:7,  pause_ms:6000, say_ko:'오늘도 열심히 할게요!',         say_en:'Going to work hard today!'      },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 19,
       room: 'library', col: 15, row: 20, ambient: true, convo: 'library_study_chat',
@@ -274,11 +352,11 @@ const NPC_SCHEDULES = {
     },
     {
       days: [0,6], hour_start: 10, hour_end: 13,
-      room: 'house', col: 25, row: 14, ambient: true,
+      room: 'house_b', col: 25, row: 14, ambient: true,
       goals: [
         { col:25, row:14, pause_ms:10000, say_ko:'주말엔 집에서 공부해요.',          say_en:'Studying at home on weekends.'  },
-        { col:47, row:14, pause_ms: 6000, say_ko:'차 마시면서 잠깐 쉬어요.',         say_en:'Taking a tea break.'            },
-        { col:13, row: 4, pause_ms: 5000, say_ko:'이불에서 잠깐 누울게요.',          say_en:'Lying down for just a minute.'  },
+        { col:46, row: 5, pause_ms: 6000, say_ko:'차 마시면서 잠깐 쉬어요.',         say_en:'Taking a tea break.'            },
+        { col: 4, row: 7, pause_ms: 5000, say_ko:'이불 쪽에서 잠깐 누울게요.',       say_en:'Lying down for just a minute.'  },
         { col:25, row:14, pause_ms:10000, say_ko:'다시 공부해야겠어요.',             say_en:'I should get back to studying.' },
       ],
     },
@@ -295,9 +373,21 @@ const NPC_SCHEDULES = {
 
   // ── Kenji ─── gallery lover, weekdays in lobby/library ───────────────────
   kenji: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:11, row:7, ambient:true,
+      goals:[ { col:11, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_c', col:11, row:7, ambient:true,
+      goals:[
+        { col:11, row:7,  pause_ms:8000, say_ko:'좋은 아침이에요.',        say_en:'Good morning.'              },
+        { col:47, row:22, pause_ms:4000, say_ko:'아침 준비 중이에요.',      say_en:'Getting ready for the day.' },
+        { col:11, row:7,  pause_ms:6000, say_ko:'오늘도 좋은 하루!',       say_en:'Have a good day today!'     },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 10, hour_end: 12,
-      room: 'lobby', col: 50, row: 15, ambient: true, convo: 'lobby_visitor_chat',
+      room: 'lobby', col: 50, row: 15, ambient: true, convo: 'lobby_intro_chat',
       goals: [
         { col:50, row:15, pause_ms: 7000, say_ko:'여기서 지인 기다리고 있어요.',     say_en:'Waiting for someone here.'      },
         { col:30, row:20, pause_ms: 5000, say_ko:'안내판 자세히 보고 있어요.',       say_en:'Looking at the information board.' },
@@ -329,6 +419,18 @@ const NPC_SCHEDULES = {
 
   // ── Nana ─── spirited young child, outdoor and play area ─────────────────
   nana: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:25, row:7, ambient:true,
+      goals:[ { col:25, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:25, row:7, ambient:true,
+      goals:[
+        { col:25, row:7,  pause_ms:8000, say_ko:'일어났어요!',         say_en:'I\'m up!'           },
+        { col:8,  row:22, pause_ms:4000, say_ko:'세수하고 왔어요.',     say_en:'Washed my face!'    },
+        { col:25, row:7,  pause_ms:6000, say_ko:'오늘도 뛰어놀 거예요!', say_en:'Running around today!' },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 10, hour_end: 14,
       room: 'outdoor', col: 10, row: 13, ambient: true, prop: '🌿', convo: 'outdoor_nature_chat',
@@ -365,6 +467,18 @@ const NPC_SCHEDULES = {
 
   // ── Riku ─── social student, cycles library → salon → outdoor ────────────
   riku: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:11, row:7, ambient:true,
+      goals:[ { col:11, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:11, row:7, ambient:true,
+      goals:[
+        { col:11, row:7,  pause_ms:8000, say_ko:'일어났어요.',            say_en:'Woke up.'             },
+        { col:27, row:22, pause_ms:4000, say_ko:'준비하고 있어요.',        say_en:'Getting ready.'       },
+        { col:11, row:7,  pause_ms:6000, say_ko:'오늘도 잘 부탁해요!',    say_en:'Best of luck today!'  },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 12,
       room: 'library', col: 25, row: 12, ambient: true, convo: 'library_study_chat',
@@ -407,20 +521,32 @@ const NPC_SCHEDULES = {
     },
     {
       days: [0,6], hour_start: 15, hour_end: 18,
-      room: 'house', col: 35, row: 14, ambient: true,
+      room: 'house_b', col: 35, row: 14, ambient: true,
       goals: [
         { col:35, row:14, pause_ms: 9000, say_ko:'집에서 쉬면서 오늘 마무리해요.',    say_en:'Winding down at home after the day.' },
-        { col:47, row:20, pause_ms: 6000, say_ko:'저녁 준비 도와드릴게요.',           say_en:'Helping get dinner ready.'      },
-        { col:25, row:12, pause_ms: 8000, say_ko:'코타츠에서 따뜻하게 쉬어요.',       say_en:'Warming up at the kotatsu.'     },
+        { col:46, row: 5, pause_ms: 6000, say_ko:'코타츠에서 따뜻하게 쉬어요.',       say_en:'Warming up at the kotatsu.'     },
+        { col:25, row:12, pause_ms: 8000, say_ko:'오늘 하루 뭐 했나 생각해요.',       say_en:'Thinking about what I did today.' },
       ],
     },
   ],
 
   // ── Hana ─── community helper, lobby and cooking room ────────────────────
   hana: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:18, row:7, ambient:true,
+      goals:[ { col:18, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_c', col:18, row:7, ambient:true,
+      goals:[
+        { col:18, row:7,  pause_ms:8000, say_ko:'좋은 아침이에요.',        say_en:'Good morning.'              },
+        { col:47, row:22, pause_ms:4000, say_ko:'아침 준비 중이에요.',      say_en:'Getting ready for the day.' },
+        { col:18, row:7,  pause_ms:6000, say_ko:'오늘도 좋은 하루!',       say_en:'Have a good day today!'     },
+      ],
+    },
     {
       days: [1,2,3,4,5], hour_start: 9, hour_end: 11,
-      room: 'lobby', col: 30, row: 20, ambient: true, convo: 'lobby_visitor_chat',
+      room: 'lobby', col: 30, row: 20, ambient: true, convo: 'lobby_intro_chat',
       goals: [
         { col:30, row:20, pause_ms: 8000, say_ko:'안내 도우미로 오늘 봉사해요.',      say_en:'Volunteering as a guide today.' },
         { col:10, row:15, pause_ms: 5000, say_ko:'오신 분들 맞이하고 있어요.',         say_en:'Welcoming people as they arrive.' },
@@ -466,6 +592,430 @@ const NPC_SCHEDULES = {
         { col:20, row:17, pause_ms: 8000, say_ko:'저녁엔 로비에서 마무리해요.',        say_en:'Wrapping up for the evening in the lobby.' },
         { col:40, row:20, pause_ms: 5000, say_ko:'오늘 하루 수고했어요!',             say_en:'Great work today, everyone!'    },
         { col:20, row:17, pause_ms: 7000, say_ko:'내일 또 봬요!',                   say_en:'See you all again tomorrow!'    },
+      ],
+    },
+  ],
+
+  // ── Librarian ─── devoted to books, lives in house_b ────────────────────
+  librarian: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:24, row:7, ambient:true,
+      goals:[ { col:24, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:24, row:7, ambient:true,
+      goals: [
+        { col:24, row:7,  pause_ms:5000, say_ko:'일어났어요. 도서관 준비해야죠.',    say_en:'Up. Have to get the library ready.'      },
+        { col:46, row:5,  pause_ms:6000, say_ko:'코타츠에서 아침 먹어요.',           say_en:'Having breakfast at the kotatsu.'        },
+        { col:24, row:7,  pause_ms:4000, say_ko:'출근할 시간이에요.',                say_en:'Time to head in.'                        },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:9, hour_end:18,
+      room:'library', col:35, row:20, ambient:true,
+      goals: [
+        { col:35, row:20, pause_ms:14000, say_ko:'도서관 업무 중이에요.',             say_en:'Working at the library desk.'            },
+        { col:51, row: 5, pause_ms: 5000, say_ko:'상단 서가 정리하고 있어요.',        say_en:'Organizing the upper shelves.'           },
+        { col:51, row:22, pause_ms: 4000, say_ko:'하단 서가도 확인하고 있어요.',      say_en:'Checking the lower shelves.'             },
+        { col:18, row:12, pause_ms: 4000, say_ko:'반납 도서 정리 중이에요.',          say_en:'Sorting returned books.'                 },
+        { col:35, row:20, pause_ms:12000, say_ko:'대출 처리하고 있어요.',             say_en:'Processing checkouts.'                   },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_b', col:46, row:5, ambient:true,
+      goals: [
+        { col:46, row:5,  pause_ms:6000, say_ko:'퇴근했어요. 코타츠에서 쉬어요.',    say_en:'Back home. Resting at the kotatsu.'      },
+        { col:47, row:21, pause_ms:5000, say_ko:'저녁 먹어야겠어요.',               say_en:'Time to have dinner.'                    },
+        { col:24, row:7,  pause_ms:8000, say_ko:'오늘도 수고했어요.',               say_en:'Good work today.'                        },
+      ],
+    },
+  ],
+
+  // ── Receptionist ─── cheerful and organized, lives in house_c ────────────
+  receptionist: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:25, row:7, ambient:true,
+      goals:[ { col:25, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_c', col:25, row:7, ambient:true,
+      goals: [
+        { col:25, row:7,  pause_ms:5000, say_ko:'좋은 아침이에요!',                  say_en:'Good morning!'                           },
+        { col:27, row:10, pause_ms:5000, say_ko:'코타츠에서 아침 먹어요.',           say_en:'Having breakfast at the kotatsu.'        },
+        { col:25, row:7,  pause_ms:4000, say_ko:'오늘도 열심히 안내할게요.',          say_en:'I\'ll guide visitors well today.'        },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:9, hour_end:18,
+      room:'lobby', col:40, row:10, ambient:true,
+      goals: [
+        { col:40, row:10, pause_ms:14000, say_ko:'안내 업무 중이에요.',               say_en:'On duty at the reception desk.'          },
+        { col: 5, row:13, pause_ms: 5000, say_ko:'입구 쪽 확인하고 있어요.',          say_en:'Checking near the entrance.'             },
+        { col:30, row:20, pause_ms: 4000, say_ko:'로비 순찰하고 있어요.',             say_en:'Doing rounds in the lobby.'              },
+        { col:40, row:10, pause_ms:12000, say_ko:'방문객 안내하고 있어요.',           say_en:'Guiding visitors.'                       },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_c', col:27, row:10, ambient:true,
+      goals: [
+        { col:27, row:10, pause_ms:7000, say_ko:'집에 왔어요. 코타츠 너무 편해요.',   say_en:'Home at last. The kotatsu is so cozy.'   },
+        { col:46, row:15, pause_ms:5000, say_ko:'저녁 먹어야겠어요.',               say_en:'Time for dinner.'                        },
+        { col:25, row:7,  pause_ms:7000, say_ko:'오늘 안내가 잘 됐어요.',           say_en:'Guiding went well today.'               },
+      ],
+    },
+  ],
+
+  // ── Play staff ─── energetic, loves working with kids, lives in house_a ──
+  play_staff: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:32, row:7, ambient:true,
+      goals:[ { col:32, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:32, row:7, ambient:true,
+      goals: [
+        { col:32, row:7,  pause_ms:4000, say_ko:'일어났어요!',                       say_en:'I\'m up!'                                },
+        { col:37, row:10, pause_ms:5000, say_ko:'코타츠에서 빨리 먹고 가야죠.',      say_en:'Quick breakfast at the kotatsu.'         },
+        { col:32, row:7,  pause_ms:4000, say_ko:'아이들이 기다리고 있을 텐데!',      say_en:'The kids are probably waiting!'          },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:9, hour_end:17,
+      room:'play_area', col:40, row:10, ambient:true,
+      goals: [
+        { col:40, row:10, pause_ms:12000, say_ko:'아이들 잘 노는지 보고 있어요.',     say_en:'Watching the kids play safely.'          },
+        { col:10, row:10, pause_ms: 5000, say_ko:'그네 쪽 확인하러 갔어요.',         say_en:'Checking on the swings.'                 },
+        { col:30, row:18, pause_ms: 4000, say_ko:'놀이 구역 한 바퀴 돌아요.',        say_en:'Walking the play area perimeter.'        },
+        { col:40, row:10, pause_ms:10000, say_ko:'오늘도 안전하게 놀고 있어요.',      say_en:'Playing safely today too.'              },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:17, hour_end:21,
+      room:'house_a', col:37, row:10, ambient:true,
+      goals: [
+        { col:37, row:10, pause_ms:7000, say_ko:'퇴근하고 코타츠에서 쉬어요.',       say_en:'Relaxing at the kotatsu after work.'     },
+        { col:48, row:17, pause_ms:5000, say_ko:'저녁 먹을게요.',                   say_en:'Having dinner.'                          },
+        { col:32, row:7,  pause_ms:7000, say_ko:'오늘도 즐거운 하루였어요.',        say_en:'What a fun day.'                        },
+      ],
+    },
+  ],
+
+  // ── Salon staff ─── creative and calm, lives in house_b ──────────────────
+  salon_staff: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:31, row:7, ambient:true,
+      goals:[ { col:31, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:10,
+      room:'house_b', col:31, row:7, ambient:true,
+      goals: [
+        { col:31, row:7,  pause_ms:6000, say_ko:'천천히 일어났어요.',                 say_en:'Taking my time waking up.'               },
+        { col:46, row:5,  pause_ms:7000, say_ko:'코타츠에서 여유롭게 아침 먹어요.',  say_en:'A leisurely breakfast at the kotatsu.'  },
+        { col:31, row:7,  pause_ms:4000, say_ko:'오늘은 어떤 작품을 만들까요?',      say_en:'What should I make today?'               },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:10, hour_end:18,
+      room:'salon', col:50, row:20, ambient:true,
+      goals: [
+        { col:50, row:20, pause_ms:12000, say_ko:'살롱 업무 보고 있어요.',             say_en:'Working at the salon.'                   },
+        { col: 5, row: 5, pause_ms: 5000, say_ko:'재료 확인하고 있어요.',             say_en:'Checking the craft supplies.'            },
+        { col:27, row:15, pause_ms: 4000, say_ko:'테이블 정리하고 있어요.',           say_en:'Tidying up the tables.'                  },
+        { col:50, row:20, pause_ms:10000, say_ko:'만드시는 분들 도와드리고 있어요.',  say_en:'Helping people with their crafts.'       },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_b', col:46, row:5, ambient:true,
+      goals: [
+        { col:46, row:5,  pause_ms:7000, say_ko:'집에서 편히 쉬고 있어요.',           say_en:'Relaxing comfortably at home.'           },
+        { col:47, row:21, pause_ms:5000, say_ko:'저녁 먹고 있어요.',                 say_en:'Having dinner.'                          },
+        { col:31, row:7,  pause_ms:7000, say_ko:'오늘 작품 잘 나왔어요.',           say_en:'Today\'s creations turned out well.'    },
+      ],
+    },
+  ],
+
+  // ── Outdoor guide ─── nature lover, early riser, lives in house_c ─────────
+  outdoor_guide: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:32, row:7, ambient:true,
+      goals:[ { col:32, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:8,
+      room:'house_c', col:32, row:7, ambient:true,
+      goals: [
+        { col:32, row:7,  pause_ms:3000, say_ko:'일찍 일어났어요. 야외가 기다려요!', say_en:'Up early. The outdoors is calling!'      },
+        { col:27, row:10, pause_ms:3000, say_ko:'빨리 먹고 나가야겠어요.',           say_en:'Eating quickly before heading out.'      },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:8, hour_end:18,
+      room:'outdoor', col:30, row:18, ambient:true,
+      goals: [
+        { col:30, row:18, pause_ms:12000, say_ko:'야외 공간 안내 중이에요.',          say_en:'Guiding visitors in the outdoor area.'   },
+        { col: 5, row:11, pause_ms: 5000, say_ko:'벤치 쪽 확인하러 갔어요.',         say_en:'Checking on the benches.'               },
+        { col:30, row:13, pause_ms: 4000, say_ko:'길을 따라 걷고 있어요.',           say_en:'Walking along the path.'                 },
+        { col:30, row:18, pause_ms:10000, say_ko:'야외 공기 마시며 안내해요.',        say_en:'Guiding while enjoying the fresh air.'   },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_c', col:27, row:10, ambient:true,
+      goals: [
+        { col:27, row:10, pause_ms:7000, say_ko:'오늘도 야외에서 잘 안내했어요.',     say_en:'Another great day guiding outdoors.'     },
+        { col:46, row:15, pause_ms:5000, say_ko:'저녁 먹어요.',                      say_en:'Having dinner.'                          },
+        { col:32, row:7,  pause_ms:7000, say_ko:'내일도 일찍 일어나야겠어요.',       say_en:'Have to wake up early again tomorrow.'  },
+      ],
+    },
+  ],
+
+  // ── Gallery curator ─── cultured, intellectual, lives in house_c ──────────
+  gallery_curator: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:32, row:15, ambient:true,
+      goals:[ { col:32, row:15, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:10,
+      room:'house_c', col:32, row:15, ambient:true,
+      goals: [
+        { col:32, row:15, pause_ms:5000, say_ko:'천천히 일어났어요.',                 say_en:'Taking my time waking up.'               },
+        { col:27, row:10, pause_ms:6000, say_ko:'코타츠에서 조용히 아침 먹어요.',    say_en:'A quiet breakfast at the kotatsu.'       },
+        { col:32, row:15, pause_ms:5000, say_ko:'오늘 전시 구성 생각하고 있어요.',   say_en:'Thinking about the exhibit layout.'      },
+      ],
+    },
+    { days:[1,2,3,4,5], hour_start:10, hour_end:17,
+      room:'library', col:35, row:12, ambient:true, convo:'library_study_chat',
+      goals: [
+        { col:35, row:12, pause_ms:14000, say_ko:'전시 자료 조사하고 있어요.',         say_en:'Researching exhibition materials.'        },
+        { col:51, row: 5, pause_ms: 5000, say_ko:'미술 관련 서적 찾고 있어요.',       say_en:'Looking for art and design books.'       },
+        { col:15, row:20, pause_ms: 6000, say_ko:'도록 참고하고 있어요.',             say_en:'Consulting the art catalogues.'          },
+        { col:35, row:12, pause_ms:10000, say_ko:'다음 전시 준비 중이에요.',          say_en:'Preparing for the next exhibition.'      },
+      ],
+    },
+    { days:[0,6], hour_start:10, hour_end:17,
+      room:'gallery', col:30, row:20, ambient:true,
+      goals: [
+        { col:30, row:20, pause_ms:12000, say_ko:'전시품 관리하고 있어요.',            say_en:'Managing the exhibits.'                  },
+        { col:10, row:11, pause_ms: 6000, say_ko:'왼쪽 전시품 점검하고 있어요.',      say_en:'Inspecting the left-side exhibits.'      },
+        { col:50, row:11, pause_ms: 6000, say_ko:'오른쪽 전시품도 확인해요.',         say_en:'Checking the right-side exhibits.'       },
+        { col:30, row:20, pause_ms:10000, say_ko:'방문객들 안내하고 있어요.',          say_en:'Guiding visitors.'                       },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:17, hour_end:21,
+      room:'house_c', col:27, row:10, ambient:true,
+      goals: [
+        { col:27, row:10, pause_ms:7000, say_ko:'예술에 대해 생각하며 쉬어요.',       say_en:'Resting and thinking about art.'         },
+        { col:46, row:15, pause_ms:5000, say_ko:'저녁 먹으면서 아이디어 떠올려요.',  say_en:'Getting ideas over dinner.'              },
+        { col:32, row:15, pause_ms:7000, say_ko:'오늘도 좋은 하루였어요.',           say_en:'Another good day.'                       },
+      ],
+    },
+  ],
+
+  // ── Cook ─── warm and nurturing, passionate about food, lives in house_c ──
+  cook: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_c', col:25, row:15, ambient:true,
+      goals:[ { col:25, row:15, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:10,
+      room:'house_c', col:25, row:15, ambient:true,
+      goals: [
+        { col:25, row:15, pause_ms:4000, say_ko:'일어나자마자 요리 생각이 나요!',     say_en:'First thing I think of is cooking!'      },
+        { col:47, row: 3, pause_ms:6000, say_ko:'아침밥 준비하고 있어요.',            say_en:'Preparing breakfast.'                    },
+        { col:25, row:15, pause_ms:5000, say_ko:'오늘도 맛있는 거 만들 거예요.',      say_en:'Going to make something delicious today.' },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:10, hour_end:17,
+      room:'cooking_room', col:30, row:14, ambient:true,
+      goals: [
+        { col:30, row:14, pause_ms:12000, say_ko:'오늘 요리 준비하고 있어요.',         say_en:'Preparing today\'s dish.'                },
+        { col:14, row:10, pause_ms: 5000, say_ko:'육수 끓이고 있어요.',               say_en:'Simmering the broth.'                    },
+        { col:46, row:10, pause_ms: 4000, say_ko:'양념 확인하고 있어요.',             say_en:'Checking the seasonings.'               },
+        { col:30, row:18, pause_ms: 5000, say_ko:'하단 조리대도 사용 중이에요.',      say_en:'Using the lower station too.'            },
+        { col:30, row:14, pause_ms:10000, say_ko:'거의 다 됐어요! 맛있을 거예요.',    say_en:'Almost done! It\'ll be delicious.'       },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:17, hour_end:21,
+      room:'house_c', col:47, row: 3, ambient:true,
+      goals: [
+        { col:47, row: 3, pause_ms:6000, say_ko:'집에서도 저녁 준비해요.',            say_en:'Making dinner at home too.'              },
+        { col:46, row:15, pause_ms:7000, say_ko:'다 같이 먹어요.',                   say_en:'Eating together with everyone.'          },
+        { col:25, row:15, pause_ms:7000, say_ko:'역시 집밥이 최고예요.',             say_en:'Home cooking is the best.'              },
+      ],
+    },
+  ],
+
+  // ── Student A ─── diligent, studies every day, lives in house_a ──────────
+  student_a: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:39, row:7, ambient:true,
+      goals:[ { col:39, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:39, row:7, ambient:true,
+      goals: [
+        { col:39, row:7,  pause_ms:5000, say_ko:'일어났어요. 오늘도 공부해야죠.',     say_en:'Up. Time to study again today.'          },
+        { col:37, row:10, pause_ms:5000, say_ko:'코타츠에서 간단히 아침 먹어요.',    say_en:'A quick breakfast at the kotatsu.'       },
+        { col:39, row:7,  pause_ms:4000, say_ko:'도서관 가야겠어요.',                say_en:'Better head to the library.'             },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:20, hour_end:21,
+      room:'house_a', col:37, row:10, ambient:true,
+      goals: [
+        { col:37, row:10, pause_ms:7000, say_ko:'오늘도 공부 열심히 했어요.',        say_en:'Studied hard again today.'               },
+        { col:48, row:17, pause_ms:5000, say_ko:'저녁 먹어야겠어요.',               say_en:'Time for dinner.'                        },
+        { col:39, row:7,  pause_ms:7000, say_ko:'내일도 도서관 가야죠.',            say_en:'Back to the library tomorrow.'          },
+      ],
+    },
+  ],
+
+  // ── Student B ─── methodical, steady hours, lives in house_b ─────────────
+  student_b: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:38, row:7, ambient:true,
+      goals:[ { col:38, row:7, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:38, row:7, ambient:true,
+      goals: [
+        { col:38, row:7,  pause_ms:5000, say_ko:'오늘도 도서관에 가야 해요.',        say_en:'Have to go to the library again today.'  },
+        { col:46, row:5,  pause_ms:5000, say_ko:'코타츠에서 아침 먹어요.',           say_en:'Having breakfast at the kotatsu.'        },
+        { col:38, row:7,  pause_ms:4000, say_ko:'오늘 리포트 꼭 끝내야겠어요.',     say_en:'Have to finish that report today.'       },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_b', col:46, row:5, ambient:true,
+      goals: [
+        { col:46, row:5,  pause_ms:7000, say_ko:'오늘 공부 잘 됐어요.',             say_en:'Studying went well today.'               },
+        { col:47, row:21, pause_ms:5000, say_ko:'저녁 먹으면서 복습해요.',           say_en:'Reviewing while I eat dinner.'           },
+        { col:38, row:7,  pause_ms:7000, say_ko:'내일도 열심히 해야죠.',            say_en:'Have to work hard again tomorrow.'       },
+      ],
+    },
+  ],
+
+  // ── Child A ─── adventurous, zipline fan, lives in house_a ───────────────
+  child_a: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_a', col:33, row:15, ambient:true,
+      goals:[ { col:33, row:15, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_a', col:33, row:15, ambient:true,
+      goals: [
+        { col:33, row:15, pause_ms:4000, say_ko:'일어났어요! 오늘도 놀러 갈 거예요!', say_en:'I\'m up! Going to play again today!'     },
+        { col:37, row:10, pause_ms:4000, say_ko:'빨리 먹고 나가야 해요!',            say_en:'Have to eat fast and go outside!'        },
+        { col:33, row:15, pause_ms:3000, say_ko:'짚라인 타고 싶어요!',               say_en:'I want to ride the zipline!'             },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_a', col:37, row:10, ambient:true,
+      goals: [
+        { col:37, row:10, pause_ms:6000, say_ko:'오늘 짚라인 몇 번이나 탔어요!',     say_en:'I rode the zipline so many times today!' },
+        { col:48, row:17, pause_ms:5000, say_ko:'배고파요. 밥 먹어요!',              say_en:'I\'m hungry. Time to eat!'               },
+        { col:33, row:15, pause_ms:6000, say_ko:'내일 또 타러 갈 거예요!',           say_en:'Going back to ride again tomorrow!'      },
+      ],
+    },
+  ],
+
+  // ── Child B ─── curious explorer, lives in house_b ───────────────────────
+  child_b: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:7,
+      room:'house_b', col:25, row:16, ambient:true,
+      goals:[ { col:25, row:16, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:9,
+      room:'house_b', col:25, row:16, ambient:true,
+      goals: [
+        { col:25, row:16, pause_ms:4000, say_ko:'오늘은 어디 갈까요?',               say_en:'Where should I go today?'                },
+        { col:46, row:5,  pause_ms:4000, say_ko:'코타츠에서 밥 먹어요.',             say_en:'Having breakfast at the kotatsu.'        },
+        { col:25, row:16, pause_ms:4000, say_ko:'빨리 나가고 싶어요!',               say_en:'I want to go out already!'               },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house_b', col:46, row:5, ambient:true,
+      goals: [
+        { col:46, row:5,  pause_ms:6000, say_ko:'오늘 밖에서 많이 놀았어요.',        say_en:'I played outside a lot today.'           },
+        { col:47, row:21, pause_ms:5000, say_ko:'피곤해요. 밥 먹고 자야겠어요.',     say_en:'I\'m tired. Eat dinner then sleep.'      },
+        { col:25, row:16, pause_ms:6000, say_ko:'내일 또 놀러 갈 거예요!',          say_en:'Going out to play again tomorrow!'       },
+      ],
+    },
+  ],
+
+  // ── House visitors ─── stay at player's house ────────────────────────────
+  visitor_a: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:9,
+      room:'house', col:26, row:9, ambient:true,
+      goals:[ { col:26, row:9, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:10,
+      room:'house', col:18, row:9, ambient:true, convo:'house_welcome_chat',
+      goals: [
+        { col:18, row:9,  pause_ms:5000, say_ko:'아, 벌써 아침이네요.',             say_en:'Oh, it\'s morning already.'            },
+        { col:7,  row:9,  pause_ms:4000, say_ko:'슬리퍼 찾아야겠어요.',             say_en:'Time to find my slippers.'             },
+        { col:25, row:12, pause_ms:8000, say_ko:'코타츠에서 아침 먹을게요.',         say_en:'I\'ll have breakfast at the kotatsu.' },
+        { col:47, row:7,  pause_ms:5000, say_ko:'아침 준비 도와드릴게요.',           say_en:'Let me help with breakfast.'           },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:10, hour_end:14,
+      room:'library', col:35, row:12, ambient:true, convo:'library_study_chat',
+      goals: [
+        { col:35, row:12, pause_ms:12000, say_ko:'오늘도 책 읽으러 왔어요.',         say_en:'Here to read again today.'            },
+        { col:51, row: 5, pause_ms: 5000, say_ko:'위쪽 서가에 뭐가 있을까요?',      say_en:'Wonder what\'s on the upper shelves.' },
+        { col:15, row:20, pause_ms: 7000, say_ko:'이쪽도 볼 책이 많네요.',           say_en:'So many books to browse over here.'  },
+        { col:35, row:12, pause_ms:10000, say_ko:'이 책 정말 재미있어요.',            say_en:'This book is really interesting.'    },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:14, hour_end:18,
+      room:'gallery', col:30, row:20, ambient:true, convo:'gallery_explore_chat',
+      goals: [
+        { col:30, row:20, pause_ms:10000, say_ko:'갤러리는 올 때마다 좋아요.',        say_en:'I love this gallery every time I visit.' },
+        { col:10, row:11, pause_ms: 7000, say_ko:'이 인형들 정말 정교해요.',          say_en:'These dolls are so finely made.'      },
+        { col:50, row: 5, pause_ms: 6000, say_ko:'저쪽 전시도 꼭 봐야죠.',           say_en:'I have to see that exhibit too.'      },
+        { col:30, row:20, pause_ms: 8000, say_ko:'다음에 또 올게요.',                say_en:'I\'ll definitely come back.'          },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:18, hour_end:21,
+      room:'house', col:47, row:13, ambient:true, convo:'house_welcome_chat',
+      goals: [
+        { col:47, row:13, pause_ms: 6000, say_ko:'저녁 준비 도와드릴까요?',           say_en:'Can I help with dinner?'              },
+        { col:47, row:20, pause_ms: 5000, say_ko:'밥상 차리는 것 도와드릴게요.',      say_en:'Let me help set the table.'           },
+        { col:25, row:12, pause_ms: 9000, say_ko:'코타츠에서 밥 먹을게요.',           say_en:'I\'ll eat at the kotatsu.'            },
+        { col:25, row:14, pause_ms: 7000, say_ko:'오늘 하루도 정말 좋았어요.',        say_en:'Today was really wonderful.'          },
+      ],
+    },
+  ],
+
+  visitor_b: [
+    { days:[0,1,2,3,4,5,6], hour_start:21, hour_end:9,
+      room:'house', col:30, row:9, ambient:true,
+      goals:[ { col:30, row:9, pause_ms:60000 } ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:7, hour_end:10,
+      room:'house', col:30, row:12, ambient:true, convo:'house_activity_chat',
+      goals: [
+        { col:30, row:12, pause_ms: 7000, say_ko:'좋은 아침이에요!',                say_en:'Good morning!'                        },
+        { col:7,  row:9,  pause_ms: 3000, say_ko:'신발 여기 두면 되죠?',             say_en:'Shoes go here, right?'                },
+        { col:47, row:7,  pause_ms: 6000, say_ko:'뭐 드릴까요? 제가 끓여드릴게요!',  say_en:'What can I get you? I\'ll make it!'  },
+        { col:30, row:12, pause_ms: 8000, say_ko:'역시 아침은 코타츠가 최고예요.',    say_en:'Nothing beats the kotatsu in the morning.' },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:10, hour_end:13,
+      room:'outdoor', col:25, row:13, ambient:true, convo:'outdoor_nature_chat',
+      goals: [
+        { col:25, row:13, pause_ms: 6000, say_ko:'밖에 나오니까 상쾌해요!',           say_en:'It feels so refreshing outside!'      },
+        { col: 5, row:11, pause_ms: 5000, say_ko:'벤치에서 잠깐 쉴게요.',             say_en:'I\'ll rest on the bench a moment.'   },
+        { col:45, row:15, pause_ms: 7000, say_ko:'저쪽까지 걸어볼게요.',              say_en:'I\'ll walk all the way over there.'  },
+        { col:25, row:13, pause_ms: 8000, say_ko:'이 길 정말 좋아요.',               say_en:'I really love this path.'            },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:13, hour_end:17,
+      room:'salon', col:20, row:13, ambient:true, convo:'salon_craft_chat',
+      goals: [
+        { col:20, row:13, pause_ms: 9000, say_ko:'살롱에서 뭔가 만들어볼게요.',        say_en:'Time to make something at the salon.' },
+        { col: 5, row: 5, pause_ms: 5000, say_ko:'재료가 엄청 많네요!',               say_en:'There are so many materials here!'   },
+        { col:50, row:13, pause_ms: 7000, say_ko:'저쪽 자리도 괜찮아 보여요.',         say_en:'That spot over there looks good too.' },
+        { col:20, row:13, pause_ms:10000, say_ko:'완성되면 보여드릴게요!',             say_en:'I\'ll show you when it\'s done!'     },
+      ],
+    },
+    { days:[0,1,2,3,4,5,6], hour_start:17, hour_end:21,
+      room:'house', col:47, row:20, ambient:true, convo:'house_activity_chat',
+      goals: [
+        { col:47, row:20, pause_ms: 5000, say_ko:'배고파요! 뭐 먹을 거예요?',         say_en:'I\'m hungry! What are we eating?'    },
+        { col:47, row:13, pause_ms: 6000, say_ko:'같이 요리할까요?',                  say_en:'Should we cook together?'            },
+        { col:30, row:12, pause_ms: 9000, say_ko:'코타츠에서 기다릴게요.',             say_en:'I\'ll wait at the kotatsu.'          },
+        { col:25, row:14, pause_ms: 7000, say_ko:'오늘 하루 너무 재미있었어요.',       say_en:'Today was so much fun.'             },
       ],
     },
   ],

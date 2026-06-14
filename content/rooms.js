@@ -77,6 +77,7 @@ const ROOM_DEFS = {
     wall_color: "#87ceeb", floor_color: "#5a8c3a", floor_dark: "#3a6020",
     outdoor: true,
     sign_layout: [
+      { sign_id: "outdoor_safety",  x: 470, w: 160, h:  80 },
       { sign_id: "outdoor_zipline", x: 60,  w: 190, h: 120 },
       { sign_id: "outdoor_yield",   x: 280, w: 180, h: 100 },
     ],
@@ -99,6 +100,27 @@ const ROOM_DEFS = {
       house_window:       { x: Math.round(W * 0.15),       y: SY + 10,  w: 60, h: 50 },
     }),
   },
+  house_a: {
+    id: "house_a", name_jp: "子供の家", name_ko: "아이들의 집", name_en: "Family House",
+    left: null, right: null, down: "street",
+    wall_color: "#f5f0e8", floor_color: "#8B4A20", floor_dark: "#4b2d12",
+    sign_layout: [],
+    object_hotspots: (W, FY, SY) => ({}),
+  },
+  house_b: {
+    id: "house_b", name_jp: "学生の家", name_ko: "학생의 집", name_en: "Student House",
+    left: null, right: null, down: "street",
+    wall_color: "#e8f0f5", floor_color: "#8B4A20", floor_dark: "#4b2d12",
+    sign_layout: [],
+    object_hotspots: (W, FY, SY) => ({}),
+  },
+  house_c: {
+    id: "house_c", name_jp: "近所の家", name_ko: "이웃집", name_en: "Neighbor's House",
+    left: null, right: null, down: "street",
+    wall_color: "#f0f5e8", floor_color: "#8B4A20", floor_dark: "#4b2d12",
+    sign_layout: [],
+    object_hotspots: (W, FY, SY) => ({}),
+  },
   gallery: {
     id: "gallery", name_jp: "おもちゃ画廊", name_ko: "장난감 갤러리", name_en: "Toy Gallery",
     left: null, right: null, down: "play_area",
@@ -117,9 +139,10 @@ const ROOM_DEFS = {
     left: null, right: null, up: "salon",
     wall_color: "#f0ebe0", floor_color: "#737373", floor_dark: "#505050",
     sign_layout: [
-      { sign_id: "cooking_welcome",  x: 40,  w: 180, h:  90 },
-      { sign_id: "cooking_safety",   x: 250, w: 200, h: 110 },
-      { sign_id: "cooking_schedule", x: 470, w: 210, h:  90 },
+      { sign_id: "cooking_welcome",   x: 40,  w: 180, h:  90 },
+      { sign_id: "cooking_safety",    x: 250, w: 200, h: 110 },
+      { sign_id: "cooking_schedule",  x: 470, w: 190, h:  90 },
+      { sign_id: "cooking_materials", x: 680, w: 180, h:  90 },
     ],
     object_hotspots: (W, FY, SY) => ({
       npc_cook: { x: Math.round(W * 0.5) - 22, y: FY - 90, w: 44, h: 90 },

@@ -71,9 +71,9 @@ describe('input2d: clicking an ambient NPC with a convo opens the conversation v
   });
 
   test('DialoguePanel.openConvo is passed the convo id from npc_def', () => {
-    // Accept npc_def?.convo, npc_def.convo, or a local convo_id variable
+    // Accept npc_def?.convo or npc_def.convo as first arg (may have trailing args)
     expect(input2d).toMatch(
-      /DialoguePanel\.openConvo\s*\(\s*npc_def\s*\??\.?\s*\.?\s*convo\s*\)|DialoguePanel\.openConvo\s*\(\s*convo_id\s*\)/
+      /DialoguePanel\.openConvo\s*\(\s*npc_def\s*\??\.convo\b|DialoguePanel\.openConvo\s*\(\s*convo_id\b/
     );
   });
 });

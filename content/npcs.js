@@ -5,22 +5,22 @@
 const NPC_DEFS = {
 
   // ── Ambient-only (conversations only, no player dialogue) ─────────────────
-  student_a: { name_en: 'Student A', name_ko: '학생 A', color: '#2a4a6c',
+  student_a: { name_en: 'Student A', name_ko: '서준', color: '#2a4a6c',
     desc_en: 'A student doing library work. Please be quiet — refrain from phone calls here.' },
-  student_b: { name_en: 'Student B', name_ko: '학생 B', color: '#1a3a2c',
+  student_b: { name_en: 'Student B', name_ko: '지원', color: '#1a3a2c',
     desc_en: 'A student. The outlet is for library work only — consumption of food is prohibited.' },
-  child_a:   { name_en: 'Child A',   name_ko: '어린이 A', color: '#8b3a1e',
+  child_a:   { name_en: 'Child A',   name_ko: '유나', color: '#8b3a1e',
     desc_en: 'A young child visiting the facility. Young children must be accompanied by an adult.' },
-  child_b:   { name_en: 'Child B',   name_ko: '어린이 B', color: '#4a1a6c',
+  child_b:   { name_en: 'Child B',   name_ko: '민서', color: '#4a1a6c',
     desc_en: 'A child. Those 7 and over must give way to younger children at play equipment.' },
-  visitor_a: { name_en: 'Visitor A', name_ko: '방문객 A', color: '#5c3317',
-    desc_en: 'A visitor to the facility.' },
-  visitor_b: { name_en: 'Visitor B', name_ko: '방문객 B', color: '#3a5c1a',
-    desc_en: 'A visitor to the facility.' },
+  visitor_a: { name_en: 'Harin', name_ko: '하린', color: '#5c3317',
+    desc_en: 'A quiet, bookish guest staying at the house. Spends mornings at the library and afternoons in the gallery — always the last to leave the kotatsu at night.' },
+  visitor_b: { name_en: 'Yujin', name_ko: '유진', color: '#3a5c1a',
+    desc_en: 'An enthusiastic, helpful guest who loves being outdoors and making things. Always the first up in the morning, offering to make breakfast for everyone.' },
 
   librarian: {
     name_jp: "司書",
-    name_ko: "사서",
+    name_ko: "도연",
     name_en: "Librarian",
     room: "library",
     hotspot: "librarian",
@@ -54,15 +54,15 @@ const NPC_DEFS = {
       ask_book: {
         keywords: ["本","書","図書","読","探","持ってきて","取って","ください"],
         keywords_ko: ["책","도서","읽","찾","빌려","사서"],
-        jp: "ご希望の本についてはカタログをご覧ください。ご不明な点があれば、司書にお申し付けください。",
-        ko: "원하시는 책은 카탈로그에서 검색해 보세요. 학생들이 많이 찾는 책도 있어요. 모르시면 사서에게 물어보세요.",
-        en: "For the book you're looking for, please check the catalogue. Ask a librarian if you need help."
+        jp: "ご希望の本については書棚のカタログをご覧ください。教科書の調べ物もどうぞ。読書も練習が大切です。司書にお申し付けください。",
+        ko: "원하시는 책은 카탈로그에서 검색해 보세요. 거기서 찾아보면 바로 알 수 있어요. 책 한 권씩 카탈로그 번호로 찾을 수 있어요. 책을 읽으러 왔죠? 모르시면 사서에게 물어보세요.",
+        en: "For the book you're looking for, please check the catalogue. You came here to read, right? Ask a librarian if you need help."
       },
       ask_quiet: {
         keywords: ["静か","うるさ","声","しずか","騒"],
         keywords_ko: ["조용","시끄","통화","전화","목소리","학생"],
-        jp: "ありがとうございます。館内では静かにお過ごしください。窓側の席もございますので、ゆっくりどうぞ。他の方のご迷惑にならないようお願いします。",
-        ko: "감사합니다. 학생 여러분, 관내에서는 조용히 해 주세요. 휴대전화 통화도 삼가 주세요.",
+        jp: "ありがとうございます。館内では静かにお過ごしください。携帯電話のご使用もご遠慮ください。窓側の席もございますので、ゆっくりどうぞ。",
+        ko: "감사합니다. 학생 여러분, 관내에서는 조용히 해 주세요. 이 공간은 조용한 공간이에요. 휴대전화 통화도 삼가 주세요.",
         en: "Thank you. Please keep quiet in the library. The window seats are available if you'd like — take your time. Please be considerate of others."
       },
       ask_laptop: {
@@ -75,16 +75,23 @@ const NPC_DEFS = {
       ask_food: {
         keywords: ["食べ","飲み","飲食","お菓子","弁当","ランチ","水"],
         keywords_ko: ["먹","마시","음식","간식","물","음료","섭취","반입"],
-        jp: "館内では飲食はご遠慮ください。水分補給のみ可能です。お食事は1階のロビーラウンジをご利用ください。",
+        jp: "館内での飲食は固く禁止です。水分補給のみ可能です。お食事は1階のロビーラウンジをご利用ください。",
         ko: "관내에서 음식물 섭취는 금지입니다. 음식 반입도 불가입니다. 수분 보충만 허용됩니다.",
         en: "Eating and drinking are not allowed inside. Water is fine. Please use the lobby lounge on the 1st floor for meals."
       },
       ask_outlet: {
         keywords: ["コンセント","充電","電源","プラグ","ケーブル"],
         keywords_ko: ["콘센트","충전","전원","플러그","전용"],
-        jp: "コンセントは図書館業務に関連する場合のみご使用いただけます。",
+        jp: "コンセントは図書館業務に関連する場合のみ許可されています。業務に関連する場合のみ可です。",
         ko: "콘센트는 도서관 업무 전용으로만 사용해 주세요.",
         en: "Outlets may only be used for library-related work."
+      },
+      ask_location: {
+        keywords: ["どこ","場所","コーナー","棚","前","後ろ","位置"],
+        keywords_ko: ["어디","위치","앞","뒤","서가","거기","옆"],
+        jp: "書棚の前にあるラベルをご確認ください。棚の後ろ側も確認してみてください。見つからなければカタログで再検索を。",
+        ko: "서가 앞에 붙은 라벨을 보세요. 서가 뒤쪽도 확인해 보세요. 거기에 없으면 카탈로그에서 다시 찾아보세요.",
+        en: "Check the label on the front of the shelf. Look at the back of the shelves too. If you can't find it, search the catalogue again."
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
@@ -111,7 +118,7 @@ const NPC_DEFS = {
 
   receptionist: {
     name_jp: "受付係",
-    name_ko: "안내 직원",
+    name_ko: "소희",
     name_en: "Receptionist",
     room: "lobby",
     hotspot: "npc_receptionist",
@@ -132,8 +139,8 @@ const NPC_DEFS = {
         keywords: ["こんにちは","おはよう","はじめまして","よろしく","どうも"],
         keywords_ko: ["안녕","반갑","처음","안녕하세요"],
         jp: "こんにちは！何かご用件がございましたら、お気軽にどうぞ。",
-        ko: "안녕하세요! 방문객 여러분을 환영합니다. 무엇이든 도움이 필요하시면 말씀해 주세요.",
-        en: "Hello! Feel free to ask if there's anything you need."
+        ko: "안녕하세요! 방문객 여러분을 환영합니다. 편하게 이용하세요! 도움이 필요하시면 말씀해 주세요.",
+        en: "Hello! Welcome. Please use this facility freely — let us know if you need anything."
       },
       ask_what_doing: {
         keywords: ["何してる","何をして","今何","しています","してるの","何やって"],
@@ -145,16 +152,16 @@ const NPC_DEFS = {
       ask_directions: {
         keywords: ["どこ","場所","行き方","案内","地図","図書館","サロン","料理","2階","1階"],
         keywords_ko: ["어디","위치","가는","안내","지도","도서관","살롱","요리","2층","1층"],
-        jp: "このロビーからエレベーターで2階にお上がりください。図書館とこどもサロンは2階にございます。料理室も2階です。おもちゃ画廊と人形画廊は1階です。",
-        ko: "이 로비에서 2층으로 올라가세요. 도서관과 어린이 살롱은 2층에 있습니다. 요리실도 2층이에요. 완구 전시관은 1층입니다.",
+        jp: "この案内所でご案内しております。ロビーからエレベーターで2階にお上がりください。図書館とこどもサロンは2階にございます。料理室も2階です。",
+        ko: "이 로비에서 2층으로 올라가세요. 도서관과 어린이 살롱은 2층에 있습니다. 요리실도 2층이에요. 완구 전시관은 1층입니다. 나가실 때는 왼쪽으로 가세요. 화장실은 1층 오른쪽에 있어요.",
         en: "Take the elevator from this lobby to the 2nd floor. The library and children's salon are on the 2nd floor, as is the cooking room. The toy and doll galleries are on the 1st floor."
       },
       ask_hours: {
         keywords: ["何時","いつ","時間","開館","閉館","営業","終わり","始まり"],
         keywords_ko: ["몇 시","언제","시간","개관","마감","영업","끝","시작"],
-        jp: "本日は午前9時から午後5時まで開館しております。最終入館は午後4時30分です。",
-        ko: "오전 9시부터 오후 5시까지 개관합니다. 오후 5시에 마감됩니다.",
-        en: "We're open today from 9 AM to 5 PM. Last entry is 4:30 PM."
+        jp: "本日は午前9時から開館しております。終了は午後5時です。最終入館は午後4時30分です。",
+        ko: "오전 9시부터 오후 5시까지 개관합니다. 영업 시간은 8시간이에요. 오후 5시에 마감됩니다.",
+        en: "We're open today from 9 AM to 5 PM — 8 hours total. Last entry is 4:30 PM."
       },
       ask_today: {
         keywords: ["今日","本日","イベント","催し","プログラム","特別"],
@@ -162,6 +169,13 @@ const NPC_DEFS = {
         jp: "本日は特別なイベントはございませんが、通常の施設はすべてご利用いただけます。",
         ko: "오늘은 특별한 행사는 없지만, 모든 시설을 이용하실 수 있어요.",
         en: "There are no special events today, but all regular facilities are available."
+      },
+      ask_when: {
+        keywords: ["毎日","平日","週末","朝","昼","夜","明日","昨日","曜日"],
+        keywords_ko: ["아침","점심","밤","내일","어제","평일","주말","매일"],
+        jp: "毎日朝9時から夕方5時まで営業しています。平日も週末も同じです。明日も同じ時間に開館しますよ。",
+        ko: "매일 아침 9시부터 저녁 5시까지 운영해요. 평일에도 주말에도 같은 시간이에요. 내일도 오전 9시에 열어요. 어제도 같은 시간이었어요.",
+        en: "Every day from 9 AM to 5 PM — weekdays and weekends alike. Same hours tomorrow as yesterday."
       },
       ask_membership: {
         keywords: ["登録","会員","カード","申込","入会","利用"],
@@ -195,7 +209,7 @@ const NPC_DEFS = {
 
   play_staff: {
     name_jp: "スタッフ",
-    name_ko: "직원",
+    name_ko: "준영",
     name_en: "Play Area Staff",
     room: "play_area",
     hotspot: "npc_play_staff",
@@ -230,8 +244,8 @@ const NPC_DEFS = {
         keywords: ["何歳","年齢","対象","才","歳","子供","こども","小学","年","何年"],
         keywords_ko: ["몇 살","나이","대상","살","어린이","이상"],
         jp: "このエリアは3才から6才のお子様が対象です。7才以上の方は小さな子に道を譲ってあげてください。",
-        ko: "이 공간은 3살부터 6살 어린이가 대상이에요. 7살 이상은 어린 아이에게 양보해 주세요.",
-        en: "This area is for children ages 3 to 6. Those 7 and older should give way to younger children."
+        ko: "이 공간은 세 살부터 여섯 살까지의 작은 어린이가 대상이에요. 일곱 살 이상은 어린 아이에게 양보해 주세요. 오늘은 다섯 명 정도 왔어요!",
+        en: "This area is for children ages 3 to 6 — the little ones. Those 7 and older should give way. About five kids are here today!"
       },
       ask_shoes: {
         keywords: ["くつ","靴","脱","履","はき","下駄"],
@@ -250,9 +264,16 @@ const NPC_DEFS = {
       ask_rules: {
         keywords: ["ルール","規則","注意","危ない","禁止","守"],
         keywords_ko: ["규칙","주의","위험","금지","뛰","사이좋게"],
-        jp: "走らないようにしてください。他のお子様とぶつからないよう気をつけて、順番を守って遊んでください。",
-        ko: "뛸 때는 조심해요. 다른 아이들과 사이좋게 놀아요. 순서를 지켜 주세요.",
+        jp: "走らないようにしてください。他の人とぶつからないよう、仲よく遊んでください。順番を守ってね。",
+        ko: "뛸 때는 조심해요. 다른 아이들과 사이좋게 놀아요. 순서를 지켜 주세요. 여기 교실 느낌이 나죠?",
         en: "Please don't run. Watch out for other children, and take turns when playing."
+      },
+      ask_count: {
+        keywords: ["何人","人数","何名","子供","いくつ","何個","座"],
+        keywords_ko: ["몇 명","인원","몇","앉아","아이","함께"],
+        jp: "今日は何人のお子様が来ていますか？小さいお子様は大人と一緒に座って遊んでください。",
+        ko: "오늘 아이들이 몇 명 왔어요? 작은 아이들은 어른과 함께 앉아서 놀아요. 서로 사이좋게 지내요.",
+        en: "How many children are here today? Little ones should sit and play with an adult nearby."
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
@@ -272,7 +293,7 @@ const NPC_DEFS = {
 
   salon_staff: {
     name_jp: "サロンスタッフ",
-    name_ko: "살롱 직원",
+    name_ko: "지아",
     name_en: "Salon Staff",
     room: "salon",
     hotspot: "npc_salon_staff",
@@ -306,7 +327,7 @@ const NPC_DEFS = {
       ask_food: {
         keywords: ["食べ","飲み","飲食","お菓子","弁当","ランチ","水","お腹"],
         keywords_ko: ["먹","마시","음식","간식","물","배고","음료"],
-        jp: "サロン内では飲食はご遠慮ください。水分補給のみ大丈夫ですよ。お食事は1階のラウンジをご利用ください。",
+        jp: "サロン内ではお菓子など飲食はご遠慮ください。水分補給のみ大丈夫ですよ。お食事は1階のラウンジをご利用ください。",
         ko: "살롱 내에서는 음식물 반입은 삼가 주세요. 수분 보충만 가능합니다. 음식은 1층 라운지를 이용해 주세요.",
         en: "Please don't eat in the salon. Water is fine. For meals, please use the 1st floor lounge."
       },
@@ -327,8 +348,8 @@ const NPC_DEFS = {
       ask_crafts: {
         keywords: ["工作","材料","作る","作り方","手伝","教えて","何"],
         keywords_ko: ["공작","재료","만들","방법","도와","인형"],
-        jp: "今日は工作台が使えますよ。材料はあちらにあります。わからないことがあれば気軽に聞いてね。",
-        ko: "오늘은 공작대가 사용 가능해요. 재료는 저쪽에 있어요. 모르면 편하게 물어보세요.",
+        jp: "今日は工作をする台が使えますよ。材料はあちらにあります。練習したら上手になりますよ。わからないことがあれば気軽に聞いてね。",
+        ko: "오늘은 공작대를 사용할 수 있어요. 재료는 저쪽에 있어요. 직접 만들 수 있어요! 재미있을 거예요. 모르면 편하게 물어보세요.",
         en: "The craft table is available today. Materials are over there. Feel free to ask if you're unsure about anything."
       },
       ask_birthday: {
@@ -349,7 +370,7 @@ const NPC_DEFS = {
 
   outdoor_guide: {
     name_jp: "外スタッフ",
-    name_ko: "야외 직원",
+    name_ko: "우진",
     name_en: "Outdoor Guide",
     room: "outdoor",
     hotspot: "npc_outdoor_guide",
@@ -390,16 +411,23 @@ const NPC_DEFS = {
       ask_rules: {
         keywords: ["ルール","決まり","約束","危ない","危険","注意","してはいけない"],
         keywords_ko: ["규칙","약속","위험","주의","안전","양보","뛰"],
-        jp: "走らないでください。ジップラインは一人ずつご利用いただき、終わったら次の方に譲ってください。",
+        jp: "安全のためにも走らないでください。7才以上の方は道を空けて次の人に譲ってください。ジップラインに乗っている人が通りますので、ベンチでお待ちください。",
         ko: "뛰지 마세요. 주의가 필요해요. 짚라인은 한 명씩 이용하고, 끝나면 다음 분께 양보해 주세요.",
         en: "Please don't run. Use the zipline one at a time and yield to the next person when you're done."
       },
       ask_inside: {
         keywords: ["図書館","中","建物","入る","どこ","トイレ","休憩"],
         keywords_ko: ["도서관","안","건물","들어가","어디","화장실","출구","입구"],
-        jp: "建物の中は左の入口から入れます。図書館やサロンは2階にありますよ。",
-        ko: "건물 안은 왼쪽 입구에서 들어가세요. 도서관과 살롱은 2층에 있어요. 출구도 왼쪽에 있어요.",
-        en: "You can enter the building through the entrance on the left. The library and salon are on the 2nd floor."
+        jp: "建物の中は左の入口から入れます。図書館やサロンは2階にありますよ。出口も左側にございます。",
+        ko: "건물 안은 왼쪽 입구에서 들어가세요. 엘리베이터로 2층에 올라가세요. 출구도 왼쪽에 있어요.",
+        en: "You can enter the building through the entrance on the left. Take the elevator up to the 2nd floor. The exit is also on the left."
+      },
+      ask_wait: {
+        keywords: ["待つ","どのくらい","時間","次","前","後","並ぶ"],
+        keywords_ko: ["기다","얼마나","시간","앞","뒤","순서","줄"],
+        jp: "待ち時間は前の方の数によります。前の人が終わったら次の番です。後ろに並んでください。",
+        ko: "기다리는 시간은 앞에 몇 명이 있느냐에 달려 있어요. 앞 사람이 끝나면 다음 차례예요. 뒤에 줄 서서 기다려 주세요. 얼마나 걸릴지는 그때그때 달라요.",
+        en: "Wait time depends on how many are ahead of you. When the person in front finishes, it's your turn. Please queue at the back."
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],
@@ -419,7 +447,7 @@ const NPC_DEFS = {
 
   gallery_curator: {
     name_jp: "学芸員",
-    name_ko: "큐레이터",
+    name_ko: "채원",
     name_en: "Curator",
     room: "gallery",
     hotspot: "npc_gallery_curator",
@@ -453,14 +481,14 @@ const NPC_DEFS = {
       ask_exhibits: {
         keywords: ["展示","おもちゃ","玩具","飾り","何","見る","触"],
         keywords_ko: ["전시품","만지","구경","인형","토요일","일요일","개관"],
-        jp: "展示品は触れないようにお願いします。目でだけ楽しんでください。どのおもちゃも大切な展示品です。",
-        ko: "전시품은 소중한 것들입니다. 인형도 전시품이에요. 토요일과 일요일에만 열려요.",
+        jp: "展示品には手を触れないようにお願いします。人形も大切な展示品です。土日しか開いていませんが、ゆっくりご覧ください。",
+        ko: "전시품은 소중한 것들입니다. 인형도 전시품이에요. 다 보려면 시간이 걸리지만, 특별한 것들이 많아요. 토요일과 일요일에만 열려요.",
         en: "Please don't touch the exhibits — enjoy them with your eyes. Every toy here is a treasured display piece."
       },
       ask_toys: {
         keywords: ["好き","人気","一番","おすすめ","面白い","かわいい"],
         keywords_ko: ["좋아","인기","제일","추천","재미","귀여","기차","코너"],
-        jp: "私が一番好きなのは木製の積み木セットです。昔の職人が一つ一つ手作りしたんですよ。",
+        jp: "汽車の模型も展示されています。コーナーごとに楽しんでください。私が一番好きなのは木製の積み木セットです。",
         ko: "저는 기차 모형도 좋아해요. 코너별로 전시돼 있어요. 木製 적목 세트도 아름다워요.",
         en: "My personal favourite is the wooden block set. Each piece was handmade by a craftsman long ago."
       },
@@ -470,6 +498,13 @@ const NPC_DEFS = {
         jp: "下の遊び場も楽しいですよ。ここから階段で行けます。小さいお子様にはそちらがいいかもしれません。",
         ko: "아래 놀이 공간도 즐거워요. 여기서 계단으로 갈 수 있어요. 어린 아이들에게 더 좋을 수 있어요.",
         en: "The play area downstairs is fun too. You can get there from here. It might suit younger children better."
+      },
+      ask_hours: {
+        keywords: ["何時","開館","時間","平日","週末","いつ","土曜","日曜"],
+        keywords_ko: ["몇 시","개관","시간","평일","주말","언제","얼마나"],
+        jp: "展示館は週末のみ、土曜日と日曜日の10時から17時まで開館しています。平日は閉館しています。",
+        ko: "전시관은 주말에만 열려요. 토요일과 일요일, 열 시부터 오후 다섯 시까지예요. 평일에는 문을 닫아요. 얼마나 걸릴지 모르지만 천천히 둘러보세요.",
+        en: "The gallery is open weekends only — Saturday and Sunday, 10 AM to 5 PM. Closed on weekdays."
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","いつ","생일"],
@@ -489,7 +524,7 @@ const NPC_DEFS = {
 
   cook: {
     name_jp: "調理師",
-    name_ko: "요리사",
+    name_ko: "미경",
     name_en: "Cook",
     room: "cooking_room",
     hotspot: "npc_cook",
@@ -530,16 +565,23 @@ const NPC_DEFS = {
       ask_safety: {
         keywords: ["ナイフ","包丁","火","危ない","注意","切る","熱い"],
         keywords_ko: ["칼","불","위험","주의","자르","뜨겁","어른"],
-        jp: "ナイフや火を使うときは必ず大人と一緒にやってください。安全第一です。怪我をしないように気をつけてね。",
+        jp: "ナイフや火を使うときは必ず大人と一緒にやってください。ナイフは手を切ることがあります。安全第一です。気をつけてね。",
         ko: "칼이나 불을 사용할 때는 반드시 어른과 함께 하세요. 주의해 주세요. 불 사용 시 특히 조심하세요.",
         en: "Always use knives and fire with an adult. Safety first — be careful not to hurt yourself."
       },
       ask_cooking: {
         keywords: ["料理","作り方","レシピ","教えて","習いたい","コツ","材料"],
         keywords_ko: ["요리","만드는","레시피","알려","배우","재료"],
-        jp: "料理で大切なのは、材料を正確に量ることと、焦らず丁寧にすることです。練習あるのみですよ！",
-        ko: "요리에서 중요한 것은 재료를 정확하게 계량하는 것이에요. 연습만이 답이에요!",
+        jp: "料理で大切なのは材料を正確に量ることです。ここは台所のような場所ですね。焦らず丁寧に。練習あるのみですよ！",
+        ko: "요리에서 중요한 것은 재료를 정확하게 계량하는 것이에요. 재료가 셋이에요 — 당근, 감자, 양파! 어떻게 만드는지 궁금하면 직접 물어봐요! 요즘 바빠서 정신이 없지만, 매일 연습하면 잘 할 수 있어요.",
         en: "The most important things in cooking are measuring accurately and taking your time. Practice makes perfect!"
+      },
+      ask_ingredients: {
+        keywords: ["材料","野菜","にんじん","玉ねぎ","じゃがいも","何個","いくつ"],
+        keywords_ko: ["재료","야채","당근","양파","감자","개","몇","계량"],
+        jp: "カレーの材料は三種類。にんじん二個、じゃがいも三個、玉ねぎ一個です。毎朝新鮮な材料を用意しています！",
+        ko: "카레 재료는 주로 세 가지예요. 당근 두 개, 감자 세 개, 양파 한 개예요. 매일 아침 신선한 재료를 준비해요!",
+        en: "Curry uses three ingredients — two carrots, three potatoes, one onion. I prepare fresh ingredients every morning!"
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","いつ","생일"],
@@ -559,7 +601,7 @@ const NPC_DEFS = {
 
   house_resident: {
     name_jp: "住人",
-    name_ko: "거주자",
+    name_ko: "현준",
     name_en: "Resident",
     room: "house",
     hotspot: "npc_house_resident",
@@ -603,14 +645,14 @@ const NPC_DEFS = {
       ask_food: {
         keywords: ["食べ","飲み","お茶","ご飯","何か","腹","お腹","空いた","夕飯","カレー"],
         keywords_ko: ["먹","마시","차","밥","배","저녁","카레","메뉴","음식"],
-        jp: "今日はカレーライスですよ。台所にお茶もあるので、先にどうぞ。",
-        ko: "오늘 저녁은 카레라이스예요. 배가 고프면 카레라이스 드세요. 오늘의 메뉴는 이걸로 결정!",
+        jp: "今日の夕飯はカレーライスです。今日のメニューはこれ！料理室で作ってきました。台所にお茶もありますよ。",
+        ko: "오늘 저녁은 카레라이스예요. 배가 고프면 카레라이스 드세요. 부엌에 차도 있으니 마셔도 돼요. 점심은 드셨어요? 오늘의 메뉴는 이걸로 결정!",
         en: "Tonight's dinner is curry rice. There's also tea in the kitchen — help yourself."
       },
       ask_house: {
         keywords: ["家","いえ","うち","部屋","こたつ","畳","たたみ","居間","玄関"],
         keywords_ko: ["집","방","코타츠","다다미","현관","따뜻"],
-        jp: "この家は古いけど居心地がいいでしょう？畳の匂いが大好きなんです。",
+        jp: "この家は古いけど居心地がいいでしょう？玄関から入ると畳の匂いがして、大好きなんです。",
         ko: "이 집은 오래됐지만 아늑하죠? 다다미 냄새가 너무 좋아요. 따뜻하게 쉬세요.",
         en: "This house is old, but cozy, isn't it? I love the smell of tatami."
       },
@@ -618,7 +660,7 @@ const NPC_DEFS = {
         keywords: ["外","そと","図書館","どこ","行く","出る","帰る","出口"],
         keywords_ko: ["밖","나가","도서관","어디","가","출구","돌아"],
         jp: "外に出るなら左の出口から。またいつでも来てね。外は気持ちいいですよ。",
-        ko: "나가려면 왼쪽 출구에서 나가면 돼요. 언제든 또 와요.",
+        ko: "나가려면 왼쪽 출구에서 나가면 돼요. 어디로 가야 할지 모르면 왼쪽이에요. 언제든 또 와요.",
         en: "If you're heading out, use the exit on the left. Come again any time — it's lovely outside."
       },
       ask_shoes: {
@@ -627,6 +669,13 @@ const NPC_DEFS = {
         jp: "玄関でくつをぬいでから上がってね。それが家のルールです。",
         ko: "입구에서 신발을 벗고 들어와요. 그게 집의 규칙이에요.",
         en: "Please take off your shoes at the entrance. That's the house rule."
+      },
+      ask_tomorrow: {
+        keywords: ["明日","昨日","また","今度","いつ","来て","再来","週末","平日"],
+        keywords_ko: ["내일","어제","또","이번","언제","주말","평일","다시"],
+        jp: "またいつでもどうぞ！明日もこたつでゆっくりしていますよ。昨日みたいに一緒に過ごしましょう。週末はいつも穏やかです。",
+        ko: "또 언제든 와요! 내일도 코타츠에서 쉬고 있을 거예요. 어제도 같이 쉬었잖아요. 주말에는 더 느긋하게 지내요. 평일에도 환영해요!",
+        en: "Come again any time! I'll be resting by the kotatsu tomorrow too. Weekends here are especially calm."
       },
       ask_birthday: {
         keywords: ["誕生日","たんじょうび","生まれ","何月","何日","生年","いつ","생일"],

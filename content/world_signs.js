@@ -6,13 +6,15 @@ const WORLD_SIGNS = [
     id: "lobby_directory",
     label: "フロア案内",
     color: "#1a3a5c",
-    japanese: "図書館・こどもサロン\n料理室・おもちゃ画廊",
-    translation: "Library · Children's Salon / Cooking Room · Toy Gallery",
+    japanese: "図書館・こどもサロン\n料理室・おもちゃ画廊\n案内所（2階）",
+    translation: "Library · Children's Salon / Cooking Room · Toy Gallery / Information Desk (2nd Floor)",
     tokens: [
       { text: "図書館",   furigana: "としょかん",   romaji: "toshokan",     meaning: "library",      points_to: "library" },
       { text: "サロン",   furigana: "サロン",       romaji: "saron",        meaning: "salon",        points_to: "salon" },
       { text: "料理室",   furigana: "りょうりしつ", romaji: "ryourishitsu", meaning: "cooking room", points_to: "cooking_room" },
       { text: "画廊",     furigana: "がろう",       romaji: "garou",        meaning: "gallery",      points_to: "gallery" },
+      { text: "案内所",   furigana: "あんないじょ", romaji: "annaijo",      meaning: "information desk" },
+      { text: "2階",      furigana: "にかい",       romaji: "ni kai",       meaning: "2nd floor" },
     ]
   },
   {
@@ -55,11 +57,12 @@ const WORLD_SIGNS = [
   },
   {
     id: "play_age",
-    label: "対象年齢",
+    label: "遊び場・対象年齢",
     color: "#2d6a4f",
-    japanese: "3才から6才まで\nのこどもたちが\n対象です",
-    translation: "Intended for children ages 3 to 6.",
+    japanese: "遊び場の対象年齢\n3才から6才まで\nのこどもたちが\n対象です",
+    translation: "Play area: intended for children ages 3 to 6.",
     tokens: [
+      { text: "遊び場", furigana: "あそびば",   romaji: "asobiba", meaning: "play area" },
       { text: "3",      furigana: "さん",       romaji: "san",     meaning: "three" },
       { text: "才",     furigana: "さい",       romaji: "sai",     meaning: "years old" },
       { text: "から",   furigana: "から",       romaji: "kara",    meaning: "from" },
@@ -86,11 +89,12 @@ const WORLD_SIGNS = [
   },
   {
     id: "salon_food",
-    label: "飲食について",
+    label: "サロンの飲食について",
     color: "#8b3a1e",
-    japanese: "飲食はご遠慮\nください\n水分補給は可",
-    translation: "Please refrain from eating and drinking. Water is permitted.",
+    japanese: "サロンの\n飲食はご遠慮\nください\n水分補給は可",
+    translation: "Please refrain from eating and drinking in the salon. Water is permitted.",
     tokens: [
+      { text: "サロン",   furigana: "サロン",           romaji: "saron",         meaning: "salon" },
       { text: "飲食",     furigana: "いんしょく",       romaji: "inshoku",       meaning: "eating and drinking" },
       { text: "ご遠慮",   furigana: "ごえんりょ",       romaji: "goenryo",       meaning: "please refrain" },
       { text: "ください", furigana: "ください",         romaji: "kudasai",       meaning: "please" },
@@ -100,6 +104,17 @@ const WORLD_SIGNS = [
   },
 
   // --- OUTDOOR ---
+  {
+    id: "outdoor_safety",
+    label: "安全のために",
+    color: "#2d6a4f",
+    japanese: "安全にご利用\nください",
+    translation: "Please use this area safely.",
+    tokens: [
+      { text: "安全",     furigana: "あんぜん",   romaji: "anzen",   meaning: "safety" },
+      { text: "ください", furigana: "ください",   romaji: "kudasai", meaning: "please" },
+    ]
+  },
   {
     id: "outdoor_zipline",
     label: "ジップライン",
@@ -177,6 +192,16 @@ const WORLD_SIGNS = [
 
   // --- COOKING ROOM ---
   {
+    id: "cooking_materials",
+    label: "材料リスト",
+    color: "#5c3317",
+    japanese: "今日の材料：\nにんじん・じゃがいも\nたまねぎ・カレー",
+    translation: "Today's ingredients: carrots, potatoes, onions, curry.",
+    tokens: [
+      { text: "材料", furigana: "ざいりょう", romaji: "zairyou", meaning: "ingredients" },
+    ]
+  },
+  {
     id: "cooking_welcome",
     label: "料理室",
     color: "#5c3317",
@@ -219,23 +244,25 @@ const WORLD_SIGNS = [
     id: "house_entrance",
     label: "玄関",
     color: "#8b3a1e",
-    japanese: "おかえりなさい\nくつをおぬぎ\nください",
-    translation: "Welcome back — please remove your shoes.",
+    japanese: "おかえりなさい\nくつをおぬぎ\nください\nくつは下駄箱へ",
+    translation: "Welcome back — please remove your shoes. Shoes go in the shoe rack.",
     tokens: [
       { text: "おかえりなさい", furigana: "おかえりなさい", romaji: "okaerinasai", meaning: "welcome back" },
       { text: "くつ",           furigana: "くつ",           romaji: "kutsu",       meaning: "shoes" },
       { text: "を",             furigana: "を",             romaji: "wo",          meaning: "object marker/object" },
       { text: "おぬぎ",         furigana: "おぬぎ",         romaji: "onugi",       meaning: "please remove" },
       { text: "ください",       furigana: "ください",       romaji: "kudasai",     meaning: "please" },
+      { text: "下駄箱",         furigana: "げたばこ",       romaji: "getabako",    meaning: "shoe rack" },
     ]
   },
   {
     id: "house_kotatsu",
     label: "居間",
     color: "#3a2810",
-    japanese: "こたつで\nあたたまろう",
-    translation: "Let's warm up at the kotatsu.",
+    japanese: "畳の上で\nこたつで\nあたたまろう",
+    translation: "Let's warm up at the kotatsu on the tatami.",
     tokens: [
+      { text: "畳",           furigana: "たたみ",       romaji: "tatami",       meaning: "tatami mat" },
       { text: "こたつ",       furigana: "こたつ",       romaji: "kotatsu",      meaning: "kotatsu" },
       { text: "で",           furigana: "で",           romaji: "de",           meaning: "at" },
       { text: "あたたまろう", furigana: "あたたまろう", romaji: "atatamaro u",  meaning: "let's warm up" },

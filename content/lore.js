@@ -47,14 +47,14 @@ const SCENE_LORE = {
     l2: "Eating/drinking in here — strictly off-limits."
   },
   librarian: {
-    l1: "It's the 図書館員 — the librarian.",
+    l1: "It's the 司書 — the librarian.",
     l2: "Ensures it is done, ongoing — quiet inside."
   },
 
   // Lobby
   info_desk: {
     l1: "It's the 案内所 — the information desk.",
-    l2: "In the ロビー — the lobby. 접수 (reception) and info. Floor maps, event schedules, lost-and-found."
+    l2: "In the ロビー — the lobby. Part of the 建物. 受付 (reception) and info. Floor maps, event schedules."
   },
   exit_door: {
     l1: "It's the 出口/출구 — the exit.",
@@ -89,6 +89,12 @@ const SCENE_LORE = {
     l2: "음식물 반입은 삼가 주세요 — no drinks in the salon."
   },
 
+  // House
+  tatami_floor: {
+    l1: "It's 畳 — traditional woven straw flooring.",
+    l2: "A quiet, grounded feeling. The smell fills the room."
+  },
+
   // Outdoor
   outdoor_bench: {
     l1: "It's a ベンチ — a bench.",
@@ -97,5 +103,15 @@ const SCENE_LORE = {
   zipline_post: {
     l1: "It's a ジップライン — a zipline.",
     l2: "Watch out — riders pass overhead. Stay clear of the path."
+  },
+
+  // Street
+  street_bench: {
+    l1: "It's a ベンチ — a bench.",
+    l2: "A place to rest outside before going in."
+  },
+  street_building: {
+    l1: "It's the 建物 — 富山県こどもみらい館.",
+    l2: "The Children's Future Hall. Enter through the main entrance."
   },
 };

@@ -110,7 +110,7 @@
         }
 
         // Room label
-        rooms += `<text x="${cx(pos.col)}" y="${y + BH / 2 - 2}" text-anchor="middle" dominant-baseline="middle" fill="${label_color}" font-size="9" font-family="'Noto Serif JP',serif" style="pointer-events:none">${labels[id] || id}</text>`;
+        rooms += `<text x="${cx(pos.col)}" y="${y + BH / 2 - 2}" text-anchor="middle" dominant-baseline="middle" fill="${label_color}" font-size="12" font-family="'Noto Serif JP',serif" style="pointer-events:none">${labels[id] || id}</text>`;
 
         // Current-location dot
         if (is_here) {

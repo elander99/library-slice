@@ -24,7 +24,8 @@ const SpeechBubble = (() => {
         if (_dragging) return;
         const npc = typeof NPC_DEFS !== 'undefined' ? NPC_DEFS[meta?.npc_id] : null;
         const ko = typeof LANG !== 'undefined' && LANG.current === 'ko';
-        const npc_label = ko ? (npc?.name_ko || '') : (npc?.name_en || '');
+        const _name_known = typeof JOURNAL_PROGRESS !== 'undefined' && JOURNAL_PROGRESS.get(meta?.npc_id).met;
+        const npc_label = _name_known ? (ko ? (npc?.name_ko || '') : (npc?.name_en || '')) : '';
         if (typeof WorkspacePanel !== 'undefined')
           WorkspacePanel.open_npc_sentence(text, words, wi, npc_label, null, meta?.text_en || '');
       });

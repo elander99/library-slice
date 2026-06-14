@@ -42,45 +42,46 @@ const WorkspacePanel = (() => {
     const panel_el  = document.getElementById("ws-panel");
     const ws_el     = document.getElementById("workspace");
     const empty_el  = document.getElementById("ws-empty");
-    const chips_row = document.getElementById("ws-chips-row");
+    const chips_row  = document.getElementById("ws-chips-row");
+    const chips_inner = document.getElementById("ws-chips-inner");
     // Drag-to-scroll the chips row (pointer drag on desktop; touch scrolls natively via overflow-x)
     let _cr_sx=0, _cr_sl=0, _cr_down=false, _cr_moved=false;
-    chips_row.addEventListener('pointerdown', e => {
+    chips_inner.addEventListener('pointerdown', e => {
       if (e.target===inp || e.button) return;
       if (e.target.closest('.ws-token')) return; // let HTML5 drag handle token dragging
-      _cr_down=true; _cr_moved=false; _cr_sx=e.clientX; _cr_sl=chips_row.scrollLeft;
-      chips_row.classList.add('dragging');
+      _cr_down=true; _cr_moved=false; _cr_sx=e.clientX; _cr_sl=chips_inner.scrollLeft;
+      chips_inner.classList.add('dragging');
     });
     document.addEventListener('pointermove', e => {
       if (!_cr_down) return;
       const dx=e.clientX-_cr_sx;
       if (Math.abs(dx)>4) _cr_moved=true;
-      chips_row.scrollLeft=_cr_sl-dx;
+      chips_inner.scrollLeft=_cr_sl-dx;
     });
-    const _cr_up=()=>{ _cr_down=false; chips_row.classList.remove('dragging'); };
+    const _cr_up=()=>{ _cr_down=false; chips_inner.classList.remove('dragging'); };
     document.addEventListener('pointerup',     _cr_up);
     document.addEventListener('pointercancel', _cr_up);
     // Swallow click if we moved, so dragging doesn't accidentally select a word
-    chips_row.addEventListener('click', e=>{ if (_cr_moved){ e.stopPropagation(); _cr_moved=false; } }, true);
+    chips_inner.addEventListener('click', e=>{ if (_cr_moved){ e.stopPropagation(); _cr_moved=false; } }, true);
 
     // ── Drag-to-slot: drop obj-label (English meaning) onto a meaning slot ──
-    chips_row.addEventListener('dragover', e => {
+    chips_inner.addEventListener('dragover', e => {
       if (!e.dataTransfer.types.includes('obj-label')) return;
       const slot = e.target?.closest?.('.ws-token-meaning.slot-empty, .ws-part-meaning.slot-empty');
       if (!slot) {
-        chips_row.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
+        chips_inner.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
         return;
       }
       e.preventDefault();
-      chips_row.querySelectorAll('.slot-drop-over').forEach(s => { if (s !== slot) s.classList.remove('slot-drop-over'); });
+      chips_inner.querySelectorAll('.slot-drop-over').forEach(s => { if (s !== slot) s.classList.remove('slot-drop-over'); });
       slot.classList.add('slot-drop-over');
     });
-    chips_row.addEventListener('dragleave', e => {
-      if (!e.relatedTarget || !chips_row.contains(e.relatedTarget))
-        chips_row.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
+    chips_inner.addEventListener('dragleave', e => {
+      if (!e.relatedTarget || !chips_inner.contains(e.relatedTarget))
+        chips_inner.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
     });
-    chips_row.addEventListener('drop', e => {
-      chips_row.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
+    chips_inner.addEventListener('drop', e => {
+      chips_inner.querySelectorAll('.slot-drop-over').forEach(s => s.classList.remove('slot-drop-over'));
       const word = e.dataTransfer.getData('obj-label');
       if (!word) return;
       const slot = e.target?.closest?.('.ws-token-meaning.slot-empty, .ws-part-meaning.slot-empty');
@@ -103,16 +104,27 @@ const WorkspacePanel = (() => {
     inp.addEventListener("pointerdown", () => { _inp_pd = true; });
     document.addEventListener("pointerup", () => { _inp_pd = false; });
     inp.addEventListener("dragover", e => {
-      if (!e.dataTransfer.types.includes('obj-label')) return;
-      if (inp.parentElement?.dataset?.field !== 'meaning') return;
+      const hasWord = e.dataTransfer.types.includes('dlg-word');
+      const hasMeaning = e.dataTransfer.types.includes('obj-label') && inp.parentElement?.dataset?.field === 'meaning';
+      if (!hasWord && !hasMeaning) return;
       e.preventDefault(); inp.classList.add('drag-over');
     });
     inp.addEventListener("dragleave", () => inp.classList.remove('drag-over'));
     inp.addEventListener("drop", e => {
-      const word = e.dataTransfer.getData('obj-label');
-      if (!word || inp.parentElement?.dataset?.field !== 'meaning') return;
       e.preventDefault(); inp.classList.remove('drag-over');
-      inp.value = word;
+      if (e.dataTransfer.types.includes('dlg-word')) {
+        const word = e.dataTransfer.getData('dlg-word');
+        if (!word) return;
+        const s = inp.selectionStart ?? inp.value.length;
+        const en = inp.selectionEnd ?? inp.value.length;
+        inp.value = inp.value.slice(0, s) + word + inp.value.slice(en);
+        inp.selectionStart = inp.selectionEnd = s + word.length;
+        inp.focus();
+        return;
+      }
+      const label = e.dataTransfer.getData('obj-label');
+      if (!label || inp.parentElement?.dataset?.field !== 'meaning') return;
+      inp.value = label;
       inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     });
     const fb        = document.getElementById("ws-feedback");
@@ -193,6 +205,9 @@ const WorkspacePanel = (() => {
         const parts=word.meaning.replace(/\(.*?\)/g,"").toLowerCase().split(/\s*[/,]\s*|\s+or\s+/).map(p=>depolite(norm(p.trim()))).filter(Boolean);
         const v=depolite(norm(val)), v_ns=depolite(norm(val_ns));
         if (parts.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return "meaning";
+        // Accept content inside parentheses: "name (subject)" → also accept "subject"
+        {const pp=[...word.meaning.matchAll(/\(([^)]+)\)/g)].map(m=>norm(m[1].trim().toLowerCase())).filter(Boolean);
+        if (pp.some(p=>v===p||v_ns===p.replace(/\s+/g,""))) return "meaning";}
         // Accept base adjective/adverb form of -ly adverbs:
         //   quietly→quiet  slowly→slow  strictly→strict  comfortably→comfortable
         if (parts.some(p => {
@@ -251,6 +266,12 @@ const WorkspacePanel = (() => {
           const base=p.slice(0,-2);
           return base.length>=2&&(v===base||v_ns===base);
         })) return "meaning";
+        // Accept -ate verb of -ation/-ations nominalizations: celebration→celebrate
+        if (parts.some(p=>{
+          if (p.endsWith('ations')&&p.length>=9){const base=p.slice(0,-6)+'ate';return base.length>=4&&(v===base||v_ns===base);}
+          if (p.endsWith('ation')&&p.length>=8){const base=p.slice(0,-5)+'ate';return base.length>=4&&(v===base||v_ns===base);}
+          return false;
+        })) return "meaning";
         // Accept base verb of -ment nominalizations: replenishment→replenish, movement→move.
         if (parts.some(p=>{
           if (!p.endsWith('ment')) return false;
@@ -285,20 +306,37 @@ const WorkspacePanel = (() => {
     }
 
     function _update_lkp() {
-      const cd=sim.state.phone.lookup_cooldown;
-      lkp.disabled=cd>0||cur_word_idx==null;
-      lkp.textContent=cd>0?`📱 ${cd}s`:'📱 look up';
-      lkp_bar.style.width=cd>0?`${(cd/60)*100}%`:'0%';
+      const ch=sim.state.phone.charges;
+      const rt=sim.state.phone.recharge_timer;
+      lkp.disabled=ch<=0||cur_word_idx==null;
+      function bat(level,charging) {
+        const fw=Math.max(0,Math.min(8,Math.round(level*8)));
+        const fill=fw>0
+          ?`<rect x="1.5" y="1.5" width="${fw}" height="5" rx="1" fill="currentColor"${charging?' class="lkp-bat-fill"':''}/>`
+          :'';
+        return `<svg width="14" height="8" viewBox="0 0 14 8" style="vertical-align:middle;margin:0 1px">`+
+          `<rect x=".5" y=".5" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/>`+
+          `<rect x="11" y="2" width="2.5" height="4" rx=".5" fill="currentColor"/>`+
+          fill+`</svg>`;
+      }
+      let html='📱';
+      for(let i=0;i<5;i++){
+        if(i<ch)        html+=bat(1,false);
+        else if(i===ch) html+=bat(rt/90,true);
+        else            html+=bat(0,false);
+      }
+      lkp.innerHTML=html;
+      lkp_bar.style.width='0%';
     }
     function _start_lkp_timer() {
       if (_lkp_timer) return;
-      _lkp_timer=setInterval(()=>{ _update_lkp(); if(sim.state.phone.lookup_cooldown<=0){clearInterval(_lkp_timer);_lkp_timer=null;} },1000);
+      _lkp_timer=setInterval(()=>{ _update_lkp(); if(sim.state.phone.charges>=5&&sim.state.phone.recharge_timer===0){clearInterval(_lkp_timer);_lkp_timer=null;} },1000);
     }
 
     function _render_chips() {
       // Rescue inp from being removed along with old chips
       panel_el.appendChild(inp); inp.style.display='none';
-      [...chips_row.querySelectorAll(".ws-merged-chip")].forEach(c=>c.remove());
+      [...chips_inner.querySelectorAll(".ws-merged-chip")].forEach(c=>c.remove());
       const merged=document.createElement("div"); merged.className="ws-merged-chip";
       const sign=SIGN_BY_ID[cur_sign_id]; if (!sign) return;
       const tokens=sign.tokens||[];
@@ -357,7 +395,8 @@ const WorkspacePanel = (() => {
           const mspan=document.createElement("span"); mspan.className="ws-token-meaning";
           mspan.dataset.tokIdx=tok_idx; mspan.dataset.field='meaning';
           if (res.meaning) {
-            if (token.meaning) { const raw=Array.isArray(token.meaning)?token.meaning[0]:token.meaning; mspan.textContent=raw.split("/")[0].trim().toLowerCase(); }
+            const _msrc=token.meaning||_KO_FALLBACK?.[token.text.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'')]?.meaning||_npc_defs?.[token.text.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'')]?.meaning||'';
+            if (_msrc) { const raw=Array.isArray(_msrc)?_msrc[0]:_msrc; mspan.textContent=raw.split("/")[0].trim().toLowerCase().replace(/\bi\b/g,'I'); }
             mspan.classList.add("slot-done");
           } else if (tok_idx===cur_word_idx&&cur_part_idx==null&&_active_field==='meaning') {
             mspan.classList.add("slot-active"); _placeInp(mspan);
@@ -424,7 +463,8 @@ const WorkspacePanel = (() => {
             const pmspan=document.createElement("span"); pmspan.className="ws-part-meaning";
             pmspan.dataset.tokIdx=tok_idx; pmspan.dataset.partIdx=pi; pmspan.dataset.field='meaning';
             if (pres.meaning) {
-              if (part.meaning) { const raw=Array.isArray(part.meaning)?part.meaning[0]:part.meaning; pmspan.textContent=raw.split("/")[0].trim().toLowerCase(); }
+              const _pmsrc=part.meaning||_KO_FALLBACK?.[part.text.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'')]?.meaning||_npc_defs?.[part.text.replace(/^[.!?,\s]+|[.!?,\s]+$/g,'')]?.meaning||'';
+              if (_pmsrc) { const raw=Array.isArray(_pmsrc)?_pmsrc[0]:_pmsrc; pmspan.textContent=raw.split("/")[0].trim().toLowerCase().replace(/\bi\b/g,'I'); }
               pmspan.classList.add("slot-done");
             } else if (tok_idx===cur_word_idx&&pi===cur_part_idx&&_active_field==='meaning') {
               pmspan.classList.add("slot-active"); _placeInp(pmspan);
@@ -491,11 +531,11 @@ const WorkspacePanel = (() => {
         const p=document.createElement("span"); p.className="ws-particle";
         p.textContent=full.slice(pos); merged.appendChild(p);
       }
-      chips_row.appendChild(merged);
+      chips_inner.appendChild(merged);
     }
 
     function _activate_slot_inplace(idx, part_idx, field) {
-      const merged=chips_row.querySelector('.ws-merged-chip');
+      const merged=chips_inner.querySelector('.ws-merged-chip');
       if (!merged) return false;
       const isWholeSlot=part_idx===-1;
       const isPartSlot=part_idx!=null&&part_idx>=0;
@@ -540,10 +580,14 @@ const WorkspacePanel = (() => {
 
     _KO_FALLBACK = {
       // ── copula ────────────────────────────────────────────────────────────
+      '입니다':    {reading:'imnida',          meaning:'is / am (formal)'},
       '이에요':    {reading:'ieyo',            meaning:'is'},
       '예요':      {reading:'yeyo',            meaning:'is'},
       // ── birthday ──────────────────────────────────────────────────────────
       '생일':      {reading:'saengil',         meaning:'birthday'},
+      '축하':      {reading:'chuka',           meaning:'celebration / congratulations'},
+      '축하해요':  {reading:'chukahaeyo',      meaning:'congratulations / celebrate (polite)', parts:[{text:'축하',furigana:'축하',romaji:'chuka',meaning:'celebration / congratulations'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
+      '축하해':    {reading:'chukahae',        meaning:'congratulations / celebrate (casual)', parts:[{text:'축하',furigana:'축하',romaji:'chuka',meaning:'celebration / congratulations'},{text:'해',furigana:'해',romaji:'hae',meaning:'do (casual)'}]},
       // ── months (N월) ──────────────────────────────────────────────────────
       '1월':  {reading:'irwol',    meaning:'January',   parts:[{text:'1', furigana:'1', romaji:'il',   meaning:'one'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
       '2월':  {reading:'iwol',     meaning:'February',  parts:[{text:'2', furigana:'2', romaji:'i',    meaning:'two'   },{text:'월',furigana:'월',romaji:'wol',meaning:'month'}]},
@@ -561,14 +605,14 @@ const WorkspacePanel = (() => {
       // ── days (N일) ────────────────────────────────────────────────────────
       '일':   {reading:'il',         meaning:'day'},
       // ── greetings & conversation ──────────────────────────────────────────
-      '안녕하세요':{reading:'annyeonghaseyo',   meaning:'hello (formal)'},
+      '안녕하세요':{reading:'annyeonghaseyo',   meaning:'hello (formal)', parts:[{text:'안녕',furigana:'안녕',romaji:'annyeong',meaning:'hi / bye (informal)'},{text:'하세요',furigana:'하세요',romaji:'haseyo',meaning:'please do (honorific)'}]},
       '안녕':      {reading:'annyeong',         meaning:'hi / bye (informal)'},
       '어서':      {reading:'eoseo',            meaning:'come / quickly'},
       '오세요':    {reading:'oseyo',            meaning:'please come'},
       '무엇을':    {reading:'mueoseul',         meaning:'what (object)'},
       '무엇이':    {reading:'mueosi',           meaning:'what (subject)'},
-      '도와드릴까요':{reading:'dowadeurilkkayo',meaning:'shall I help you?'},
-      '도와줄까요': {reading:'dowajulkkayo',    meaning:'shall I help you?'},
+      '도와드릴까요':{reading:'dowadeurilkkayo',meaning:'shall I help you? / can I help you? / can I help?'},
+      '도와줄까요': {reading:'dowajulkkayo',    meaning:'shall I help you? / can I help you? / can I help?'},
       '도와줄게요': {reading:'dowajulgeyo',     meaning:"I'll help you"},
       '오늘':      {reading:'oneul',            meaning:'today'},
       '놀러':      {reading:'nolleo',           meaning:'play / visit / hang out'},
@@ -617,15 +661,15 @@ const WorkspacePanel = (() => {
       '고마워요':  {reading:'gomawoyo',         meaning:'thank you (informal)'},
       '괜찮아요':  {reading:'gwaenchanayo',     meaning:"it's okay / fine"},
       '괜찮아':    {reading:'gwaenchana',       meaning:"it's okay (informal)"},
-      '알겠어요':  {reading:'algeseoyo',        meaning:'I understand'},
-      '모르겠어요':{reading:'moreugeseoyo',     meaning:"I don't know"},
-      '좋아요':    {reading:'joayo',            meaning:'good / I like it'},
-      '좋겠다':    {reading:'jokkeda',          meaning:'sounds nice / that\'s nice / how nice / nice'},
-      '있어요':    {reading:'isseoyo',          meaning:'there is / is / are / exist / exists / have / has / I have'},
-      '있는지':    {reading:'innenji',          meaning:'whether there is / where it is'},
-      '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have / no"},
-      '그래요':    {reading:'geuraeyo',         meaning:"I see / that's right"},
-      '맞아요':    {reading:'majayo',           meaning:"that's right / correct"},
+      '알겠어요':  {reading:'algeseoyo',        meaning:'I understand', parts:[{text:'알',furigana:'알',romaji:'al',meaning:'know / understand'},{text:'겠어요',furigana:'겠어요',romaji:'gesseoyo',meaning:'will / conjecture (polite)'}]},
+      '모르겠어요':{reading:'moreugeseoyo',     meaning:"I don't know", parts:[{text:'모르',furigana:'모르',romaji:'moreu',meaning:'not know (모르다 stem)'},{text:'겠어요',furigana:'겠어요',romaji:'gesseoyo',meaning:'will / conjecture (polite)'}]},
+      '좋아요':    {reading:'joayo',            meaning:'good / I like it', parts:[{text:'좋',furigana:'좋',romaji:'jota',meaning:'good'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
+      '좋겠다':    {reading:'jokkeda',          meaning:'sounds nice / that\'s nice / how nice / nice', parts:[{text:'좋',furigana:'좋',romaji:'jo',meaning:'good'},{text:'겠다',furigana:'겠다',romaji:'getda',meaning:'would be / conjecture'}]},
+      '있어요':    {reading:'isseoyo',          meaning:'there is / is / are / exist / exists / have / has / I have', parts:[{text:'있',furigana:'있',romaji:'it',meaning:'exist / have'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '있는지':    {reading:'innenji',          meaning:'whether there is / where it is', parts:[{text:'있',furigana:'있',romaji:'it',meaning:'exist / have'},{text:'는지',furigana:'는지',romaji:'neunji',meaning:'whether / if'}]},
+      '없어요':    {reading:'eopseoyo',         meaning:"there isn't / I don't have / no", parts:[{text:'없',furigana:'없',romaji:'eops',meaning:'not exist / not have'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '그래요':    {reading:'geuraeyo',         meaning:"I see / that's right", parts:[{text:'그래',furigana:'그래',romaji:'geurae',meaning:'like that (그러다 stem)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '맞아요':    {reading:'majayo',           meaning:"that's right / correct", parts:[{text:'맞',furigana:'맞',romaji:'maj',meaning:'correct / right'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '여기':      {reading:'yeogi',            meaning:'here'},
       '거기':      {reading:'geogi',            meaning:'there'},
       '지금':      {reading:'jigeum',           meaning:'now'},
@@ -697,7 +741,7 @@ const WorkspacePanel = (() => {
       '과':        {reading:'gwa',             meaning:'and / with'},
       '도':        {reading:'do',              meaning:'also / too'},
       '만':        {reading:'man',             meaning:'only'},
-      '의':        {reading:'ui',              meaning:"possessive ('s)"},
+      '의':        {reading:'ui',              meaning:"possessive ('s) / of"},
       '에':        {reading:'e',               meaning:'at / in / to'},
       '로':        {reading:'ro',              meaning:'to / by / with'},
       // ── home / host vocabulary ────────────────────────────────────────────
@@ -760,6 +804,8 @@ const WorkspacePanel = (() => {
       '공간':      {reading:'gonggan',          meaning:'space / area / place'},
       '차례차례':  {reading:'charyecharye',     meaning:'in turns / one by one / taking turns'},
       '사이좋게':  {reading:'saijokke',         meaning:'friendly / harmoniously / nicely / amicably'},
+      '줄':        {reading:'jul',              meaning:'give / do for (prospective form of 주다)'},
+      '수':        {reading:'su',               meaning:'way / ability / means (bound noun)'},
       '수분':      {reading:'subun',            meaning:'water / hydration / moisture'},
       '보충':      {reading:'bochung',          meaning:'replenishment / supplement / refill'},
       '이상':      {reading:'isang',            meaning:'and over / or older / or more / at least / above'},
@@ -781,7 +827,7 @@ const WorkspacePanel = (() => {
       // ── common polite request forms ───────────────────────────────────────
       '들어주세요':  {reading:'deureojuseyo',    meaning:'please listen'},
       '들어':       {reading:'deureo',           meaning:'listen / enter'},
-      '들어요':     {reading:'deuleoyo',         meaning:'listens / enters (polite)'},
+      '들어요':     {reading:'deuleoyo',         meaning:'listens / enters (polite)', parts:[{text:'들',furigana:'들',romaji:'deul',meaning:'listen / enter (듣다, ㄷ irr)'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '들다':       {reading:'deulda',           meaning:'listen / enter / hold'},
       '보여주세요':  {reading:'boyeojuseyo',     meaning:'please show'},
       '알려주세요':  {reading:'allyeojuseyo',    meaning:'please let me know'},
@@ -803,57 +849,59 @@ const WorkspacePanel = (() => {
       '작가님':    {reading:'jakganim',        meaning:'author (honorific)'},
       '서점':      {reading:'seojeom',         meaning:'bookstore'},
       '찾다':      {reading:'chatda',          meaning:'find / look for / search'},
-      '찾아요':    {reading:'chajayo',         meaning:'find / look for (polite)'},
+      '찾아요':    {reading:'chajayo',         meaning:'find / look for (polite)', parts:[{text:'찾',furigana:'찾',romaji:'chat',meaning:'find / look for / search'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '찾고':      {reading:'chatgo',          meaning:'looking for / finding (and…)'},
       '찾고 있어요':{reading:'chatgo isseoyo', meaning:'I am looking for'},
       '읽다':      {reading:'ikda',            meaning:'read'},
-      '읽어요':    {reading:'igeoyo',          meaning:'read (polite)'},
-      '읽었어요':  {reading:'igeosseoyo',      meaning:'read (past polite)'},
+      '읽어요':    {reading:'igeoyo',          meaning:'read (polite)', parts:[{text:'읽',furigana:'읽',romaji:'ik',meaning:'read'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '읽었어요':  {reading:'igeosseoyo',      meaning:'read (past polite)', parts:[{text:'읽',furigana:'읽',romaji:'ik',meaning:'read'},{text:'었어요',furigana:'었어요',romaji:'eosseoyo',meaning:'did (past polite)'}]},
       '빌리다':    {reading:'billida',         meaning:'borrow / lend'},
-      '빌려요':    {reading:'billyeoyo',       meaning:'borrow (polite)'},
+      '빌려요':    {reading:'billyeoyo',       meaning:'borrow (polite)', parts:[{text:'빌려',furigana:'빌려',romaji:'billyeo',meaning:'borrow (빌리다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '빌릴':      {reading:'billil',          meaning:'borrow (future/adjective form)'},
       '반납하다':  {reading:'bannapada',       meaning:'return (a borrowed item)'},
-      '반납해요':  {reading:'bannaphaeyo',     meaning:'return (polite)'},
+      '반납해요':  {reading:'bannaphaeyo',     meaning:'return (polite)', parts:[{text:'반납',furigana:'반납',romaji:'bannap',meaning:'return / give back'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '어떤':      {reading:'eotteon',         meaning:'what kind of / which / what sort of'},
       '뭐':        {reading:'mwo',             meaning:'what (informal)'},
       '무슨':      {reading:'museun',          meaning:'what / which (before a noun)'},
       '어느':      {reading:'eoneu',           meaning:'which'},
       '알다':      {reading:'alda',            meaning:'know / understand'},
       '알아':      {reading:'ara',             meaning:'know (informal)'},
-      '알아요':    {reading:'arayo',           meaning:'I know (polite)'},
+      '알아요':    {reading:'arayo',           meaning:'I know (polite)', parts:[{text:'알',furigana:'알',romaji:'al',meaning:'know / understand'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '모르다':    {reading:'moreuda',         meaning:'not know / don\'t know'},
-      '몰라요':    {reading:'mollayo',         meaning:'I don\'t know (polite)'},
+      '몰라요':    {reading:'mollayo',         meaning:'I don\'t know (polite)', parts:[{text:'몰라',furigana:'몰라',romaji:'molla',meaning:'don\'t know (모르다, ㄹ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '좋아하다':  {reading:'joahada',         meaning:'like / enjoy'},
-      '좋아해요':  {reading:'joahaeyo',        meaning:'I like (polite)'},
+      '좋아해요':  {reading:'joahaeyo',        meaning:'I like (polite)', parts:[{text:'좋아',furigana:'좋아',romaji:'joa',meaning:'like / enjoy'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '재미있다':  {reading:'jaemiitda',       meaning:'interesting / fun'},
-      '재미있어요':{reading:'jaemiisseoyo',    meaning:'interesting / fun (polite)'},
-      '재미없다':  {reading:'jaemieoptda',     meaning:'boring / not interesting'},
+      '재미있어요':{reading:'jaemiisseoyo',    meaning:'interesting / fun (polite)', parts:[{text:'재미있',furigana:'재미있',romaji:'jaemiit',meaning:'interesting (재미+있다)'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '재미없다':  {reading:'jaemieoptda',     meaning:'boring / not interesting', parts:[{text:'재미없',furigana:'재미없',romaji:'jaemieop',meaning:'boring (재미+없다)'},{text:'다',furigana:'다',romaji:'da',meaning:'dictionary form'}]},
       '어렵다':    {reading:'eoryeopda',       meaning:'difficult / hard'},
-      '어려워요':  {reading:'eoryeowoyo',      meaning:'difficult (polite)'},
+      '어려워요':  {reading:'eoryeowoyo',      meaning:'difficult (polite)', parts:[{text:'어려워',furigana:'어려워',romaji:'eoryeowo',meaning:'difficult (어렵다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '쉽다':      {reading:'swipda',          meaning:'easy'},
-      '쉬워요':    {reading:'swiwoyo',         meaning:'easy (polite)'},
+      '쉬워요':    {reading:'swiwoyo',         meaning:'easy (polite)', parts:[{text:'쉬워',furigana:'쉬워',romaji:'swiwo',meaning:'easy (쉽다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '가다':      {reading:'gada',            meaning:'go'},
-      '가요':      {reading:'gayo',            meaning:'go (polite)'},
+      '가요':      {reading:'gayo',            meaning:'go (polite)', parts:[{text:'가',furigana:'가',romaji:'ga',meaning:'go'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '오다':      {reading:'oda',             meaning:'come'},
-      '와요':      {reading:'wayo',            meaning:'come (polite)'},
+      '와요':      {reading:'wayo',            meaning:'come (polite)', parts:[{text:'와',furigana:'와',romaji:'wa',meaning:'come (오다, 오+아→와)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '먹다':      {reading:'meokda',          meaning:'eat'},
-      '먹어요':    {reading:'meogeoyo',        meaning:'eat (polite)'},
+      '먹어요':    {reading:'meogeoyo',        meaning:'eat (polite)', parts:[{text:'먹',furigana:'먹',romaji:'meok',meaning:'eat'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '마시다':    {reading:'masida',          meaning:'drink'},
-      '마셔요':    {reading:'masyeoyo',        meaning:'drink (polite)'},
+      '마셔요':    {reading:'masyeoyo',        meaning:'drink (polite)', parts:[{text:'마셔',furigana:'마셔',romaji:'masyeo',meaning:'drink (마시다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '보다':      {reading:'boda',            meaning:'see / look / watch'},
-      '봐요':      {reading:'bwayo',           meaning:'see / look (polite)'},
+      '봐요':      {reading:'bwayo',           meaning:'see / look (polite)', parts:[{text:'봐',furigana:'봐',romaji:'bwa',meaning:'see / look (보다, 보+아→봐)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '듣다':      {reading:'deutda',          meaning:'listen / hear'},
-      '들어요':    {reading:'deuleoyo',        meaning:'listen (polite)'},
+      '들어요':    {reading:'deuleoyo',        meaning:'listen (polite)', parts:[{text:'들',furigana:'들',romaji:'deul',meaning:'listen / enter (듣다, ㄷ irr)'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '말하다':    {reading:'malhada',         meaning:'say / speak / tell'},
-      '말해요':    {reading:'malhaeyo',        meaning:'say / speak (polite)'},
+      '말해요':    {reading:'malhaeyo',        meaning:'say / speak (polite)', parts:[{text:'말',furigana:'말',romaji:'mal',meaning:'horse / word / speech'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '쓰다':      {reading:'sseuda',          meaning:'write / use'},
-      '써요':      {reading:'sseoyo',          meaning:'write (polite)'},
+      '써요':      {reading:'sseoyo',          meaning:'write (polite)', parts:[{text:'써',furigana:'써',romaji:'sseo',meaning:'write / use (쓰다, ㅡ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '배우다':    {reading:'baeuda',          meaning:'learn / study'},
-      '배워요':    {reading:'baeoyo',          meaning:'learn (polite)'},
+      '배워요':    {reading:'baeoyo',          meaning:'learn (polite)', parts:[{text:'배워',furigana:'배워',romaji:'baewo',meaning:'learn (배우다, 우+어→워)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '내일':      {reading:'naeil',           meaning:'tomorrow'},
       '어제':      {reading:'eoje',            meaning:'yesterday'},
       '그냥':      {reading:'geunyang',        meaning:'just / simply / as-is'},
-      '같아요':    {reading:'gatayo',          meaning:'seems like / looks like / I think'},
+      '같':        {reading:'gat',             meaning:'same / alike / seems like'},
+      '같아':      {reading:'gata',           meaning:'seems like / looks like / I think'},
+      '같아요':    {reading:'gatayo',          meaning:'seems like / looks like / I think', parts:[{text:'같',furigana:'같',romaji:'gat',meaning:'seem / same'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '맞아요':    {reading:'majayo',          meaning:"that's right / correct"},
       '아직':      {reading:'ajik',            meaning:'yet / still / not yet'},
       '벌써':      {reading:'beolsseo',        meaning:'already'},
@@ -862,6 +910,8 @@ const WorkspacePanel = (() => {
       // ── pronouns & demonstratives ────────────────────────────────────────
       '나':        {reading:'na',             meaning:'I / me (informal)'},
       '저':        {reading:'jeo',            meaning:'I / me (formal)'},
+      '내':        {reading:'nae',            meaning:'my (informal)'},
+      '제':        {reading:'je',             meaning:'my (formal/humble)'},
       '우리':      {reading:'uri',            meaning:'we / our'},
       '너':        {reading:'neo',            meaning:'you (informal)'},
       '이것':      {reading:'igeot',          meaning:'this'},
@@ -886,6 +936,8 @@ const WorkspacePanel = (() => {
       '엄마':      {reading:'eomma',          meaning:'mom / mother'},
       '아빠':      {reading:'appa',           meaning:'dad / father'},
       '선생님':    {reading:'seonsaengnim',   meaning:'teacher'},
+      '씨':        {reading:'ssi',            meaning:'Mr./Ms. (honorific title)'},
+      '에릭님':    {reading:'eriknim',        meaning:'Erik (honorific)'},
       '학생':      {reading:'haksaeng',       meaning:'student'},
       // ── places ───────────────────────────────────────────────────────────
       '학교':      {reading:'hakgyo',         meaning:'school'},
@@ -904,23 +956,23 @@ const WorkspacePanel = (() => {
       '나중에':    {reading:'najunge',        meaning:'later'},
       // ── adjectives / states ──────────────────────────────────────────────
       '커요':      {reading:'keoyo',          meaning:'big / large'},
-      '작아요':    {reading:'jagayo',         meaning:'small'},
-      '나빠요':    {reading:'nappayo',        meaning:'bad'},
-      '예뻐요':    {reading:'yeppeoyo',       meaning:'pretty / beautiful'},
-      '귀여워요':  {reading:'gwiyeowoyo',     meaning:'cute'},
-      '따뜻해요':  {reading:'ttatteuthaeyo',  meaning:'warm'},
-      '차가워요':  {reading:'chagawoyo',      meaning:'cold'},
+      '작아요':    {reading:'jagayo',         meaning:'small', parts:[{text:'작',furigana:'작',romaji:'jak',meaning:'small'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
+      '나빠요':    {reading:'nappayo',        meaning:'bad', parts:[{text:'나빠',furigana:'나빠',romaji:'nappa',meaning:'bad (나쁘다, ㅡ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '예뻐요':    {reading:'yeppeoyo',       meaning:'pretty / beautiful', parts:[{text:'예뻐',furigana:'예뻐',romaji:'yeppeo',meaning:'pretty (예쁘다, ㅡ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '귀여워요':  {reading:'gwiyeowoyo',     meaning:'cute', parts:[{text:'귀여워',furigana:'귀여워',romaji:'gwiyeowo',meaning:'cute (귀엽다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '따뜻해요':  {reading:'ttatteuthaeyo',  meaning:'warm', parts:[{text:'따뜻',furigana:'따뜻',romaji:'ttatteut',meaning:'warm'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
+      '차가워요':  {reading:'chagawoyo',      meaning:'cold', parts:[{text:'차가워',furigana:'차가워',romaji:'chagawoyo',meaning:'cold/touch (차갑다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '배고파요':  {reading:'baegopayo',      meaning:'hungry'},
-      '피곤해요':  {reading:'pigonhaeyo',     meaning:'tired'},
-      '바빠요':    {reading:'bappayo',        meaning:'busy'},
+      '피곤해요':  {reading:'pigonhaeyo',     meaning:'tired', parts:[{text:'피곤',furigana:'피곤',romaji:'pigon',meaning:'tired'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
+      '바빠요':    {reading:'bappayo',        meaning:'busy', parts:[{text:'바빠',furigana:'바빠',romaji:'bappa',meaning:'busy (바쁘다, ㅡ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       // ── game HUD terms ───────────────────────────────────────────────────
       '충실감':    {reading:'chungsilgam',    meaning:'fulfillment / wellbeing'},
       '充実感':    {reading:'juujitsukan',    meaning:'fulfillment / wellbeing'},
       // ── emotions ─────────────────────────────────────────────────────────
       '기분':      {reading:'gibun',          meaning:'feeling / mood'},
-      '행복해요':  {reading:'haengbokhaeyo',  meaning:'happy'},
+      '행복해요':  {reading:'haengbokhaeyo',  meaning:'happy', parts:[{text:'행복',furigana:'행복',romaji:'haengbok',meaning:'happy'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '슬퍼요':    {reading:'seulpeoyo',      meaning:'sad'},
-      '무서워요':  {reading:'museowoyo',      meaning:'scared'},
+      '무서워요':  {reading:'museowoyo',      meaning:'scared', parts:[{text:'무서워',furigana:'무서워',romaji:'museowoyo',meaning:'scary (무섭다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '신나요':    {reading:'sinnayo',        meaning:'excited'},
       // ── connectors ───────────────────────────────────────────────────────
       '그리고':    {reading:'geurigo',        meaning:'and / and then'},
@@ -955,22 +1007,22 @@ const WorkspacePanel = (() => {
       '아홉':      {reading:'ahop',           meaning:'nine'},
       '열':        {reading:'yeol',           meaning:'ten'},
       // ── everyday verbs (polite form) ─────────────────────────────────────
-      '앉아요':    {reading:'anjayo',         meaning:'sit'},
-      '서요':      {reading:'seoyo',          meaning:'stand'},
-      '자요':      {reading:'jayo',           meaning:'sleep'},
-      '일어나요':  {reading:'ireonayo',       meaning:'wake up / get up'},
-      '만들어요':  {reading:'mandeuleoyo',    meaning:'make / create'},
-      '줘요':      {reading:'jwoyo',          meaning:'give'},
+      '앉아요':    {reading:'anjayo',         meaning:'sit', parts:[{text:'앉',furigana:'앉',romaji:'an',meaning:'sit'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
+      '서요':      {reading:'seoyo',          meaning:'stand', parts:[{text:'서',furigana:'서',romaji:'seo',meaning:'stand'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '자요':      {reading:'jayo',           meaning:'sleep', parts:[{text:'자',furigana:'자',romaji:'ja',meaning:'sleep'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '일어나요':  {reading:'ireonayo',       meaning:'wake up / get up', parts:[{text:'일어나',furigana:'일어나',romaji:'ireona',meaning:'wake up / get up'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '만들어요':  {reading:'mandeuleoyo',    meaning:'make / create', parts:[{text:'만들',furigana:'만들',romaji:'mandeul',meaning:'make'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '줘요':      {reading:'jwoyo',          meaning:'give', parts:[{text:'줘',furigana:'줘',romaji:'jwo',meaning:'give (주다, 주+어→줘)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '받아요':    {reading:'badayo',         meaning:'receive / get'},
-      '열어요':    {reading:'yeoreoyo',       meaning:'open'},
-      '닫아요':    {reading:'datayo',         meaning:'close'},
-      '나가요':    {reading:'nagayo',         meaning:'go out / exit'},
-      '들어가요':  {reading:'deureogayo',     meaning:'go in / enter'},
-      '기다려요':  {reading:'gidaryeoyo',     meaning:'wait'},
-      '시작해요':  {reading:'sijakhaeyo',     meaning:'start / begin'},
+      '열어요':    {reading:'yeoreoyo',       meaning:'open', parts:[{text:'열',furigana:'열',romaji:'yeol',meaning:'open'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '닫아요':    {reading:'datayo',         meaning:'close', parts:[{text:'닫',furigana:'닫',romaji:'dat',meaning:'close'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
+      '나가요':    {reading:'nagayo',         meaning:'go out / exit', parts:[{text:'나가',furigana:'나가',romaji:'naga',meaning:'go out / leave'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '들어가요':  {reading:'deureogayo',     meaning:'go in / enter', parts:[{text:'들어가',furigana:'들어가',romaji:'deureoga',meaning:'enter / go in'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '기다려요':  {reading:'gidaryeoyo',     meaning:'wait', parts:[{text:'기다려',furigana:'기다려',romaji:'gidaryeo',meaning:'wait (기다리다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '시작해요':  {reading:'sijakhaeyo',     meaning:'start / begin', parts:[{text:'시작',furigana:'시작',romaji:'sijak',meaning:'beginning / start'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '끝나요':    {reading:'kkeutnayo',      meaning:'end / finish'},
       '도와요':    {reading:'dowayo',         meaning:'help'},
-      '축하해요':  {reading:'chukhahaeyo',    meaning:'congratulate'},
+      '축하해요':  {reading:'chukhahaeyo',    meaning:'congratulate', parts:[{text:'축하',furigana:'축하',romaji:'chuka',meaning:'celebration / congratulations'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '힘내요':    {reading:'himnaeyo',       meaning:'cheer up / hang in there'},
       '웃어요':    {reading:'useoyo',         meaning:'laugh / smile'},
       '울어요':    {reading:'ureoyo',         meaning:'cry'},
@@ -1018,9 +1070,9 @@ const WorkspacePanel = (() => {
       '분홍':      {reading:'bunhong',        meaning:'pink'},
       '갈색':      {reading:'galsaek',        meaning:'brown'},
       '회색':      {reading:'hoesaek',        meaning:'gray'},
-      '빨개요':    {reading:'palgaeyo',       meaning:'is red'},
-      '파래요':    {reading:'paraeyo',        meaning:'is blue'},
-      '노래요':    {reading:'noraeyo',        meaning:'is yellow'},
+      '빨개요':    {reading:'palgaeyo',       meaning:'is red', parts:[{text:'빨개',furigana:'빨개',romaji:'palgae',meaning:'red (빨갛다, ㅎ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '파래요':    {reading:'paraeyo',        meaning:'is blue', parts:[{text:'파래',furigana:'파래',romaji:'parae',meaning:'blue (파랗다, ㅎ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '노래요':    {reading:'noraeyo',        meaning:'is yellow', parts:[{text:'노래',furigana:'노래',romaji:'norae',meaning:'yellow (노랗다, ㅎ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '초록색':    {reading:'choroksaek',     meaning:'green (color)'},
       // ── body parts ─────────────────────────────────────────────────────────
       '머리':      {reading:'meori',          meaning:'head / hair'},
@@ -1081,14 +1133,14 @@ const WorkspacePanel = (() => {
       '만지다':    {reading:'manjida',        meaning:'touch / handle'},
       '만져요':    {reading:'manjyeoyo',      meaning:'touch (polite)'},
       '구경하다':  {reading:'gugyeonghada',   meaning:'look around / browse'},
-      '구경해요':  {reading:'gugyeonghaeyo',  meaning:'look around (polite)'},
+      '구경해요':  {reading:'gugyeonghaeyo',  meaning:'look around (polite)', parts:[{text:'구경',furigana:'구경',romaji:'gugyeong',meaning:'look around / browse'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '보물':      {reading:'bomul',          meaning:'treasure'},
       '역사':      {reading:'yeoksa',         meaning:'history'},
       '문화':      {reading:'munhwa',         meaning:'culture'},
       '예술':      {reading:'yesul',          meaning:'art'},
       // ── cooking room ───────────────────────────────────────────────────────
       '요리하다':  {reading:'yorihada',       meaning:'cook / prepare food'},
-      '요리해요':  {reading:'yorihaeyo',      meaning:'cook (polite)'},
+      '요리해요':  {reading:'yorihaeyo',      meaning:'cook (polite)', parts:[{text:'요리',furigana:'요리',romaji:'yori',meaning:'cooking / cuisine'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '재료':      {reading:'jaeryo',         meaning:'ingredient / material'},
       '냄비':      {reading:'naembi',         meaning:'pot / saucepan'},
       '칼':        {reading:'kal',            meaning:'knife'},
@@ -1099,17 +1151,17 @@ const WorkspacePanel = (() => {
       '컵':        {reading:'keop',           meaning:'cup'},
       '그릇':      {reading:'geureut',        meaning:'bowl / vessel'},
       '맛있다':    {reading:'masitda',        meaning:'delicious / tasty'},
-      '맛있어요':  {reading:'massisseoyo',    meaning:'delicious (polite)'},
-      '맛없어요':  {reading:'maseopsseoyo',   meaning:'tasteless / not tasty'},
+      '맛있어요':  {reading:'massisseoyo',    meaning:'delicious (polite)', parts:[{text:'맛있',furigana:'맛있',romaji:'masit',meaning:'delicious (맛+있다)'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
+      '맛없어요':  {reading:'maseopsseoyo',   meaning:'tasteless / not tasty', parts:[{text:'맛없',furigana:'맛없',romaji:'maseops',meaning:'tasteless (맛+없다)'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '달다':      {reading:'dalda',          meaning:'sweet'},
-      '달아요':    {reading:'darayo',         meaning:'sweet (polite)'},
+      '달아요':    {reading:'darayo',         meaning:'sweet (polite)', parts:[{text:'달',furigana:'달',romaji:'dal',meaning:'sweet'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '짜다':      {reading:'jjada',          meaning:'salty'},
-      '짜요':      {reading:'jjayo',          meaning:'salty (polite)'},
+      '짜요':      {reading:'jjayo',          meaning:'salty (polite)', parts:[{text:'짜',furigana:'짜',romaji:'jja',meaning:'salty'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '맵다':      {reading:'maepda',         meaning:'spicy / hot'},
       '매워요':    {reading:'maewoyo',        meaning:'spicy (polite)'},
       '시다':      {reading:'sida',           meaning:'sour'},
       '씻다':      {reading:'ssitda',         meaning:'wash'},
-      '씻어요':    {reading:'ssiseoyo',       meaning:'wash (polite)'},
+      '씻어요':    {reading:'ssiseoyo',       meaning:'wash (polite)', parts:[{text:'씻',furigana:'씻',romaji:'ssit',meaning:'wash'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '썰다':      {reading:'sseolda',        meaning:'cut / slice'},
       '볶다':      {reading:'bokda',          meaning:'stir-fry'},
       '끓이다':    {reading:'kkeurida',       meaning:'boil'},
@@ -1123,9 +1175,9 @@ const WorkspacePanel = (() => {
       '비싸요':    {reading:'bissayo',        meaning:'expensive'},
       '싸요':      {reading:'ssayo',          meaning:'cheap / inexpensive'},
       '사다':      {reading:'sada',           meaning:'buy'},
-      '사요':      {reading:'sayo',           meaning:'buy (polite)'},
+      '사요':      {reading:'sayo',           meaning:'buy (polite)', parts:[{text:'사',furigana:'사',romaji:'sa',meaning:'buy'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '팔다':      {reading:'palda',          meaning:'sell'},
-      '팔아요':    {reading:'parayo',         meaning:'sell (polite)'},
+      '팔아요':    {reading:'parayo',         meaning:'sell (polite)', parts:[{text:'팔',furigana:'팔',romaji:'pal',meaning:'sell'},{text:'아요',furigana:'아요',romaji:'ayo',meaning:'polite ending'}]},
       '영수증':    {reading:'yeongsujeung',   meaning:'receipt'},
       '거스름돈':  {reading:'geoseureudon',   meaning:'change (money)'},
       '할인':      {reading:'harin',          meaning:'discount'},
@@ -1140,7 +1192,7 @@ const WorkspacePanel = (() => {
       '걷다':      {reading:'geotda',         meaning:'walk'},
       '걸어요':    {reading:'georeoyo',       meaning:'walk (polite)'},
       '타다':      {reading:'tada',           meaning:'ride / board / get on'},
-      '타요':      {reading:'tayo',           meaning:'ride (polite)'},
+      '타요':      {reading:'tayo',           meaning:'ride (polite)', parts:[{text:'타',furigana:'타',romaji:'ta',meaning:'ride / board / get on'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       // ── more places ────────────────────────────────────────────────────────
       '병원':      {reading:'byeongwon',      meaning:'hospital / clinic'},
       '약국':      {reading:'yakguk',         meaning:'pharmacy'},
@@ -1186,51 +1238,51 @@ const WorkspacePanel = (() => {
       '복도':      {reading:'bokdo',          meaning:'corridor / hallway'},
       // ── more verbs ─────────────────────────────────────────────────────────
       '원하다':    {reading:'wonhada',        meaning:'want'},
-      '원해요':    {reading:'wonhaeyo',       meaning:'want (polite)'},
+      '원해요':    {reading:'wonhaeyo',       meaning:'want (polite)', parts:[{text:'원',furigana:'원',romaji:'won',meaning:'want'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '생각하다':  {reading:'saenggakhada',   meaning:'think'},
-      '생각해요':  {reading:'saenggakhaeyo',  meaning:'think (polite)'},
+      '생각해요':  {reading:'saenggakhaeyo',  meaning:'think (polite)', parts:[{text:'생각',furigana:'생각',romaji:'saenggak',meaning:'think'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '느끼다':    {reading:'neukkida',       meaning:'feel'},
-      '느껴요':    {reading:'neukkyeoyo',     meaning:'feel (polite)'},
+      '느껴요':    {reading:'neukkyeoyo',     meaning:'feel (polite)', parts:[{text:'느껴',furigana:'느껴',romaji:'neukkyeo',meaning:'feel (느끼다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '사랑하다':  {reading:'saranghada',     meaning:'love'},
-      '사랑해요':  {reading:'saranghaeyo',    meaning:'love (polite)'},
+      '사랑해요':  {reading:'saranghaeyo',    meaning:'love (polite)', parts:[{text:'사랑',furigana:'사랑',romaji:'sarang',meaning:'love'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '싫어하다':  {reading:'sirheohada',     meaning:'dislike / hate'},
-      '싫어해요':  {reading:'sirheohaeoyo',   meaning:'dislike (polite)'},
+      '싫어해요':  {reading:'sirheohaeoyo',   meaning:'dislike (polite)', parts:[{text:'싫어',furigana:'싫어',romaji:'sirheo',meaning:'dislike / hate'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '달리다':    {reading:'dallida',        meaning:'run'},
-      '달려요':    {reading:'dallyeoyo',      meaning:'run (polite)'},
+      '달려요':    {reading:'dallyeoyo',      meaning:'run (polite)', parts:[{text:'달려',furigana:'달려',romaji:'dallyeo',meaning:'run (달리다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '뛰다':      {reading:'ttwida',         meaning:'run / jump'},
-      '뛰어요':    {reading:'ttwioyo',        meaning:'run / jump (polite)'},
+      '뛰어요':    {reading:'ttwioyo',        meaning:'run / jump (polite)', parts:[{text:'뛰',furigana:'뛰',romaji:'ttwi',meaning:'run / jump'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '공부하다':  {reading:'gongbuhada',     meaning:'study'},
-      '공부해요':  {reading:'gongbuhaeyo',    meaning:'study (polite)'},
+      '공부해요':  {reading:'gongbuhaeyo',    meaning:'study (polite)', parts:[{text:'공부',furigana:'공부',romaji:'gongbu',meaning:'study / studying'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '물어보다':  {reading:'mureoboda',      meaning:'ask'},
       '물어봐요':  {reading:'mureobwayo',     meaning:'ask (polite)'},
       '대답하다':  {reading:'daedaphada',     meaning:'answer / reply'},
-      '대답해요':  {reading:'daedaphaeyo',    meaning:'answer (polite)'},
+      '대답해요':  {reading:'daedaphaeyo',    meaning:'answer (polite)', parts:[{text:'대답',furigana:'대답',romaji:'daedap',meaning:'answer / reply'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '가르치다':  {reading:'gareuchida',     meaning:'teach'},
-      '가르쳐요':  {reading:'gareuchyeoyo',   meaning:'teach (polite)'},
+      '가르쳐요':  {reading:'gareuchyeoyo',   meaning:'teach (polite)', parts:[{text:'가르쳐',furigana:'가르쳐',romaji:'gareuchyeo',meaning:'teach (가르치다, 이+어→여)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '기억하다':  {reading:'gieokada',       meaning:'remember'},
-      '기억해요':  {reading:'gieokhaeyo',     meaning:'remember (polite)'},
+      '기억해요':  {reading:'gieokhaeyo',     meaning:'remember (polite)', parts:[{text:'기억',furigana:'기억',romaji:'gieoka',meaning:'remember'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '잊다':      {reading:'itda',           meaning:'forget'},
-      '잊어요':    {reading:'ijeoyo',         meaning:'forget (polite)'},
+      '잊어요':    {reading:'ijeoyo',         meaning:'forget (polite)', parts:[{text:'잊',furigana:'잊',romaji:'it',meaning:'forget'},{text:'어요',furigana:'어요',romaji:'eoyo',meaning:'polite ending'}]},
       '부르다':    {reading:'bureuda',        meaning:'call / sing'},
-      '불러요':    {reading:'bulleoyo',       meaning:'call / sing (polite)'},
+      '불러요':    {reading:'bulleoyo',       meaning:'call / sing (polite)', parts:[{text:'불러',furigana:'불러',romaji:'bulleo',meaning:'call / sing (부르다, ㄹ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '보내다':    {reading:'bonaeda',        meaning:'send'},
-      '보내요':    {reading:'bonaeoyo',       meaning:'send (polite)'},
+      '보내요':    {reading:'bonaeoyo',       meaning:'send (polite)', parts:[{text:'보내',furigana:'보내',romaji:'bonae',meaning:'send'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '준비하다':  {reading:'junbihada',      meaning:'prepare'},
-      '준비해요':  {reading:'junbihaeyo',     meaning:'prepare (polite)'},
+      '준비해요':  {reading:'junbihaeyo',     meaning:'prepare (polite)', parts:[{text:'준비',furigana:'준비',romaji:'junbi',meaning:'prepare'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '걱정하다':  {reading:'geokjeonghada',  meaning:'worry'},
-      '걱정해요':  {reading:'geokjeonghaeyo', meaning:'worry (polite)'},
+      '걱정해요':  {reading:'geokjeonghaeyo', meaning:'worry (polite)', parts:[{text:'걱정',furigana:'걱정',romaji:'geokjeong',meaning:'worry'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '고르다':    {reading:'goreuda',        meaning:'choose / select'},
-      '골라요':    {reading:'gollayo',        meaning:'choose (polite)'},
+      '골라요':    {reading:'gollayo',        meaning:'choose (polite)', parts:[{text:'골라',furigana:'골라',romaji:'golla',meaning:'choose (고르다, ㄹ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '설명하다':  {reading:'seolmyeonghada', meaning:'explain'},
-      '설명해요':  {reading:'seolmyeonghaeyo',meaning:'explain (polite)'},
+      '설명해요':  {reading:'seolmyeonghaeyo',meaning:'explain (polite)', parts:[{text:'설명',furigana:'설명',romaji:'seolmyeong',meaning:'explain'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '소개하다':  {reading:'sogaehada',      meaning:'introduce'},
-      '소개해요':  {reading:'sogaehaeyo',     meaning:'introduce (polite)'},
+      '소개해요':  {reading:'sogaehaeyo',     meaning:'introduce (polite)', parts:[{text:'소개',furigana:'소개',romaji:'sogae',meaning:'introduce'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '확인하다':  {reading:'hwakinada',      meaning:'confirm / check'},
-      '확인해요':  {reading:'hwakinhaeyo',    meaning:'confirm (polite)'},
+      '확인해요':  {reading:'hwakinhaeyo',    meaning:'confirm (polite)', parts:[{text:'확인',furigana:'확인',romaji:'hwakina',meaning:'confirm / check'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '청소하다':  {reading:'cheongsohada',   meaning:'clean'},
-      '청소해요':  {reading:'cheongsohaeyo',  meaning:'clean (polite)'},
+      '청소해요':  {reading:'cheongsohaeyo',  meaning:'clean (polite)', parts:[{text:'청소',furigana:'청소',romaji:'cheongso',meaning:'clean'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '만나다':    {reading:'mannada',        meaning:'meet'},
-      '만나요':    {reading:'mannayo',        meaning:'meet (polite)'},
+      '만나요':    {reading:'mannayo',        meaning:'meet (polite)', parts:[{text:'만나',furigana:'만나',romaji:'manna',meaning:'meet'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       // ── verb & adjective roots (dictionary forms) ──────────────────────────
       '크다':      {reading:'keuda',          meaning:'big / large'},
       '작다':      {reading:'jakda',          meaning:'small'},
@@ -1264,18 +1316,18 @@ const WorkspacePanel = (() => {
       '특별해요':  {reading:'teukbyeolhaeyo', meaning:'special'},
       '신기해요':  {reading:'singihaeyo',     meaning:'amazing / fascinating'},
       '멋있어요':  {reading:'meositsseoyo',   meaning:'cool / stylish / awesome'},
-      '아파요':    {reading:'apayo',          meaning:'hurt / painful / sick'},
-      '건강해요':  {reading:'geonganghaeyo',  meaning:'healthy'},
+      '아파요':    {reading:'apayo',          meaning:'hurt / painful / sick', parts:[{text:'아파',furigana:'아파',romaji:'apa',meaning:'hurt / sick (아프다, ㅡ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '건강해요':  {reading:'geonganghaeyo',  meaning:'healthy', parts:[{text:'건강',furigana:'건강',romaji:'geongang',meaning:'health'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '조용해요':  {reading:'joyonghaeyo',    meaning:'quiet'},
-      '시끄러워요':{reading:'sikkeureowoyo',  meaning:'noisy / loud'},
+      '시끄러워요':{reading:'sikkeureowoyo',  meaning:'noisy / loud', parts:[{text:'시끄러워',furigana:'시끄러워',romaji:'sikkeureowoyo',meaning:'noisy (시끄럽다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '빨라요':    {reading:'ppallayo',       meaning:'fast / quick'},
       '느려요':    {reading:'neuryeoyo',      meaning:'slow'},
       '높아요':    {reading:'nopayo',         meaning:'high / tall'},
       '낮아요':    {reading:'najayo',         meaning:'low'},
       '길어요':    {reading:'gireoyo',        meaning:'long'},
       '짧아요':    {reading:'jjarbayo',       meaning:'short'},
-      '무거워요':  {reading:'mugeowoyo',      meaning:'heavy'},
-      '가벼워요':  {reading:'gabyeowoyo',     meaning:'light (in weight)'},
+      '무거워요':  {reading:'mugeowoyo',      meaning:'heavy', parts:[{text:'무거워',furigana:'무거워',romaji:'mugeowoyo',meaning:'heavy (무겁다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
+      '가벼워요':  {reading:'gabyeowoyo',     meaning:'light (in weight)', parts:[{text:'가벼워',furigana:'가벼워',romaji:'gabyeowoyo',meaning:'light (가볍다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '밝아요':    {reading:'balgayo',        meaning:'bright'},
       '어두워요':  {reading:'eoduwoyo',       meaning:'dark'},
       '맑아요':    {reading:'malgayo',        meaning:'clear / sunny'},
@@ -1326,9 +1378,9 @@ const WorkspacePanel = (() => {
       // ── weather ────────────────────────────────────────────────────────────
       '흐려요':    {reading:'heuryeoyo',      meaning:'cloudy'},
       '덥다':      {reading:'deoptda',        meaning:'hot (weather)'},
-      '더워요':    {reading:'deowoyo',        meaning:'hot (polite)'},
+      '더워요':    {reading:'deowoyo',        meaning:'hot (polite)', parts:[{text:'더워',furigana:'더워',romaji:'deowoyo',meaning:'hot/weather (덥다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '춥다':      {reading:'chupda',         meaning:'cold (weather)'},
-      '추워요':    {reading:'chuwoyo',        meaning:'cold (polite)'},
+      '추워요':    {reading:'chuwoyo',        meaning:'cold (polite)', parts:[{text:'추워',furigana:'추워',romaji:'chuwoyo',meaning:'cold/weather (춥다, ㅂ irr)'},{text:'요',furigana:'요',romaji:'yo',meaning:'polite ending'}]},
       '습해요':    {reading:'seupaeyo',       meaning:'humid'},
       // ── expressions & phrases ──────────────────────────────────────────────
       '물론':      {reading:'mulleon',        meaning:'of course'},
@@ -1383,7 +1435,7 @@ const WorkspacePanel = (() => {
       '의사':      {reading:'uisa',           meaning:'doctor'},
       '간호사':    {reading:'ganhosa',        meaning:'nurse'},
       '조심하다':  {reading:'josimhada',      meaning:'be careful / watch out'},
-      '조심해요':  {reading:'josimhaeyo',     meaning:'be careful (polite)'},
+      '조심해요':  {reading:'josimhaeyo',     meaning:'be careful (polite)', parts:[{text:'조심',furigana:'조심',romaji:'josim',meaning:'be careful / watch out'},{text:'해요',furigana:'해요',romaji:'haeyo',meaning:'do/does (polite)'}]},
       '위험':      {reading:'wiheom',         meaning:'danger / dangerous'},
       '안전':      {reading:'anjeon',         meaning:'safety / safe'},
       // ── building & navigation ──────────────────────────────────────────────
@@ -1406,12 +1458,75 @@ const WorkspacePanel = (() => {
       '잔':        {reading:'jan',            meaning:'cup / glass (counter)'},
       '병':        {reading:'byeong',         meaning:'bottle'},
       '봉지':      {reading:'bongji',         meaning:'bag / packet'},
+      // ── events, management & hosting (NPC free-conversation vocabulary) ──────
+      '주재':       {reading:'jujae',          meaning:'presiding / chairing / hosting'},
+      '진행':       {reading:'jinhaeng',       meaning:'proceeding / conducting'},
+      '진행자':     {reading:'jinhaengja',     meaning:'host / moderator / MC'},
+      '사회':       {reading:'sahoe',          meaning:'emcee / hosting'},
+      '사회자':     {reading:'sahoeja',        meaning:'emcee / moderator / MC'},
+      '담당':       {reading:'damdang',        meaning:'in charge / assigned'},
+      '담당자':     {reading:'damdangja',      meaning:'person in charge'},
+      '주최':       {reading:'juchoe',         meaning:'organizing / hosting'},
+      '주최자':     {reading:'juchoeja',       meaning:'organizer / host'},
+      '기획':       {reading:'gihoek',         meaning:'planning / project'},
+      '발표':       {reading:'balpyo',         meaning:'presentation / announcement'},
+      '강연':       {reading:'gangyeon',       meaning:'lecture / talk'},
+      '강사':       {reading:'gangsa',         meaning:'lecturer / instructor'},
+      '운영':       {reading:'unyeong',        meaning:'operation / management'},
+      '관리':       {reading:'gwanri',         meaning:'management / control'},
+      '관장':       {reading:'gwanjang',       meaning:'director (of institution)'},
+      '참가':       {reading:'chamga',         meaning:'participation'},
+      '참가자':     {reading:'chamgaja',       meaning:'participant'},
+      '참석':       {reading:'chamseok',       meaning:'attendance'},
+      '참석자':     {reading:'chamseokja',     meaning:'attendee'},
+      '신청':       {reading:'sincheong',      meaning:'application / sign-up'},
+      '예약':       {reading:'yeyak',          meaning:'reservation / booking'},
+      '봉사':       {reading:'bongsa',         meaning:'service / volunteering'},
+      '문의':       {reading:'munui',          meaning:'inquiry / question'},
+      '일정':       {reading:'iljeong',        meaning:'schedule / itinerary'},
+      '프로그램':   {reading:'peurogeulaem',   meaning:'program'},
+      '활동':       {reading:'hwaldong',       meaning:'activity'},
+      '체험':       {reading:'cheheom',        meaning:'hands-on experience'},
+      '교육':       {reading:'gyoyuk',         meaning:'education'},
+      '강좌':       {reading:'gangjwa',        meaning:'course / class'},
+      '방문':       {reading:'bangmun',        meaning:'visit'},
+      '방문객':     {reading:'bangmungaek',    meaning:'visitor / guest'},
+      '개최':       {reading:'gaechoe',        meaning:'holding / hosting (an event)'},
+      // ── intention endings — meanings shown when these appear as word parts ──
+      '하려고':     {reading:'haryeogo',       meaning:'intending to (do)'},
+      '으려고':     {reading:'euryeogo',       meaning:'intending to'},
+      '려고':       {reading:'ryeogo',         meaning:'intending to'},
+      '하려해':     {reading:'haryeohae',      meaning:'about to do / intend to'},
+      '으려해':     {reading:'euryeohae',      meaning:'intend to'},
+      '려해':       {reading:'ryeohae',        meaning:'intend to'},
+      // ── NPC proper names ──────────────────────────────────────────────────────
+      '도연':       {reading:'doyeon',         meaning:'Doyeon (name)'},
+      '소희':       {reading:'sohui',          meaning:'Sohui (name)'},
+      '준영':       {reading:'junyeong',       meaning:'Junyeong (name)'},
+      '지아':       {reading:'jia',            meaning:'Jia (name)'},
+      '우진':       {reading:'ujin',           meaning:'Ujin (name)'},
+      '채원':       {reading:'chaewon',        meaning:'Chaewon (name)'},
+      '미경':       {reading:'migyeong',       meaning:'Migyeong (name)'},
+      '현준':       {reading:'hyeonjun',       meaning:'Hyeonjun (name)'},
+      '서준':       {reading:'seojun',         meaning:'Seojun (name)'},
+      '지원':       {reading:'jiwon',          meaning:'Jiwon (name)'},
+      '유나':       {reading:'yuna',           meaning:'Yuna (name)'},
+      '민서':       {reading:'minseo',         meaning:'Minseo (name)'},
+      '하린':       {reading:'harin',          meaning:'Harin (name)'},
+      '유진':       {reading:'yujin',          meaning:'Yujin (name)'},
     };
     // Compound verb endings listed longest-first so the greedy match works correctly
     const _KO_PARTICLES = [
+      // Intention / prospective endings — 하려고 하다 contractions (longest first)
+      '하시려고해요','하려고해요','으려고해요','하시려해요',
+      '하시려고해','하려고해','으려고해','하시려해',
+      '하시려고','하려고','으려고','하려해','으려해',
+      '려고해요','려해요',
+      '려고해','려해',
+      '려고','려해',
       '하시려면','하려면','하시겠어요','하겠습니다','하겠어요','했습니다','했어요',
       '하십시오','하시면','하세요','합니까','합니다','해봐요','해봐','해요','해서','하면','하다','하고',
-      '시려면','겠습니다','겠어요','습니다','었어요','았어요','이에요','으면','려면',
+      '시려면','겠습니다','겠어요','습니다','었어요','았어요','입니다','이에요','으면','려면',
       // Compound postpositions — must come before their embedded short particles
       '밖에서','밖에도','밖에','밖으로',
       '으로부터','으로서도','으로서','으로도','으로만','으로는',
@@ -1425,6 +1540,7 @@ const WorkspacePanel = (() => {
     const _KO_NO_SPLIT = new Set([
       '안녕하세요','안녕하십시오','감사합니다','감사해요','죄송합니다','죄송해요',
       '괜찮아요','괜찮습니다','실례합니다','어서오세요','잘부탁합니다',
+      '같이',  // adverb "together" — would incorrectly split as 같 + 이 (subject particle)
     ]);
     function _ko_base_raw(w) {
       for (const p of _KO_PARTICLES) {
@@ -1453,8 +1569,8 @@ const WorkspacePanel = (() => {
             out_defs.push({
               text: clean, reading: romanizeKo(clean), meaning: _KO_FALLBACK?.[clean]?.meaning || '',
               parts: [
-                {text: base,     reading: romanizeKo(base),     meaning: _KO_FALLBACK?.[base]?.meaning     || ''},
-                {text: particle, reading: romanizeKo(particle), meaning: _KO_FALLBACK?.[particle]?.meaning || ''},
+                {text: base,     reading: romanizeKo(base),     romaji: romanizeKo(base),     furigana: romanizeKo(base),     meaning: _KO_FALLBACK?.[base]?.meaning     || ''},
+                {text: particle, reading: romanizeKo(particle), romaji: romanizeKo(particle), furigana: romanizeKo(particle), meaning: _KO_FALLBACK?.[particle]?.meaning || ''},
               ]
             });
           } else {
@@ -1492,6 +1608,9 @@ const WorkspacePanel = (() => {
         const sd=_sign_lookup(clean);  if (sd) { _npc_defs[clean]=sd; return sd; }
       }
       const lang_name = LANG.current==='ko'?'Korean':'Japanese';
+      // For Korean, if a known particle was stripped, ask Ollama about just the base —
+      // avoids hallucinations like "있습니다" confusion when the copula 입니다 is attached.
+      const base_for_ollama = LANG.current==='ko' ? (_ko_base(clean) || clean) : clean;
       let elapsed=0;
       const pulse=on_status?setInterval(()=>{ elapsed++; on_status(`looking up… ${elapsed}s`); },1000):null;
       on_status?.('looking up…');
@@ -1499,7 +1618,7 @@ const WorkspacePanel = (() => {
         const ctl=new AbortController(); const tid=setTimeout(()=>ctl.abort(),15000);
         const res=await fetch(OLLAMA_URL,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
           body:JSON.stringify({model:OLLAMA_MODEL,keep_alive:-1,messages:[{role:'user',content:
-            `${lang_name} word: "${clean}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"core English word or short phrase (3 words max)"}`
+            `${lang_name} word: "${base_for_ollama}"\nReply ONLY with JSON: {"reading":"romanization","meaning":"core English word or short phrase (3 words max)"}`
           }],stream:false,options:{temperature:0,num_predict:40}})});
         clearTimeout(tid); if(pulse)clearInterval(pulse);
         if (!res.ok) throw new Error();
@@ -1626,6 +1745,7 @@ const WorkspacePanel = (() => {
     function open(sign_id) {
       chips_row.style.display='';
       const sign=SIGN_BY_ID[sign_id]; if (!sign) return;
+      if (sign_id !== '__npc__') ENCOUNTER_PROGRESS.mark_sign(sign_id);
       cur_sign_id=sign_id; cur_word_idx=null; cur_part_idx=null; _active_field=null; _hint_by_key={};
       const saved=sign_id==='__npc__'?NPC_LINE_PROGRESS.get(_npc_line_id):WORD_PROGRESS.getSign(sign_id); word_results={};
       Object.keys(saved).forEach(k=>{
@@ -1702,7 +1822,7 @@ const WorkspacePanel = (() => {
       const transl_el=document.getElementById("ws-translation");
       transl_el.classList.remove('visible'); transl_el.textContent='';
       if (sign_id!=='__npc__') renderer.sign_panel={sign_id};
-      _render_chips(); _update_lkp();
+      _render_chips(); _update_lkp(); if(sim.state.phone.charges<5) _start_lkp_timer();
       // Show done state immediately if already completed (saved progress)
       const alreadyDone=sign&&sign.tokens.every((t,i)=>{
         if (t.parts&&t.parts.length) return t.parts.every((_,pi)=>{ const r=word_results[`${i}p${pi}`]||{}; return r.romaji&&r.meaning; });
@@ -1784,7 +1904,7 @@ const WorkspacePanel = (() => {
       if (e.key==="Escape"){inp.blur();return;}
       if (e.key==="Tab") {
         e.preventDefault();
-        const merged=chips_row.querySelector('.ws-merged-chip');
+        const merged=chips_inner.querySelector('.ws-merged-chip');
         if (!merged) return;
         const openSlots=[...merged.querySelectorAll('[data-field].slot-empty,[data-field].slot-active')];
         if (openSlots.length===0) return;
@@ -1843,6 +1963,22 @@ const WorkspacePanel = (() => {
       } else { inp.className="wrong"; setTimeout(()=>{inp.className="";},700); }
     });
 
+    // Tab cycling when workspace is open but inp isn't focused (e.g. after clicking a completed token)
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Tab') return;
+      if (document.activeElement === inp) return; // inp's own handler covers this case
+      if (!panel_el.classList.contains('open')) return;
+      const merged = chips_inner.querySelector('.ws-merged-chip');
+      if (!merged) return;
+      const openSlots = [...merged.querySelectorAll('[data-field].slot-empty,[data-field].slot-active')];
+      if (openSlots.length === 0) return;
+      e.preventDefault();
+      const next = e.shiftKey ? openSlots[openSlots.length - 1] : openSlots[0];
+      const tok_idx = +next.dataset.tokIdx;
+      const part_idx = next.dataset.whole === '1' ? -1 : (next.dataset.partIdx !== undefined ? +next.dataset.partIdx : null);
+      _select(tok_idx, part_idx, next.dataset.field);
+    }, true);
+
     speak_all.addEventListener("click", () => {
       const sign = SIGN_BY_ID[cur_sign_id]; if (!sign) return;
       _speak(sign.japanese.replace(/\n/g, ' '));
@@ -1872,7 +2008,7 @@ const WorkspacePanel = (() => {
       word_results[res_key]=word_results[res_key]||{};
       const res=word_results[res_key];
       const _alreadyDone=res.romaji&&res.meaning;
-      if (sim.state.phone.lookup_cooldown>0) return;
+      if (sim.state.phone.charges<=0) return;
       if (cur_sign_id==='__npc__') {
         if ((!active.romaji&&!active.furigana)||!active.meaning) {
           lkp.disabled=true;
@@ -1881,7 +2017,7 @@ const WorkspacePanel = (() => {
           if (def) { if(!active.romaji)active.romaji=def.reading; if(!active.furigana)active.furigana=def.reading; if(!active.meaning)active.meaning=def.meaning; }
         }
         const reading=active.romaji||active.furigana;
-        const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'').toLowerCase();
+        const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'');
         fb.textContent=''; fb.style.color='';
         if (!reading&&!meaning) { fb.textContent='not found'; fb.style.color='#888'; _update_lkp(); return; }
         const _hr=_fmt_read(active.furigana||reading,reading);
@@ -1893,7 +2029,7 @@ const WorkspacePanel = (() => {
       }
       // non-NPC: show reading+meaning as hint only — player must still type to get credit
       const reading=active.romaji||active.furigana;
-      const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'').toLowerCase();
+      const meaning=(active.meaning||'').split(/\s*[/,]\s*|\s+or\s+/)[0].trim().replace(/^to\s+/i,'');
       const _hr2=_fmt_read(active.furigana,reading);
       _hint_by_key[res_key]={reading:_hr2, meaning};
       _show_hint(_hr2, meaning);

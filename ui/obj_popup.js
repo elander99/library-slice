@@ -42,8 +42,9 @@ const ObjectDescPopup = (() => {
   function show_for(id, sx, sy) {
     const npc = NPC_DEFS[id];
     if (npc) {
-      const word = LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp;
-      show(word, npc.name_en, sx, sy, npc.desc_en);
+      const known = typeof JOURNAL_PROGRESS !== 'undefined' && JOURNAL_PROGRESS.get(id).met;
+      const word = known ? (LANG.current === 'ko' && npc.name_ko ? npc.name_ko : npc.name_jp) : '？？？';
+      show(word, known ? npc.name_en : '', sx, sy, npc.desc_en);
       return;
     }
     const def = ENTITY_DEFS[id];

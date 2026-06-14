@@ -53,11 +53,13 @@ function generateJS(data) {
 }
 
 const OLLAMA = { host: '127.0.0.1', port: 11434 };
+const OLLAMA_MODEL = 'llama3.1:8b';
 
 function ensureOllama() {
   const check = http.get({ host: OLLAMA.host, port: OLLAMA.port, path: '/api/version' }, res => {
     res.resume();
     console.log('[ollama] already running');
+    warmModel(0);
   });
   check.setTimeout(1500, () => { check.destroy(); startOllama(); });
   check.on('error', startOllama);
@@ -69,6 +71,24 @@ function startOllama() {
   const proc = spawn('ollama', ['serve'], { detached: true, stdio: 'ignore' });
   proc.on('error', e => console.error('[ollama] failed to spawn:', e.message));
   proc.unref();
+  // Give Ollama a moment to start, then warm the model
+  setTimeout(() => warmModel(0), 3000);
+}
+
+// Fire a zero-prompt request so the model is loaded into memory before the first player interaction.
+function warmModel(attempt) {
+  const body = JSON.stringify({ model: OLLAMA_MODEL, keep_alive: -1, messages: [], stream: false });
+  const req = http.request(
+    { host: OLLAMA.host, port: OLLAMA.port, path: '/api/chat', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
+    res => { res.resume(); console.log(`[ollama] model ${OLLAMA_MODEL} warmed up`); }
+  );
+  req.on('error', () => {
+    if (attempt < 8) setTimeout(() => warmModel(attempt + 1), 2000);
+    else console.warn('[ollama] could not warm model — will load on first use');
+  });
+  req.write(body);
+  req.end();
 }
 
 function proxyOllama(req, res, path) {
